@@ -1,0 +1,27 @@
+<multi_task_tenancy>
+  <critical_rule priority="MANDATORY">
+    Multi-task development requires strict context isolation. Each task context must be isolated
+    from other task contexts. Task-specific decisions stay in task context, not shared context.
+    Only promote decisions to shared context when they affect multiple tasks.
+
+    This is MANDATORY for all modes that use memory bank systems.
+  </critical_rule>
+
+  <overview>
+    Complete multi-task tenancy system rules defined in:
+    ../../sdlc/shared/universal/multi-task-tenancy.md
+  </overview>
+
+  <shared_reference>../../sdlc/shared/universal/multi-task-tenancy.md</shared_reference>
+
+  <includes>
+    - Two-tier tenancy architecture (shared + task contexts)
+    - Automatic task detection from git branches
+    - Context isolation rules and boundaries
+    - Merge and integration workflow
+    - Mode behavior adaptations
+    - Task handoff protocol
+    - Implementation checklist
+    - Anti-patterns to avoid
+  </includes>
+</multi_task_tenancy>

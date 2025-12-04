@@ -1,0 +1,33 @@
+<step_timestamp_logging>
+  <overview>
+    All workflow steps in project online MR Actions mode must print timestamps at the beginning and end to track execution time and provide visibility into MR feedback processing progress.
+  </overview>
+
+  <timestamp_format>
+    Defined in: ../../sdlc/shared/mr-timestamp-logging.md (Timestamp Format section)
+  </timestamp_format>
+
+  <logging_pattern>
+    Defined in: ../../sdlc/shared/mr-timestamp-logging.md (Logging Pattern section)
+  </logging_pattern>
+
+  <mr_feedback_workflow_integration>
+    Defined in: ../../sdlc/shared/mr-timestamp-logging.md (Typical Workflow with Timestamps section)
+  </mr_feedback_workflow_integration>
+
+  <timestamp_generation>
+    Defined in: ../../sdlc/shared/mr-timestamp-logging.md (Timestamp Format section)
+  </timestamp_generation>
+
+  <duration_calculation>
+    Defined in: ../../sdlc/shared/mr-timestamp-logging.md (Duration Calculation section)
+  </duration_calculation>
+
+  <best_practices>
+    Defined in: ../../sdlc/shared/mr-timestamp-logging.md (Best Practices section)
+  </best_practices>
+
+  <complete_mr_workflow_example>
+    Defined in: ../../sdlc/shared/mr-timestamp-logging.md (Typical Workflow with Timestamps section)
+  </complete_mr_workflow_example>
+</step_timestamp_logging>

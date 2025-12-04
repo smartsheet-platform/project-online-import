@@ -1,0 +1,12 @@
+<api_client_delegation>
+  <overview>
+    NEVER IMPLEMENT API CLIENTS. Always delegate to project online API Client Code mode.
+
+    Role and scope boundaries defined in: ../../sdlc/shared/code-reviewer-role-definition.md
+
+    When API client issues found:
+    - Review API client code for correctness (in scope)
+    - Provide feedback on identified issues (in scope)
+    - Delegate modifications to project online API Client Code mode
+  </overview>
+</api_client_delegation>

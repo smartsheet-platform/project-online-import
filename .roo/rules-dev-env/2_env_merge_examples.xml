@@ -1,0 +1,394 @@
+<env_merge_examples>
+  <!--
+    Practical examples of .env file merging scenarios for Dev Env mode
+  -->
+
+  <overview>
+    This file provides concrete examples of how Dev Env mode should handle
+    different .env file scenarios, with emphasis on preserving existing values
+    while adding new variables from .env.sample.
+  </overview>
+
+  <example name="scenario_1_new_project">
+    <description>
+      User has no .env file - first time setup
+    </description>
+    
+    <initial_state>
+      <file_exists>.env.sample exists</file_exists>
+      <file_missing>.env does not exist</file_missing>
+    </initial_state>
+    
+    <workflow>
+      <step number="1">
+        <action>Detect that .env is missing</action>
+        <command>test -f .env || echo "missing"</command>
+      </step>
+      
+      <step number="2">
+        <action>Copy .env.sample to .env</action>
+        <command>cp .env.sample .env</command>
+        <message>Created .env from .env.sample template</message>
+      </step>
+      
+      <step number="3">
+        <action>Proceed with Phase 1 variable population</action>
+        <message>Now let's configure your required environment variables</message>
+      </step>
+      
+      <step number="4">
+        <action>Collect GIT_TOKEN interactively</action>
+        <prompt>Enter your Git platform token (required for MR feedback)</prompt>
+      </step>
+      
+      <step number="5">
+        <action>Ask about Jira integration</action>
+        <prompt>Would you like to configure Jira integration? (optional)</prompt>
+      </step>
+    </workflow>
+    
+    <result>
+      .env file created with all variables from .env.sample, required ones populated
+    </result>
+  </example>
+
+  <example name="scenario_2_existing_env_missing_vars">
+    <description>
+      User has .env but it's missing some variables from updated .env.sample
+    </description>
+    
+    <initial_state>
+      <existing_env><![CDATA[
+# User's existing .env file
+GIT_TOKEN=ghp_existing_token_12345
+JIRA_PROJECT_KEY=MYPROJ
+JIRA_USERNAME=user@company.com
+JIRA_API_TOKEN=existing_jira_token
+      ]]></existing_env>
+      
+      <env_sample><![CDATA[
+# Updated .env.sample with new variables
+GIT_TOKEN=
+JIRA_PROJECT_KEY=
+JIRA_URL=https://smartsheet.atlassian.net
+JIRA_USERNAME=
+JIRA_API_TOKEN=
+
+# New variables added in latest version
+CONFLUENCE_URL=https://company.atlassian.net/
+CONFLUENCE_USERNAME=
+CONFLUENCE_API_TOKEN=
+
+      ]]></env_sample>
+    </initial_state>
+    
+    <workflow>
+      <step number="1">
+        <action>Detect .env exists</action>
+        <command>test -f .env && echo "exists"</command>
+      </step>
+      
+      <step number="2">
+        <action>Identify missing variables</action>
+        <code><![CDATA[
+# Variables in .env.sample but not in .env
+missing_vars=(
+  "CONFLUENCE_URL"
+  "CONFLUENCE_USERNAME"
+  "CONFLUENCE_API_TOKEN"
+  "JIRA_URL"
+  "JIRA_USERNAME"
+  "JIRA_API_TOKEN"
+)
+        ]]></code>
+      </step>
+      
+      <step number="3">
+        <action>Inform user about merge</action>
+        <message>
+Your .env file is missing some variables from the latest .env.sample.
+I'll add these new variables while preserving your existing configuration:
+  - CONFLUENCE_URL
+  - CONFLUENCE_USERNAME
+  - CONFLUENCE_API_TOKEN
+  - JIRA_URL
+  - JIRA_USERNAME
+  - JIRA_API_TOKEN
+        </message>
+      </step>
+      
+      <step number="4">
+        <action>Merge missing variables</action>
+        <code><![CDATA[
+# Backup existing .env
+cp .env .env.backup
+
+# Append new variables with their comments
+echo "" >> .env
+echo "# Variables added from .env.sample on $(date +%Y-%m-%d)" >> .env
+echo "" >> .env
+echo "# Confluence Configuration (optional)" >> .env
+echo "CONFLUENCE_URL=https://company.atlassian.net/" >> .env
+echo "CONFLUENCE_USERNAME=" >> .env
+echo "CONFLUENCE_API_TOKEN=" >> .env
+echo "" >> .env
+echo "# JIRA Integration (optional)" >> .env
+echo "JIRA_URL=https://smartsheet.atlassian.net" >> .env
+echo "JIRA_USERNAME=" >> .env
+echo "JIRA_API_TOKEN=" >> .env
+        ]]></code>
+      </step>
+      
+      <step number="5">
+        <action>Ask if user wants to configure new optional features</action>
+        <prompt>
+Would you like to configure the new Confluence integration? (optional)
+Would you like to configure JIRA tracking? (optional)
+        </prompt>
+      </step>
+    </workflow>
+    
+    <result>
+      <final_env><![CDATA[
+# User's existing .env file (PRESERVED)
+GIT_TOKEN=ghp_existing_token_12345
+JIRA_PROJECT_KEY=MYPROJ
+JIRA_USERNAME=user@company.com
+JIRA_API_TOKEN=existing_jira_token
+
+# Variables added from .env.sample on 2025-01-21
+
+# Confluence Configuration (optional)
+CONFLUENCE_URL=https://company.atlassian.net/
+CONFLUENCE_USERNAME=
+CONFLUENCE_API_TOKEN=
+
+# JIRA Integration (optional)
+JIRA_URL=https://smartsheet.atlassian.net
+JIRA_USERNAME=
+JIRA_API_TOKEN=
+      ]]></final_env>
+      
+      <critical_note>
+        ALL existing values (GIT_TOKEN, JIRA_* variables) were PRESERVED.
+        Only new variables were added.
+      </critical_note>
+    </result>
+  </example>
+
+  <example name="scenario_3_fully_configured">
+    <description>
+      User has .env with all variables from .env.sample already present
+    </description>
+    
+    <initial_state>
+      <existing_env><![CDATA[
+GIT_TOKEN=ghp_configured_token
+JIRA_PROJECT_KEY=PROJ
+JIRA_URL=https://smartsheet.atlassian.net
+JIRA_USERNAME=user@company.com
+JIRA_API_TOKEN=configured_token
+CONFLUENCE_URL=https://company.atlassian.net/
+CONFLUENCE_USERNAME=user@company.com
+CONFLUENCE_API_TOKEN=configured_token
+      ]]></existing_env>
+    </initial_state>
+    
+    <workflow>
+      <step number="1">
+        <action>Detect .env exists</action>
+      </step>
+      
+      <step number="2">
+        <action>Check for missing variables</action>
+        <result>No missing variables found</result>
+      </step>
+      
+      <step number="3">
+        <action>Validate required variables have values</action>
+        <validation>
+          <check>GIT_TOKEN is populated ✅</check>
+          <check>All Jira variables populated ✅</check>
+        </validation>
+      </step>
+      
+      <step number="4">
+        <action>Inform user</action>
+        <message>
+Your .env file is fully configured with all required variables.
+Ready to proceed to Phase 2 (script execution) if needed.
+        </message>
+      </step>
+    </workflow>
+    
+    <result>
+      No changes needed. User can proceed to Phase 2 or other tasks.
+    </result>
+  </example>
+
+  <example name="scenario_4_partial_values">
+    <description>
+      User has .env with all variables but some are empty
+    </description>
+    
+    <initial_state>
+      <existing_env><![CDATA[
+GIT_TOKEN=ghp_configured_token
+JIRA_PROJECT_KEY=
+JIRA_URL=https://smartsheet.atlassian.net
+JIRA_USERNAME=
+JIRA_API_TOKEN=
+CONFLUENCE_URL=https://company.atlassian.net/
+CONFLUENCE_USERNAME=
+CONFLUENCE_API_TOKEN=
+      ]]></existing_env>
+    </initial_state>
+    
+    <workflow>
+      <step number="1">
+        <action>Detect .env exists with all variables</action>
+      </step>
+      
+      <step number="2">
+        <action>Identify empty variables</action>
+        <code><![CDATA[
+empty_vars=(
+  "JIRA_PROJECT_KEY"
+  "JIRA_USERNAME"
+  "JIRA_API_TOKEN"
+  "CONFLUENCE_USERNAME"
+  "CONFLUENCE_API_TOKEN"
+)
+        ]]></code>
+      </step>
+      
+      <step number="3">
+        <action>Ask about optional integrations</action>
+        <message>
+Your .env file has all variables but some are not configured:
+  - Jira integration (optional)
+  - Confluence integration (optional)
+
+Would you like to configure these now?
+        </message>
+      </step>
+      
+      <step number="4">
+        <action>If user wants to configure, collect values and update</action>
+        <critical_rule>
+          Use sed to update ONLY the specific variables being configured.
+          Do NOT overwrite the entire file or other variables.
+        </critical_rule>
+        <code><![CDATA[
+# Safe update of specific variables
+sed -i.bak "s|^JIRA_PROJECT_KEY=.*|JIRA_PROJECT_KEY=${project_key}|" .env
+sed -i.bak "s|^JIRA_USERNAME=.*|JIRA_USERNAME=${username}|" .env
+sed -i.bak "s|^JIRA_API_TOKEN=.*|JIRA_API_TOKEN=${api_token}|" .env
+        ]]></code>
+      </step>
+    </workflow>
+    
+    <result>
+      Only the empty variables that user chose to configure are updated.
+      GIT_TOKEN and other configured values remain unchanged.
+    </result>
+  </example>
+
+  <anti_patterns>
+    <anti_pattern name="overwrite_entire_file">
+      <description>NEVER do this - it destroys existing configuration</description>
+      <bad_code><![CDATA[
+# ❌ WRONG - This overwrites everything
+cp .env.sample .env
+      ]]></bad_code>
+      <why_bad>
+        Destroys all user's existing configuration values
+      </why_bad>
+    </anti_pattern>
+    
+    <anti_pattern name="sed_replace_all_lines">
+      <description>NEVER use sed to replace entire lines without checking</description>
+      <bad_code><![CDATA[
+# ❌ WRONG - This overwrites existing values
+sed -i 's|^GIT_TOKEN=.*|GIT_TOKEN=|' .env
+sed -i 's|^JIRA_USERNAME=.*|JIRA_USERNAME=|' .env
+      ]]></bad_code>
+      <why_bad>
+        Replaces configured values with empty strings
+      </why_bad>
+    </anti_pattern>
+    
+    <anti_pattern name="assume_empty_means_unconfigured">
+      <description>Don't assume empty values need configuration</description>
+      <bad_code><![CDATA[
+# ❌ WRONG - User might intentionally leave optional vars empty
+if grep -q "^JIRA_USERNAME=$" .env; then
+  # Force configuration without asking
+  read -p "Enter Jira username: " username
+fi
+      ]]></bad_code>
+      <why_bad>
+        User might not want Jira integration. Always ask first.
+      </why_bad>
+    </anti_pattern>
+  </anti_patterns>
+
+  <best_practices>
+    <practice name="always_backup">
+      <description>Always backup .env before making changes</description>
+      <code>cp .env .env.backup.$(date +%Y%m%d_%H%M%S)</code>
+    </practice>
+    
+    <practice name="check_before_add">
+      <description>Always check if variable exists before adding</description>
+      <code><![CDATA[
+if ! grep -q "^VARIABLE_NAME=" .env; then
+  echo "VARIABLE_NAME=" >> .env
+fi
+      ]]></code>
+    </practice>
+    
+    <practice name="targeted_updates">
+      <description>Update only specific variables, not entire file</description>
+      <code><![CDATA[
+# Update only this one variable
+sed -i.bak "s|^GIT_TOKEN=.*|GIT_TOKEN=${new_value}|" .env
+      ]]></code>
+    </practice>
+    
+    <practice name="preserve_comments">
+      <description>When adding variables, include their comment context</description>
+      <code><![CDATA[
+echo "" >> .env
+echo "# Git Platform Token (required)" >> .env
+echo "GIT_TOKEN=" >> .env
+      ]]></code>
+    </practice>
+    
+    <practice name="validate_after_merge">
+      <description>Always validate that merge was successful</description>
+      <code><![CDATA[
+# Verify all expected variables exist
+for var in GIT_TOKEN JIRA_USERNAME JIRA_API_TOKEN; do
+  if ! grep -q "^${var}=" .env; then
+    echo "❌ Missing variable: $var"
+  fi
+done
+      ]]></code>
+    </practice>
+  </best_practices>
+
+  <implementation_checklist>
+    <item>✅ Check if .env exists</item>
+    <item>✅ If missing, copy from .env.sample</item>
+    <item>✅ If exists, identify missing variables from .env.sample</item>
+    <item>✅ Backup existing .env before any changes</item>
+    <item>✅ Append missing variables with their comments</item>
+    <item>✅ Identify which variables are empty</item>
+    <item>✅ Prompt user only for empty required variables</item>
+    <item>✅ Ask about optional integrations</item>
+    <item>✅ Update only the specific variables being configured</item>
+    <item>✅ Validate all required variables are populated</item>
+    <item>✅ Never overwrite existing configured values</item>
+  </implementation_checklist>
+</env_merge_examples>

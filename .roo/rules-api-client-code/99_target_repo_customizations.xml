@@ -1,0 +1,30 @@
+<target_repo_customizations>
+  <!--
+    IMPORTANT: Project-specific customizations have been moved to markdown format.
+    
+    All customizations for this mode should now be added to:
+    ../../shared/customizations/api-client-code-customizations.md
+    
+    That file:
+    - Will NEVER be overwritten by setup-sdlc.sh updates
+    - Provides better formatting and examples
+    - Is easier to read and maintain
+    - Follows the same ultra-DRY principles
+    
+    This XML file is kept for backward compatibility but should reference
+    the markdown file for actual customizations.
+  -->
+  
+  <customization_reference>
+    <location>../../shared/customizations/api-client-code-customizations.md</location>
+    <description>
+      Project-specific customizations for API Client Code mode including:
+      - Custom API client patterns specific to your APIs
+      - Project-specific authentication mechanisms
+      - Custom error handling for your API responses
+      - Integration with your team's API testing tools
+      - Additional validation rules for API specifications
+    </description>
+  </customization_reference>
+  
+</target_repo_customizations>

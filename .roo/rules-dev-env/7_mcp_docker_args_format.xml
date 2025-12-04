@@ -1,0 +1,70 @@
+<jira_mcp_docker_args_format>
+  <!--
+    ULTRA-DRY: All details in ../../sdlc/shared/jira-mcp-troubleshooting.md
+    
+    This file references the shared pattern for ALL Docker/Podman args format requirements.
+    Update shared file when any of these change.
+  -->
+
+  <overview>
+    Docker/Podman args array MUST include -e flags to pass environment variables into containers.
+
+    CRITICAL: -e flag syntax is IDENTICAL for both Docker and Podman.
+
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md
+    - "Docker/Podman Args Format" section
+    - "Correct Format (Docker)" and "Correct Format (Podman)" sections
+    - "Common Mistakes" section
+  </overview>
+
+  <shared_pattern>sdlc/shared/jira-mcp-troubleshooting.md</shared_pattern>
+
+  <critical_requirement>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Critical Requirement section)
+    
+    Environment variables in "env" section are NOT automatically available inside containers.
+    MUST explicitly pass using -e flags in args array.
+  </critical_requirement>
+
+  <correct_syntax>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Correct Format sections)
+    
+    Key rules:
+    - Each -e flag followed by ONLY variable NAME (not value)
+    - Container runtime looks up value from "env" section
+    - Format: "-e", "VARIABLE_NAME" (two separate array elements)
+  </correct_syntax>
+
+  <required_e_flags>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Required Environment Variables section)
+    
+    All 6 required flags:
+    - CONFLUENCE_URL, CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN
+    - JIRA_URL, JIRA_USERNAME, JIRA_API_TOKEN
+  </required_e_flags>
+
+  <common_mistakes>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Common Mistakes section)
+    
+    - Missing all -e flags
+    - Using -e "VAR=VALUE" syntax
+    - Placing -e flags after container image
+  </common_mistakes>
+
+  <mode_behavior>
+    When creating/updating .roo/mcp.json or .mcp.json:
+    1. Follow format from shared pattern (Docker/Podman Args Format section)
+    2. Use correct -e flag syntax (variable NAME only, not value)
+    3. Include all 6 required -e flags BEFORE container image
+    4. Validate using commands from shared pattern (Validation Steps section)
+  </mode_behavior>
+
+  <validation>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Validation Steps section)
+    
+    - Count -e flags: grep -o '"-e"' [config-file] | wc -l (expect: 6)
+    - Verify no VAR=VALUE syntax
+    - Verify all -e flags before container image
+    - Verify env section has all 6 variables with values
+  </validation>
+</jira_mcp_docker_args_format>

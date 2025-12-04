@@ -1,0 +1,21 @@
+<workflow_validation_and_testing>
+  <overview>
+    Comprehensive validation framework for dual workflow system functionality defined in:
+    ../../sdlc/shared/orchestrator-validation-testing.md
+
+    Includes test scenarios, integration validation, and troubleshooting procedures.
+  </overview>
+
+  <shared_reference>../../sdlc/shared/orchestrator-validation-testing.md</shared_reference>
+
+  <includes>
+    - Validation Checklist (system integration and mode coordination validation)
+    - Test Scenarios (new feature/enhancement workflows, existing updates, edge cases)
+    - Integration Testing (JIRA MCP and Git workflow integration)
+    - Performance Validation (response time benchmarks)
+    - Troubleshooting Procedures (common issues with diagnosis and resolution)
+    - Validation Commands (system health checks)
+    - Deployment Validation (pre/post deployment checklists)
+    - Monitoring and Maintenance (key metrics and procedures)
+  </includes>
+</workflow_validation_and_testing>

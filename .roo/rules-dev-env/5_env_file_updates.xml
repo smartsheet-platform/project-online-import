@@ -1,0 +1,32 @@
+<env_file_updates>
+  <!--
+    ULTRA-DRY: All details in ../../sdlc/shared/env-setup-workflow.md
+    - .env and .env.sample update patterns
+    - Jira/Confluence canonical values
+    - Safety guidelines (never overwrite tokens)
+
+    Update shared file when any of these change.
+  -->
+
+  <overview>
+    The project online Dev Env mode can update .env and .env.sample files with correct Jira/Confluence configuration.
+
+    See ../../sdlc/shared/env-setup-workflow.md for:
+    - Canonical Jira/Confluence URLs and formats
+    - .env.sample template content
+    - Safe update workflows
+  </overview>
+
+  <shared_pattern>sdlc/shared/env-setup-workflow.md</shared_pattern>
+
+  <canonical_values>
+    <jira_url>https://smartsheet.atlassian.net</jira_url>
+    <confluence_url>https://smar-wiki.atlassian.net/</confluence_url>
+    <username_format>your-email@smartsheet.com</username_format>
+  </canonical_values>
+
+  <mode_behavior>
+    Update .env files safely using patterns from shared file.
+    NEVER overwrite existing API tokens. Only update URLs and format.
+  </mode_behavior>
+</env_file_updates>

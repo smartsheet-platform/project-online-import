@@ -1,0 +1,8 @@
+<dev_env_delegation>
+  <overview>
+    Environment issue delegation rules (what to delegate, when, how to resume)
+    defined in: ../../sdlc/shared/api-client-code-generation.md
+
+    Core principle: API CLIENT MODES IMPLEMENT, DON'T FIX ENVIRONMENT ISSUES
+  </overview>
+</dev_env_delegation>

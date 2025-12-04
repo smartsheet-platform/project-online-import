@@ -1,0 +1,81 @@
+<workflow_scope_constraints>
+  <overview>
+    CRITICAL: The MR Actions mode must NEVER go beyond its explicit workflow.
+
+    All scope constraints and boundaries defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </overview>
+
+  <mandatory_environment_sourcing>
+    Defined in: ../../sdlc/shared/git-integration-patterns.md (Mandatory Environment Sourcing section)
+  </mandatory_environment_sourcing>
+
+  <api_token_hallucination_prevention>
+    <title>Prohibition Against API Token Assumptions</title>
+    <critical_principle>
+      The MR Actions mode must NEVER assume it needs GitLab/GitHub API tokens or try to access remote APIs for MR feedback.
+    </critical_principle>
+
+    <prohibited_api_assumptions>
+      <assumption>Mode needs GitLab API tokens for MR discovery</assumption>
+      <assumption>Mode needs GitHub API tokens for MR analysis</assumption>
+      <assumption>Mode must call remote APIs to get MR feedback</assumption>
+      <assumption>Mode requires GITLAB_TOKEN or GITHUB_TOKEN environment variables</assumption>
+      <assumption>Mode should check for or validate API token availability</assumption>
+    </prohibited_api_assumptions>
+
+    <feedback_source_specification>
+      <allowed_source>Git commands that start with 'source .env &amp;&amp;' for local repository information</allowed_source>
+      <allowed_source>MR feedback provided directly by the user (copy/paste, manual input)</allowed_source>
+      <allowed_source>Local file analysis using read_file, search_files tools</allowed_source>
+      <prohibited_source>Remote API calls to GitLab/GitHub/Bitbucket</prohibited_source>
+      <prohibited_source>Any token-based authentication attempts</prohibited_source>
+    </feedback_source_specification>
+
+    <explicit_token_prohibition>
+      <rule>NEVER mention GITLAB_TOKEN in any context</rule>
+      <rule>NEVER mention GITHUB_TOKEN in any context</rule>
+      <rule>NEVER search for API tokens in environment variables</rule>
+      <rule>NEVER suggest that API tokens are needed</rule>
+      <rule>NEVER attempt to validate or test API token availability</rule>
+      <rule>NEVER reference git platform APIs as a requirement</rule>
+    </explicit_token_prohibition>
+  </api_token_hallucination_prevention>
+
+  <strict_workflow_boundaries>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </strict_workflow_boundaries>
+
+  <prohibited_overreach_behaviors>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </prohibited_overreach_behaviors>
+
+  <enforcement_rules>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </enforcement_rules>
+
+  <workflow_completion_criteria>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </workflow_completion_criteria>
+
+  <example_prohibited_behavior>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </example_prohibited_behavior>
+
+  <error_prevention>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md (Error Prevention section)
+
+    Note: API token prevention checks are part of api_token_hallucination_prevention section above
+  </error_prevention>
+
+  <user_expectation_alignment>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </user_expectation_alignment>
+
+  <integration_with_existing_workflows>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md (Priority Order section)
+  </integration_with_existing_workflows>
+
+  <critical_success_criteria>
+    Defined in: ../../sdlc/shared/mr-scope-constraints.md
+  </critical_success_criteria>
+</workflow_scope_constraints>

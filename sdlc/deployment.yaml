@@ -1,0 +1,154 @@
+# Generic SDLC Mode Deployment Configuration
+# This file defines how to deploy SDLC-developed modes to the parent directory
+
+name: "SDLC Mode Deployment"
+description: "Deploy custom SDLC modes from SDLC workspace to parent directory"
+
+# Configuration Variables (Replace when setting up in new repository)
+project_config:
+  project_name: "project online"           # e.g., "MyProject"
+  project_slug: "project-online"           # e.g., "myproject"
+
+# Trigger phrases that Roo modes should recognize
+trigger_phrases:
+  - "deploy project-online modes"
+  - "refresh roo modes" 
+  - "update custom modes"
+  - "deploy SDLC modes to parent"
+  - "refresh project-online modes"
+  - "deploy modes to parent directory"
+
+# Primary deployment command sequence
+deployment_commands:
+  - name: "deploy_modes_config"
+    command: |
+      if [ -f "../.roomodes" ]; then
+        echo "🔄 Merging template modes with existing .roomodes..."
+        # Create backup and prepare for merge
+        cp "../.roomodes" "../.roomodes.tmp"
+        # Remove existing template modes (using resolved slug names)
+        PROJECT_SLUG="project-online"
+        for slug in "architect" "${PROJECT_SLUG}-spec" "${PROJECT_SLUG}-code" "${PROJECT_SLUG}-api-client-code" "orchestrator" "${PROJECT_SLUG}-mr-actions" "${PROJECT_SLUG}-dev-env"; do
+          awk -v slug="$slug" 'BEGIN { skip = 0; in_custom_modes = 0 } /^customModes:/ { in_custom_modes = 1; print; next } in_custom_modes && /^  - slug: / { if ($0 ~ "slug: \"?" slug "\"?") { skip = 1; next } else { skip = 0; print; next } } in_custom_modes && skip && (/^  - slug: / || /^[^ ]/) { skip = 0; if (/^  - slug: /) print } !skip { print }' "../.roomodes.tmp" > "../.roomodes.tmp2"
+          mv "../.roomodes.tmp2" "../.roomodes.tmp"
+        done
+        # Append new template modes
+        echo "" >> "../.roomodes.tmp"
+        echo "# Updated template modes" >> "../.roomodes.tmp"
+        awk '/^customModes:/,0' .roomodes | tail -n +2 >> "../.roomodes.tmp"
+        mv "../.roomodes.tmp" "../.roomodes"
+        echo "✅ Successfully merged template modes with existing custom modes"
+      else
+        echo "📋 Deploying new .roomodes file..."
+        cp .roomodes ../
+      fi
+    description: "Intelligently merge SDLC .roomodes with existing modes, preserving custom modes"
+    
+  - name: "deploy_mode_rules"
+    command: |
+      echo "📁 Deploying individual mode rules..."
+      mkdir -p ../.roo
+      # Copy universal rules (shared across all modes)
+      if [ -d ".roo/universal-rules" ]; then
+        echo "🔄 Updating universal rules..."
+        cp -r .roo/universal-rules ../.roo/
+      fi
+      # Copy individual mode rule directories
+      for mode_dir in .roo/rules-*; do
+        if [ -d "$mode_dir" ]; then
+          mode_name=$(basename "$mode_dir")
+          echo "📦 Deploying $mode_name..."
+          cp -r "$mode_dir" ../.roo/
+        fi
+      done
+    description: "Copy individual SDLC mode rule directories to parent, preserving existing custom modes"
+    
+  - name: "deployment_complete"
+    command: "echo 'project online modes deployed successfully. Please manually reload VSCode window: Cmd+Shift+P -> Developer: Reload Window'"
+    description: "Deployment completion message with manual reload instructions"
+
+# Optional verification commands (use only if troubleshooting)
+verification_commands:
+  - name: "check_modes"
+    command: "cd .. && grep 'slug: project-online-' .roomodes"
+    description: "Check which project online modes are deployed (troubleshooting only)"
+    
+  - name: "validate_syntax"
+    command: "cd .. && python3 -c \"import yaml; yaml.safe_load(open('.roomodes', 'r'))\" && echo 'YAML syntax valid' || echo 'YAML syntax error'"
+    description: "Validate .roomodes YAML syntax (troubleshooting only)"
+    
+  - name: "check_rule_files"
+    command: "cd .. && ls -la .roo/ && echo 'Rule directories found'"
+    description: "Verify .roo directory and rule files are deployed (troubleshooting only)"
+
+# Post-deployment instructions
+post_deployment:
+  - "Manually reload VSCode: Cmd+Shift+P -> 'Developer: Reload Window'"
+  - "Verify modes appear in Roo mode selector: 🏗️ project online Architect (replaces default Architect)"
+  - "Test mode functionality by switching to project online Architect mode"
+
+# Available modes for deployment (Template - customize for your project)
+available_modes:
+  - slug: "architect"
+    name: "🏗️ project online Architect"
+    description: "Architecture and planning specialist with memory bank segmentation (replaces default Architect)"
+    
+  - slug: "project-online-spec"
+    name: "📊 project online Spec"
+    description: "project online tool specification and documentation specialist"
+    
+  - slug: "project-online-code"
+    name: "💻 project online Code"
+    description: "project online tool implementation and code generation specialist"
+    
+  - slug: "project-online-api-client-code"
+    name: "🔌 project online API Client Code"
+    description: "API client code generation specialist focused on specification fidelity"
+    
+  - slug: "orchestrator"
+    name: "🎯 project online Orchestrator"
+    description: "Comprehensive orchestration with project online development expertise (replaces default Orchestrator)"
+    
+  - slug: "project-online-mr-actions"
+    name: "🔄 project online MR Actions"
+    description: "MR feedback analysis and action planning specialist"
+    
+  - slug: "project-online-dev-env"
+    name: "🔧 project online Dev Env"
+    description: "project online development environment setup and troubleshooting specialist"
+
+# Troubleshooting
+troubleshooting:
+  modes_not_appearing:
+    - "Restart VSCode completely"
+    - "Use 'Developer: Reload Window' command"
+    - "Check .roomodes file exists in parent directory"
+    - "Check .roo directory exists in parent directory with rule files"
+    
+  syntax_errors:
+    - "Validate YAML syntax with: python -c \"import yaml; yaml.safe_load(open('.roomodes', 'r'))\""
+    - "Check indentation and structure"
+    - "Compare against working .roomodes example"
+    
+  missing_functionality:
+    - "Verify .roo directory was copied to parent directory"
+    - "Check rule files exist in parent .roo/ subdirectories"
+    - "Ensure both .roomodes AND .roo directory are deployed together"
+
+# Usage instructions for Roo modes
+usage_instructions:
+  orchestrator: "Execute deployment_commands sequence: intelligently merge .roomodes config (preserving custom modes), deploy individual .roo rule directories, then instruct manual reload"
+  architect: "Plan deployment strategy using deployment_commands as reference - intelligent merging preserves existing custom modes while updating template modes"
+  code: "Run complete deployment: intelligently merge .roomodes (template modes update, custom modes preserved) AND deploy individual .roo rule directories to parent, then manually reload VSCode window"
+
+# Customization Guide
+customization_guide:
+  setup_steps:
+    - "Replace all project online placeholders with your project name"
+    - "Replace all project-online placeholders with your project slug"
+    - "Update available_modes section with your specific modes"
+    - "Customize trigger_phrases for your project terminology"
+  
+  placeholder_examples:
+    PROJECT_NAME:  MyApp, DataProcessor"
+    PROJECT_SLUG: myapp, dataprocessor"

@@ -1,0 +1,62 @@
+<automatic_jira_status_updates>
+  <overview>
+    Automatic Jira status update enforcement for the Orchestrator mode to ensure
+    ticket status accurately reflects work progress throughout the development lifecycle.
+    This workflow ensures status transitions happen automatically at key checkpoints.
+  </overview>
+
+  <comprehensive_reference>
+    <file>../../sdlc/shared/jira-status-updates.md</file>
+    <description>
+      Complete automatic status update workflow including:
+      - Status update philosophy and principles
+      - Automatic update checkpoints (work start, code complete, MR feedback processing, MR feedback complete)
+      - Status transition matrix with prerequisites
+      - Implementation details (issue key detection, user email retrieval, MCP tool sequences)
+      - Story Points validation workflow
+      - Error handling scenarios and responses
+      - User communication guidelines and message templates
+      - Integration patterns with all modes (Spec, Code, MR Actions)
+      - Best practices for status management
+    </description>
+  </comprehensive_reference>
+
+  <critical_requirements>
+    <requirement>
+      Stories MUST have Story Points (customfield_10025) set before transitioning to "In Progress"
+    </requirement>
+    <requirement>
+      Always use git config user.email for user identification, NOT currentUser()
+    </requirement>
+    <requirement>
+      Status update failures should NOT block work progress
+    </requirement>
+    <requirement>
+      Always inform user when status is updated or fails to update
+    </requirement>
+  </critical_requirements>
+
+  <merge_request_creation>
+    <reference>../../sdlc/shared/mr-creation-workflow.md</reference>
+    <description>
+      Automatic merge request creation workflow that integrates with the "Code Complete" checkpoint.
+      This ensures every completed feature has a proper MR for code review before status transitions to "In Review".
+      
+      Key integration points:
+      - MR creation happens BEFORE status transition to "In Review"
+      - MR URL is linked back to JIRA ticket
+      - Supports both GitLab and GitHub platforms
+      - Requires git platform token (GITLAB_TOKEN or GITHUB_TOKEN)
+      - Provides fallback to manual MR creation if automation fails
+    </description>
+  </merge_request_creation>
+
+  <quick_reference>
+    <checkpoints>
+      <checkpoint name="work_start">Open/Backlog/Selected → In Progress (requires Story Points for Stories)</checkpoint>
+      <checkpoint name="code_complete">In Progress → In Review (includes MR creation - see mr-creation-workflow.md)</checkpoint>
+      <checkpoint name="mr_feedback_start">In Review → In Progress</checkpoint>
+      <checkpoint name="mr_feedback_complete">In Progress → In Review (includes MR update)</checkpoint>
+    </checkpoints>
+  </quick_reference>
+</automatic_jira_status_updates>

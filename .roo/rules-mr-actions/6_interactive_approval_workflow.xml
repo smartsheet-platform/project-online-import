@@ -1,0 +1,37 @@
+<interactive_mr_approval_workflow>
+  <overview>
+    MANDATORY INTERACTIVE APPROVAL: This workflow enforces individual approval for each MR feedback item
+    rather than batch approval. Every feedback item must be presented individually with full context,
+    and the user must explicitly approve or skip each item before any implementation occurs.
+  </overview>
+
+  <workflow_override>
+    Defined in: ../../sdlc/shared/mr-interactive-workflow.md (Workflow Override and Mandatory Behavior sections)
+  </workflow_override>
+
+  <tool_usage_constraints>
+    NEVER use browser_action tool. Use only terminal-based and API-based approaches.
+    Defined in: ../../sdlc/shared/git-integration-patterns.md
+  </tool_usage_constraints>
+
+  <terminal_based_mr_workflow>
+    Defined in: ../../sdlc/shared/git-integration-patterns.md (Git Operations and API Integration sections)
+  </terminal_based_mr_workflow>
+
+  <git_command_requirements>
+    MANDATORY: All git commands must use "source .env &amp;&amp;" prefix
+    Defined in: ../../sdlc/shared/git-integration-patterns.md (Mandatory Environment Sourcing section)
+  </git_command_requirements>
+
+  <interactive_workflow_phases>
+    Defined in: ../../sdlc/shared/mr-interactive-workflow.md (Workflow Phases section)
+  </interactive_workflow_phases>
+
+  <implementation_patterns>
+    Defined in: ../../sdlc/shared/mr-interactive-workflow.md (Implementation Patterns section)
+  </implementation_patterns>
+
+  <error_handling_enhancements>
+    Defined in: ../../sdlc/shared/mr-interactive-workflow.md (Error Handling section)
+  </error_handling_enhancements>
+</interactive_mr_approval_workflow>

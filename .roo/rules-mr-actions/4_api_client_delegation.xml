@@ -1,0 +1,22 @@
+<api_client_delegation>
+  <overview>
+    The project online MR Actions mode must NEVER modify API client code directly.
+    ALL API client changes must be delegated to the project online API Client Code mode.
+  </overview>
+
+  <delegation_rule>
+    Defined in: ../../sdlc/shared/mr-processor-role-definition.md (Scope Boundaries section)
+  </delegation_rule>
+
+  <mr_feedback_handling>
+    Defined in: ../../sdlc/shared/mr-processor-role-definition.md (Scope Boundaries section)
+  </mr_feedback_handling>
+
+  <coordination_with_api_client_mode>
+    Defined in: ../../sdlc/shared/mr-interactive-workflow.md (Agent Handoff Coordination - API Client Delegation section)
+  </coordination_with_api_client_mode>
+
+  <user_guidance>
+    Defined in: ../../sdlc/shared/mr-interactive-workflow.md (Agent Handoff Coordination - API Client Delegation - User Communication)
+  </user_guidance>
+</api_client_delegation>

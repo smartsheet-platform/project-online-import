@@ -1,0 +1,12 @@
+<dev_env_delegation>
+  <overview>
+    NEVER TROUBLESHOOT ENVIRONMENT ISSUES. Always delegate to project online Dev Env mode.
+
+    Environment troubleshooting workflow defined in: ../../sdlc/shared/env-setup-workflow.md
+
+    When environment errors encountered:
+    - Detect the environment issue (command not found, module errors, etc.)
+    - Delegate to project online Dev Env mode using task delegation
+    - Retry review after environment is fixed
+  </overview>
+</dev_env_delegation>

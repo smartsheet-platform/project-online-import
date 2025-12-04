@@ -1,0 +1,29 @@
+<multi_task_initialization_guide>
+  <critical_rule priority="MANDATORY">
+    Teams MUST properly initialize the multi-task memory bank system before concurrent development.
+    System will auto-detect tasks from git branches and auto-create task contexts.
+    Developers must update task contexts as they work and commit context updates at least daily.
+
+    This is the AUTHORITATIVE guide for multi-task setup and daily workflows.
+  </critical_rule>
+
+  <overview>
+    Complete multi-task initialization and usage guide defined in:
+    ../../sdlc/shared/universal/multi-task-initialization-guide.md
+  </overview>
+
+  <shared_reference>../../sdlc/shared/universal/multi-task-initialization-guide.md</shared_reference>
+
+  <includes>
+    - Quick start for team leads and developers
+    - Phase 1: Shared context initialization (5 steps)
+    - Phase 2: Task context creation (automatic)
+    - Daily workflow for developers (morning/during/end-of-day)
+    - Task completion workflow
+    - Collaboration patterns (handoff/collaborative/review/dependencies)
+    - Best practices and troubleshooting
+    - Migration from single-tier system
+    - Team lead responsibilities
+    - Success metrics
+  </includes>
+</multi_task_initialization_guide>

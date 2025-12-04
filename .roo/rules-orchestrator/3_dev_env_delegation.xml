@@ -1,0 +1,19 @@
+<dev_env_delegation>
+  <critical_principle>ORCHESTRATORS COORDINATE, DON'T FIX ENVIRONMENT ISSUES</critical_principle>
+
+  <overview>
+    Complete environment issue delegation pattern for orchestrators defined in:
+    ../../sdlc/shared/orchestrator-delegation-patterns.md (Environment Issues Delegation section)
+  </overview>
+
+  <shared_reference>../../sdlc/shared/orchestrator-delegation-patterns.md</shared_reference>
+
+  <includes>
+    - Critical principle (orchestrators coordinate, don't fix env)
+    - Environment issue indicators (15+ error types)
+    - Delegation workflow (3 steps with retry strategy)
+    - Orchestration-specific scenarios (Atlassian MCP, env vars, git, mode coordination)
+    - User communication templates
+    - Retry approach after fixes
+  </includes>
+</dev_env_delegation>

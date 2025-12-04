@@ -1,0 +1,12 @@
+<specification_fidelity_workflow>
+  <role_definition>
+    Role definition, core expertise, core principles, scope boundaries, and
+    specification fidelity workflow defined in:
+    ../../sdlc/shared/api-client-role-definition.md
+  </role_definition>
+
+  <reality_enforcement>
+    Reality enforcement methodology defined in:
+    ../../sdlc/shared/api-client-code-generation.md
+  </reality_enforcement>
+</specification_fidelity_workflow>

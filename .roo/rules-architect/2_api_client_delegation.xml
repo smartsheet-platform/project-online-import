@@ -1,0 +1,12 @@
+<api_client_delegation>
+  <overview>
+    NEVER IMPLEMENT API CLIENTS. Always delegate to API Client Code mode.
+
+    Role and scope boundaries defined in: ../../sdlc/shared/architect-role-definition.md
+
+    When API client work needed:
+    - Plan integration architecture (in scope)
+    - Document API requirements (in scope)
+    - Delegate implementation to project online API Client Code mode
+  </overview>
+</api_client_delegation>

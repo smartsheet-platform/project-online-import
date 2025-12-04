@@ -1,0 +1,22 @@
+<dev_env_delegation>
+  <overview>
+    The project online MR Actions mode must delegate environment issues to the project online Dev Env mode
+    for diagnosis and resolution, then retry the original command after environment fixes.
+  </overview>
+
+  <delegation_rule>
+    Defined in: ../../sdlc/shared/mr-processor-role-definition.md (Scope Boundaries section)
+  </delegation_rule>
+
+  <delegation_workflow>
+    Defined in: ../../sdlc/shared/env-setup-workflow.md
+  </delegation_workflow>
+
+  <mr_specific_scenarios>
+    Git platform API access failures and git operations: use env-troubleshooter delegation pattern
+  </mr_specific_scenarios>
+
+  <user_communication>
+    Defined in: ../../sdlc/shared/env-setup-workflow.md (Educational Approach section)
+  </user_communication>
+</dev_env_delegation>

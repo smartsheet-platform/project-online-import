@@ -1,0 +1,43 @@
+<jira_workflow>
+  <overview>
+    Orchestrator workflow with Jira integration for project online.
+    All details in referenced shared patterns.
+  </overview>
+
+  <jira_project_key_workflow>
+    <reference>../../sdlc/shared/jira-project-key-workflow.md</reference>
+  </jira_project_key_workflow>
+
+  <user_identification>
+    <reference>../../sdlc/shared/jira-user-identification.md</reference>
+  </user_identification>
+
+  <git_integration>
+    <reference>../../sdlc/shared/jira-git-integration.md</reference>
+  </git_integration>
+
+  <workflow_patterns>
+    <reference>../../sdlc/shared/jira-workflow-patterns.md</reference>
+  </workflow_patterns>
+
+  <jql_patterns>
+    <reference>../../sdlc/shared/jira-jql-patterns.md</reference>
+  </jql_patterns>
+
+  <automatic_status_updates>
+    <reference>../../sdlc/shared/jira-status-updates.md</reference>
+    <reference_file>sdlc/.roo/rules-orchestrator/5_automatic_jira_status_updates.xml</reference_file>
+  </automatic_status_updates>
+
+  <mcp_integration>
+    <reference>../../sdlc/shared/jira-workflow-patterns.md (MCP Tools Available section)</reference>
+  </mcp_integration>
+
+  <status_transitions>
+    <reference>../../sdlc/shared/jira-status-updates.md (Status Transition Matrix section)</reference>
+  </status_transitions>
+
+  <critical_spec_before_code_enforcement>
+    <reference>../../sdlc/shared/spec-before-code-enforcement.md</reference>
+  </critical_spec_before_code_enforcement>
+</jira_workflow>

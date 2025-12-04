@@ -1,0 +1,13 @@
+<dev_env_delegation>
+  <overview>
+    DELEGATE ENVIRONMENT ISSUES, DON'T TROUBLESHOOT DIRECTLY.
+
+    Environment troubleshooting workflow and scope boundaries defined in:
+    ../../sdlc/shared/env-setup-workflow.md
+
+    When environment issue detected:
+    1. Detect the error (command not found, module errors, permission denied, etc.)
+    2. Delegate to project online Dev Env mode with error context
+    3. After environment fixed, retry original command and continue work
+  </overview>
+</dev_env_delegation>

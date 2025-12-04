@@ -1,0 +1,26 @@
+<vscode_settings_protection>
+  <critical_rule priority="STRICT">
+    NEVER edit .vscode/settings.json unless explicitly requested by the user.
+    This file contains critical workspace configuration that affects the entire development environment.
+
+    NO EXCEPTIONS. This protection applies to ALL modes and ALL contexts.
+  </critical_rule>
+
+  <overview>
+    Complete VSCode settings protection rules defined in:
+    ../../sdlc/shared/universal/vscode-settings-protection.md
+  </overview>
+
+  <shared_reference>../../sdlc/shared/universal/vscode-settings-protection.md</shared_reference>
+
+  <includes>
+    - Protection rules and enforcement level
+    - Explicit request detection patterns
+    - Alternative configuration approaches
+    - Violation prevention workflow
+    - Common scenarios and correct behaviors
+    - Integration with other rules
+    - Exception handling guidelines
+    - User education component
+  </includes>
+</vscode_settings_protection>

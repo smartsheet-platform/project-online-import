@@ -1,0 +1,13 @@
+<api_client_delegation>
+  <overview>
+    NEVER IMPLEMENT API CLIENTS. Always delegate to API Client Code mode.
+
+    Role and scope boundaries defined in: ../../sdlc/shared/spec-writer-role-definition.md
+
+    When API client work encountered:
+    - Document API integration requirements (in scope)
+    - Specify functionality and behavior (in scope)
+    - Define authentication and error handling (in scope)
+    - Delegate implementation to project online API Client Code mode
+  </overview>
+</api_client_delegation>

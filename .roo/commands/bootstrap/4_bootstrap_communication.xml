@@ -1,0 +1,555 @@
+<bootstrap_communication>
+  <overview>
+    Guidelines for user communication and output formatting during bootstrap operations.
+  </overview>
+
+  <user_interaction>
+    <initial_contact>
+      <principle>Act on the bootstrap request immediately.</principle>
+      <principle>Only ask for clarification if the scope is ambiguous.</principle>
+      <principle>Default to full codebase analysis unless specific areas requested.</principle>
+    </initial_contact>
+
+    <clarification>
+      <when_to_ask>
+        <scenario>User requests bootstrap for specific area but it's unclear which.</scenario>
+        <scenario>Multiple projects exist in workspace and target is ambiguous.</scenario>
+        <scenario>Verification requested but no bootstrap artifacts exist.</scenario>
+      </when_to_ask>
+      
+      <example>
+        <scenario>Ambiguous scope</scenario>
+        <response>
+          I can bootstrap knowledge extraction for:
+          1. Full codebase (architecture, patterns, conventions, integrations)
+          2. Specific areas (architecture only, conventions only, etc.)
+          
+          Which would you prefer?
+        </response>
+      </example>
+    </clarification>
+
+    <progress_updates>
+      <when_to_update>
+        <trigger>Starting major analysis phase (architecture, patterns, conventions).</trigger>
+        <trigger>Completing each major phase.</trigger>
+        <trigger>Discovering significant patterns or anti-patterns.</trigger>
+        <trigger>Generating bootstrap artifacts.</trigger>
+      </when_to_update>
+      
+      <update_format>
+        <template>
+Analyzing [component/phase]...
+- Discovered [X] architectural patterns
+- Identified [Y] code conventions
+- Found [Z] integration points
+- Detected [N] anti-patterns to document
+        </template>
+      </update_format>
+
+      <example>
+Analyzing architecture patterns...
+- Discovered Clean Architecture with 4 layers
+- Identified 12 service boundaries
+- Found 8 external API integrations
+- Detected 3 anti-patterns to document
+      </example>
+    </progress_updates>
+
+    <findings_communication>
+      <important_findings>
+        <discovery type="architectural_pattern">
+          Highlight the primary architectural pattern discovered and its implications for AI agents.
+        </discovery>
+        <discovery type="critical_conventions">
+          Note conventions that are critical for code consistency (e.g., layer boundaries, naming).
+        </discovery>
+        <discovery type="anti_patterns">
+          Alert to anti-patterns found that AI agents must avoid.
+        </discovery>
+        <discovery type="integration_complexity">
+          Warn about complex integration patterns that require careful handling.
+        </discovery>
+        <discovery type="missing_patterns">
+          Note areas where patterns are inconsistent or missing.
+        </discovery>
+      </important_findings>
+
+      <initial_bootstrap_findings>
+        <template>
+Bootstrap extraction complete for [project-name].
+
+**Bootstrap Artifacts Created**:
+- `sdlc/docs/code/BOOTSTRAP-[project].md` - Comprehensive project knowledge
+- `sdlc/docs/code/patterns.md` - Recurring code patterns with examples
+- `sdlc/docs/code/conventions.md` - Team conventions and standards
+- `sdlc/docs/code/anti-patterns.md` - Anti-patterns to avoid
+- `sdlc/docs/code/troubleshooting-playbook.md` - Common issues and solutions
+- `sdlc/docs/specs/architecture-decisions.md` - ADRs and design rationale
+
+**Key Findings**:
+- **Architecture**: [Pattern name] with [X] layers/components
+- **Technology Stack**: [Primary tech] with [Y] key dependencies
+- **Patterns Identified**: [Z] recurring patterns documented
+- **Conventions**: [N] team conventions extracted
+- **Anti-Patterns**: [M] anti-patterns to avoid
+- **Integration Points**: [P] external dependencies mapped
+
+**Critical Conventions for AI Agents**:
+1. [Most important convention with example]
+2. [Second most important convention with example]
+3. [Third most important convention with example]
+
+**Anti-Patterns to Avoid**:
+1. [Most critical anti-pattern with rationale]
+2. [Second critical anti-pattern with rationale]
+
+**Next Steps**:
+- Review bootstrap artifacts for accuracy
+- Add project-specific context if needed
+- All SDLC modes now have access to this knowledge
+- Run `/bootstrap verify` periodically to check for drift
+
+**Files Updated**:
+- [List of files created/updated]
+        </template>
+      </initial_bootstrap_findings>
+
+      <verification_findings>
+        <template>
+Bootstrap verification complete for [project-name].
+
+**Verification Report**: `sdlc/docs/code/VERIFICATION-bootstrap.md`
+
+**Overall Assessment**: [Current/Needs Minor Updates/Needs Major Updates/Significant Drift]
+
+**Summary of Findings**:
+- **Critical Inaccuracies**: [number] - Patterns that no longer match code
+- **Outdated Patterns**: [number] - Patterns that have evolved
+- **Missing Patterns**: [number] - New patterns not yet documented
+- **Technology Updates**: [number] - Version or dependency changes
+
+**Most Important Issues**:
+1. [Critical issue that could mislead AI agents]
+2. [Important pattern drift]
+3. [Key missing pattern]
+
+**Recommendations**:
+- [High priority update needed]
+- [Medium priority update needed]
+- [Consider re-running full bootstrap if drift is significant]
+
+**Detailed Findings**:
+See `VERIFICATION-bootstrap.md` for complete analysis and recommendations.
+        </template>
+      </verification_findings>
+    </findings_communication>
+  </user_interaction>
+
+  <output_formatting>
+    <markdown_standards>
+      <headings>
+        <rule>Use # for main title, ## for major sections, ### for subsections.</rule>
+        <rule>Never skip heading levels.</rule>
+        <rule>Use descriptive headings that indicate content purpose.</rule>
+      </headings>
+
+      <code_blocks>
+        <rule>Always specify language for syntax highlighting.</rule>
+        <rule>Include file paths as comments where relevant.</rule>
+        <rule>Use actual code examples from the codebase, not generic examples.</rule>
+        <example>
+```python
+# src/domain/exceptions.py
+class ValidationError(DomainException):
+    """Custom exception with context for validation failures."""
+    def __init__(self, message: str, field: str, context: dict):
+        super().__init__(message)
+        self.field = field
+        self.context = context
+```
+        </example>
+      </code_blocks>
+
+      <tables>
+        <rule>Use tables for structured data like technology stack, conventions.</rule>
+        <rule>Include headers and align columns consistently.</rule>
+        <rule>Keep cell content concise but informative.</rule>
+        <example>
+| Component | Technology | Version | Rationale |
+|-----------|-----------|---------|-----------|
+| Backend | Python/FastAPI | 3.11/0.104 | Async support, type safety, performance |
+| Database | PostgreSQL | 15 | ACID compliance, JSON support, reliability |
+        </example>
+      </tables>
+
+      <lists>
+        <rule>Use bullets for unordered lists, numbers for sequential steps or priorities.</rule>
+        <rule>Keep list items parallel in structure.</rule>
+        <rule>Use sub-bullets for related details.</rule>
+        <example>
+**DO** - Use custom exceptions with context:
+- Provides debugging information
+- Enables proper error handling
+- Facilitates error tracking
+
+**DON'T** - Use generic exceptions:
+- Loses context
+- Hard to debug
+- Poor user experience
+        </example>
+      </lists>
+    </markdown_standards>
+
+    <cross_references>
+      <internal_links>
+        <format>[Link text](#section-anchor)</format>
+        <rule>Use lowercase, hyphenated anchors.</rule>
+        <rule>Test all internal links.</rule>
+        <example>[See Architecture Patterns](#architecture-patterns)</example>
+      </internal_links>
+
+      <file_references>
+        <format>`path/to/file.ext`</format>
+        <rule>Use relative paths from project root.</rule>
+        <rule>Always use backticks for file paths.</rule>
+        <example>See `src/domain/entities/user.py` for example implementation.</example>
+      </file_references>
+
+      <code_references>
+        <format>`ClassName.method()` or `function_name()`</format>
+        <rule>Use backticks for code references.</rule>
+        <rule>Include class name for methods.</rule>
+        <example>The `UserService.create_user()` method demonstrates this pattern.</example>
+      </code_references>
+    </cross_references>
+
+    <special_sections>
+      <alerts>
+        <type name="critical">
+          <format>⚠️ **CRITICAL**: [message]</format>
+          <use_for>Anti-patterns that cause serious issues, architectural violations.</use_for>
+          <example>⚠️ **CRITICAL**: Domain layer must never import from infrastructure layer</example>
+        </type>
+        
+        <type name="important">
+          <format>📌 **IMPORTANT**: [message]</format>
+          <use_for>Key conventions, critical patterns.</use_for>
+          <example>📌 **IMPORTANT**: All API clients must implement retry logic with exponential backoff</example>
+        </type>
+        
+        <type name="note">
+          <format>📝 **Note**: [message]</format>
+          <use_for>Additional context, clarifications.</use_for>
+          <example>📝 **Note**: This pattern evolved from earlier approach documented in git history</example>
+        </type>
+        
+        <type name="tip">
+          <format>💡 **Tip**: [message]</format>
+          <use_for>Best practices, optimization suggestions.</use_for>
+          <example>💡 **Tip**: Use structured logging to enable better log analysis and debugging</example>
+        </type>
+      </alerts>
+
+      <do_dont_blocks>
+        <format>
+**DO** - [Correct approach]:
+```[language]
+[correct code example]
+```
+
+**DON'T** - [Incorrect approach]:
+```[language]
+[incorrect code example]  # ❌ [Why it's wrong]
+```
+        </format>
+        <rule>Always include rationale for why the DON'T is wrong.</rule>
+        <rule>Use actual code examples from codebase when possible.</rule>
+      </do_dont_blocks>
+
+      <metadata_blocks>
+        <version_info>
+---
+**Last Updated**: [ISO date]
+**Bootstrap Version**: [version]
+**Codebase Commit**: [git hash]
+**Status**: [Current/Needs Review/Outdated]
+---
+        </version_info>
+      </metadata_blocks>
+    </special_sections>
+  </output_formatting>
+
+  <documentation_tone>
+    <general>
+      <principle>Be direct and technical - this is for AI agents, not end users.</principle>
+      <principle>Use active voice and imperative mood.</principle>
+      <principle>Lead with the pattern/convention, then explain rationale.</principle>
+      <principle>Use concrete examples from actual codebase.</principle>
+      <principle>Keep explanations concise but complete.</principle>
+      <principle>Focus on "what" and "why", not just "how".</principle>
+    </general>
+
+    <pattern_documentation>
+      <structure>
+        1. Pattern name and brief description
+        2. When to use it
+        3. Concrete example from codebase
+        4. Why it's used (rationale/benefits)
+        5. Common mistakes to avoid
+      </structure>
+      
+      <example>
+### Error Handling Pattern: Custom Exceptions with Context
+
+**When to use**: All domain and application layer error conditions
+
+**Example**:
+```python
+# src/domain/exceptions.py
+raise ValidationError(
+    message="Invalid email format",
+    field="email",
+    context={"provided": email}
+)
+```
+
+**Rationale**:
+- Provides debugging context
+- Enables structured error logging
+- Facilitates error tracking and monitoring
+- Improves error messages for users
+
+**Common mistakes**:
+- Using generic `Exception` without context
+- Not including field information
+- Missing context dictionary
+      </example>
+    </pattern_documentation>
+
+    <anti_pattern_documentation>
+      <structure>
+        1. Anti-pattern name and description
+        2. Why it's wrong (consequences)
+        3. Example of the anti-pattern
+        4. Correct alternative
+        5. How to detect it
+      </structure>
+      
+      <example>
+### Anti-Pattern: God Objects
+
+**Description**: Classes with too many responsibilities (10+ methods, 500+ lines)
+
+**Why it's wrong**:
+- Violates Single Responsibility Principle
+- Hard to test and maintain
+- Creates tight coupling
+- Difficult to understand and modify
+
+**Example of anti-pattern**:
+```python
+class UserManager:  # ❌ Does everything
+    def create_user(self): ...
+    def send_email(self): ...
+    def process_payment(self): ...
+    def generate_report(self): ...
+```
+
+**Correct approach**:
+```python
+class UserService:  # ✅ Single responsibility
+    def create_user(self): ...
+
+class EmailService:
+    def send_email(self): ...
+```
+
+**Detection**: Look for classes with 10+ methods or 500+ lines
+      </example>
+    </anti_pattern_documentation>
+  </documentation_tone>
+
+  <completion_message>
+    <structure>
+      <element>Summary of operation performed</element>
+      <element>Key findings and statistics</element>
+      <element>Critical conventions and anti-patterns</element>
+      <element>Artifact locations</element>
+      <element>Next steps and recommendations</element>
+    </structure>
+
+    <initial_bootstrap_example>
+Bootstrap extraction complete for MyProject.
+
+**Bootstrap Artifacts Created**:
+- `sdlc/docs/code/BOOTSTRAP-myproject.md` - Comprehensive project knowledge
+- `sdlc/docs/code/patterns.md` - 15 code patterns with examples
+- `sdlc/docs/code/conventions.md` - 12 team conventions
+- `sdlc/docs/code/anti-patterns.md` - 5 anti-patterns to avoid
+- `sdlc/docs/code/troubleshooting-playbook.md` - Common issues and solutions
+- `sdlc/docs/specs/architecture-decisions.md` - ADRs and design rationale
+
+**Key Findings**:
+- **Architecture**: Clean Architecture with 4 layers (domain, application, infrastructure, interfaces)
+- **Technology Stack**: Python 3.11, FastAPI 0.104, PostgreSQL 15, Redis 7
+- **Patterns Identified**: 15 recurring patterns (error handling, API clients, validation, logging, etc.)
+- **Conventions**: 12 team conventions (naming, git workflow, testing, etc.)
+- **Anti-Patterns**: 5 anti-patterns documented (god objects, circular deps, leaky abstractions)
+- **Integration Points**: 8 external APIs with documented client patterns
+
+**Critical Conventions for AI Agents**:
+1. **Layer Boundaries**: Domain layer must never import from infrastructure (enforced architecturally)
+2. **Error Handling**: Always use custom exceptions with context (ValidationError, DomainError, etc.)
+3. **API Clients**: Abstract external APIs with interfaces, implement retry logic with exponential backoff
+
+**Anti-Patterns to Avoid**:
+1. **God Objects**: Classes with 10+ methods violate SRP - split into focused services
+2. **Circular Dependencies**: Use dependency injection and interfaces to break cycles
+
+**Next Steps**:
+- Review `sdlc/docs/code/BOOTSTRAP-myproject.md` for complete knowledge
+- All SDLC modes (Architect, Code, Spec, etc.) now reference this knowledge
+- Run `/bootstrap verify` periodically to check for drift
+- Update bootstrap artifacts when architectural changes occur
+
+**Files Created**:
+- `sdlc/docs/code/BOOTSTRAP-myproject.md`
+- `sdlc/docs/code/patterns.md`
+- `sdlc/docs/code/conventions.md`
+- `sdlc/docs/code/anti-patterns.md`
+- `sdlc/docs/code/troubleshooting-playbook.md`
+- `sdlc/docs/specs/architecture-decisions.md`
+    </initial_bootstrap_example>
+
+    <verification_example>
+Bootstrap verification complete for MyProject.
+
+**Verification Report**: `sdlc/docs/code/VERIFICATION-bootstrap.md`
+
+**Overall Assessment**: Needs Minor Updates
+
+**Summary of Findings**:
+- **Critical Inaccuracies**: 0 - No patterns that could mislead AI agents
+- **Outdated Patterns**: 3 - Patterns that have evolved since last bootstrap
+- **Missing Patterns**: 2 - New patterns not yet documented
+- **Technology Updates**: 2 - FastAPI 0.104→0.109, Redis 7→7.2
+
+**Most Important Issues**:
+1. **API Client Pattern**: Now uses async context managers (not documented)
+2. **Validation Pattern**: Switched from Pydantic v1 to v2 syntax
+3. **Missing Pattern**: New circuit breaker pattern for external APIs
+
+**Recommendations**:
+- **High Priority**: Update API client and validation patterns (actively used)
+- **Medium Priority**: Document circuit breaker pattern
+- **Low Priority**: Update technology versions in stack table
+
+**Detailed Findings**:
+See `sdlc/docs/code/VERIFICATION-bootstrap.md` for:
+- Line-by-line comparison of documented vs actual patterns
+- Specific code examples of pattern drift
+- Recommended updates for each finding
+- Suggested re-extraction areas
+
+**Next Steps**:
+- Review verification report
+- Update specific patterns or run full re-extraction
+- Consider scheduling periodic verification (monthly/quarterly)
+    </verification_example>
+  </completion_message>
+
+  <error_handling>
+    <scenarios>
+      <scenario type="no_codebase">
+        <response>
+Cannot perform bootstrap: No codebase found in current directory.
+
+Please ensure you're in a project directory with source code before running `/bootstrap`.
+        </response>
+      </scenario>
+
+      <scenario type="no_artifacts_for_verification">
+        <response>
+Cannot verify bootstrap: No bootstrap artifacts found.
+
+Run `/bootstrap` first to create initial bootstrap artifacts, then use `/bootstrap verify` to check for drift.
+        </response>
+      </scenario>
+
+      <scenario type="ambiguous_scope">
+        <response>
+Bootstrap scope is ambiguous. Please specify:
+- `/bootstrap` - Full codebase analysis
+- `/bootstrap verify` - Verify existing artifacts
+        </response>
+      </scenario>
+
+      <scenario type="insufficient_code">
+        <response>
+Limited code found for pattern extraction. Bootstrap will document:
+- Available architecture from directory structure
+- Technology stack from package manifests
+- Existing documentation from README and docs/
+
+Note: Pattern extraction works best with substantial codebase. Consider running again as project grows.
+        </response>
+      </scenario>
+    </scenarios>
+  </error_handling>
+
+  <quality_checks>
+    <before_completion>
+      <check>All bootstrap artifacts created in correct locations</check>
+      <check>Code examples are from actual codebase, not generic</check>
+      <check>Patterns include rationale and "why"</check>
+      <check>Anti-patterns include correct alternatives</check>
+      <check>File paths are accurate and relative to project root</check>
+      <check>Tables are properly formatted</check>
+      <check>Internal links work correctly</check>
+      <check>Metadata includes date and version</check>
+      <check>No placeholder content remains</check>
+      <check>sdlc/docs/ files updated appropriately</check>
+    </before_completion>
+  </quality_checks>
+
+  <progress_tracking>
+    <phases>
+      <phase name="initialization">
+        <message>Initializing bootstrap extraction for [project-name]...</message>
+      </phase>
+      
+      <phase name="discovery">
+        <message>Analyzing project structure and technology stack...</message>
+      </phase>
+      
+      <phase name="architecture">
+        <message>Extracting architecture patterns and component organization...</message>
+      </phase>
+      
+      <phase name="conventions">
+        <message>Analyzing code conventions and team standards...</message>
+      </phase>
+      
+      <phase name="patterns">
+        <message>Discovering recurring code patterns...</message>
+      </phase>
+      
+      <phase name="anti_patterns">
+        <message>Identifying anti-patterns and code smells...</message>
+      </phase>
+      
+      <phase name="integrations">
+        <message>Mapping external dependencies and integration patterns...</message>
+      </phase>
+      
+      <phase name="synthesis">
+        <message>Generating bootstrap artifacts...</message>
+      </phase>
+      
+      <phase name="completion">
+        <message>Bootstrap extraction complete. Artifacts ready for AI agent guidance.</message>
+      </phase>
+    </phases>
+  </progress_tracking>
+</bootstrap_communication>

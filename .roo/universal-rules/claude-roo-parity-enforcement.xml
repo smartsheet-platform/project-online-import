@@ -1,0 +1,26 @@
+<claude_roo_parity_enforcement>
+  <critical_rule priority="ABSOLUTE_HIGHEST">
+    MANDATORY: When updating ANY Roo mode rule, you MUST immediately update the corresponding Claude agent.
+    When updating ANY Claude agent, you MUST immediately update the corresponding Roo mode.
+
+    NO EXCEPTIONS. THIS IS NON-NEGOTIABLE.
+  </critical_rule>
+
+  <overview>
+    Complete Claude-Roo parity enforcement workflow defined in:
+    ../../sdlc/shared/universal/claude-roo-parity-enforcement.md
+  </overview>
+
+  <shared_reference>../../sdlc/shared/universal/claude-roo-parity-enforcement.md</shared_reference>
+
+  <includes>
+    - Mode-agent mapping
+    - Mandatory workflow (5 steps)
+    - Shared documentation strategy
+    - Enforcement checklist
+    - Commit message templates
+    - Failure consequences
+    - Success criteria
+    - Priority statement (ABSOLUTE HIGHEST)
+  </includes>
+</claude_roo_parity_enforcement>

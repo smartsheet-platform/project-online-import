@@ -1,0 +1,24 @@
+<jira_orchestrator_delegation>
+  <overview>
+    The project online Architect mode delegates ALL Jira operations to Orchestrator mode.
+
+    Complete delegation pattern defined in: ../../sdlc/shared/jira-orchestrator-delegation-pattern.md
+  </overview>
+
+  <mode_name>Architect mode</mode_name>
+  <mode_purpose>Architectural planning</mode_purpose>
+
+  <shared_pattern>../../sdlc/shared/jira-orchestrator-delegation-pattern.md</shared_pattern>
+
+  <automatic_status_updates_reference>
+    <file>../../sdlc/shared/jira-status-updates.md</file>
+    <orchestrator_file>../rules-orchestrator/5_automatic_jira_status_updates.xml</orchestrator_file>
+  </automatic_status_updates_reference>
+
+  <architect_mode_specific>
+    <memory_bank_integration>
+      <update_context>Update memory bank with Jira context for architectural decisions</update_context>
+      <reference_pattern>Reference issue key in architectural documentation</reference_pattern>
+    </memory_bank_integration>
+  </architect_mode_specific>
+</jira_orchestrator_delegation>

@@ -1,0 +1,96 @@
+<mcp_configuration_creation>
+  <!--
+    ULTRA-DRY: All details in ../../sdlc/shared/jira-mcp-troubleshooting.md
+    
+    This file references the shared pattern for ALL MCP configuration creation workflows.
+    Update shared file when any of these change.
+  -->
+
+  <overview>
+    When Dev Env mode creates or updates MCP configuration for Atlassian MCP integration,
+    it MUST use the correct Docker/Podman args format with proper -e flag syntax.
+    
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md
+    - "MCP Configuration Creation Workflow" section
+    - "Configuration File Locations" section
+    - "Configuration Templates" section
+    - "MCP Configuration Creation Steps" section
+  </overview>
+
+  <shared_pattern>sdlc/shared/jira-mcp-troubleshooting.md</shared_pattern>
+
+  <configuration_files>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Configuration File Locations section)
+    
+    - .roo/mcp.json (for Roo Code users)
+    - .mcp.json (for Claude Code users, at project root)
+    
+    Detection strategy and file selection logic in shared pattern.
+  </configuration_files>
+
+  <templates>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Configuration Templates section)
+    
+    Two templates available:
+    1. Without Zscaler Certificate (for EC2, home networks)
+    2. With Zscaler Certificate (for corporate environments)
+    
+    Complete JSON templates with correct -e flag syntax in shared pattern.
+  </templates>
+
+  <critical_rules>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Docker/Podman Args Format section)
+    
+    - Each -e flag MUST be separate array element with variable NAME only
+    - NEVER use -e "VAR=VALUE" syntax
+    - All -e flags MUST come BEFORE container image
+    - env section contains actual values that -e flags reference
+    - For Podman, use "podman" instead of "docker" (syntax otherwise IDENTICAL)
+  </critical_rules>
+
+  <known_bugs>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (Known Bugs in Setup Scripts section)
+    
+    Setup scripts have bugs that need Code mode to fix:
+    - Bug 1: Missing ALL -e flags (no Zscaler path)
+    - Bug 2: Wrong -e syntax (with Zscaler path)
+    - Bug 3: Windows script likely has same issues
+  </known_bugs>
+
+  <workflow>
+    Defined in: ../../sdlc/shared/jira-mcp-troubleshooting.md (MCP Configuration Creation Steps section)
+    
+    7-step workflow:
+    1. Detect need for configuration
+    2. Determine environment type
+    3. Gather required information
+    4. Determine target file(s)
+    5. Create/update configuration
+    6. Validation
+    7. Instruct user to reload VSCode
+    
+    Complete details in shared pattern.
+  </workflow>
+
+  <mode_behavior>
+    Execute MCP configuration creation workflow from shared pattern.
+    
+    Key actions:
+    - Detect which config file(s) to update (.roo/mcp.json and/or .mcp.json)
+    - Ask about Zscaler and container runtime
+    - Use appropriate template from shared pattern
+    - Validate using commands from shared pattern
+    - Instruct user to reload VSCode window
+  </mode_behavior>
+
+  <delegation_note>
+    If user needs setup scripts fixed (not just config files), delegate to Code mode.
+    Dev Env mode can only edit configuration files, not shell scripts.
+  </delegation_note>
+
+  <reference_documentation>
+    Additional documentation files:
+    - sdlc/atlassian/ATLASSIAN_MCP.md
+    - sdlc/atlassian/ATLASSIAN_MCP_SETUP_SCRIPTS.md
+  </reference_documentation>
+</mcp_configuration_creation>

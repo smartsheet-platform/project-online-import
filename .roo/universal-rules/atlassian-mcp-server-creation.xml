@@ -1,0 +1,34 @@
+<atlassian_mcp_server_creation>
+  <critical_rule priority="MANDATORY">
+    ALWAYS create Atlassian MCP server configuration when Atlassian integration is requested.
+    MCP server configuration goes in .roo/mcp.json (per-project), NEVER in .vscode/settings.json.
+
+    No alternative approaches allowed - MCP server is the standard for Roo/Claude Atlassian integration.
+  </critical_rule>
+
+  <overview>
+    Complete Atlassian MCP server creation rules and workflow defined in:
+    ../../sdlc/shared/universal/atlassian-mcp-server-creation.md
+  </overview>
+
+  <shared_reference>../../sdlc/shared/universal/atlassian-mcp-server-creation.md</shared_reference>
+
+  <includes>
+    - Core principle and enforcement level
+    - Mandatory behavior rules
+    - Trigger scenarios (explicit, implicit, workflow integration)
+    - Implementation workflow (6 steps)
+    - Configuration templates (macOS, Windows, Linux, EC2)
+    - Mode-specific behaviors
+    - Quality assurance checklist
+    - Common mistakes prevention
+    - Integration with other universal rules
+    - Troubleshooting patterns
+    - User education component
+  </includes>
+
+  <applies_to>
+    <roo>ALL Roo modes when Atlassian integration needed</roo>
+    <claude>ALL Claude agents when Atlassian integration needed</claude>
+  </applies_to>
+</atlassian_mcp_server_creation>

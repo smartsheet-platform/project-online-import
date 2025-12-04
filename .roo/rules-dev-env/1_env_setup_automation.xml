@@ -1,0 +1,38 @@
+<env_setup_automation>
+  <!--
+    ULTRA-DRY: All details in ../../sdlc/shared/env-setup-workflow.md
+    - Two-phase workflow (Phase 1 in 0_env_file_initialization.xml, Phase 2 here)
+    - Trigger phrases
+    - Workflow steps and commands
+    - Token setup instructions (URLs, scopes)
+    - Validation commands
+
+    Update shared file when any of these change.
+  -->
+
+  <overview>
+    The project online Dev Env mode handles Phase 2 of environment setup.
+
+    Phase 1: Environment Variable Population (0_env_file_initialization.xml)
+    Phase 2: Script Execution (this file)
+
+    CRITICAL: Phase 1 MUST complete before Phase 2 begins.
+
+    See ../../sdlc/shared/env-setup-workflow.md for:
+    - Complete two-phase workflow
+    - All commands and validation steps
+    - Token setup instructions (Git, Jira)
+    - Trigger phrases
+  </overview>
+
+  <shared_pattern>sdlc/shared/env-setup-workflow.md</shared_pattern>
+
+  <phase_1_dependency>
+    Before proceeding, ensure Phase 1 is complete.
+    See 0_env_file_initialization.xml for variable population workflow.
+  </phase_1_dependency>
+
+  <mode_behavior>
+    Execute Phase 2 (Script Execution Workflow) from shared pattern file.
+  </mode_behavior>
+</env_setup_automation>

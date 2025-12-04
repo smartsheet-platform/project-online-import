@@ -1,0 +1,8 @@
+<git_integration>
+  <overview>
+    Git operations, branch discovery, git platform API integration, authentication, endpoints, and error handling defined in:
+    ../../sdlc/shared/git-integration-patterns.md
+
+    CRITICAL: All git commands MUST use "source .env &amp;&amp;" prefix (ABSOLUTE HIGHEST PRIORITY)
+  </overview>
+</git_integration>

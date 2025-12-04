@@ -1,0 +1,24 @@
+<jira_orchestrator_delegation>
+  <overview>
+    The project online Spec mode delegates ALL Jira operations to Orchestrator mode.
+
+    Complete delegation pattern defined in: ../../sdlc/shared/jira-orchestrator-delegation-pattern.md
+  </overview>
+
+  <mode_name>Spec mode</mode_name>
+  <mode_purpose>Documentation work</mode_purpose>
+
+  <shared_pattern>../../sdlc/shared/jira-orchestrator-delegation-pattern.md</shared_pattern>
+
+  <automatic_status_updates_reference>
+    <file>../../sdlc/shared/jira-status-updates.md</file>
+    <orchestrator_file>../rules-orchestrator/5_automatic_jira_status_updates.xml</orchestrator_file>
+  </automatic_status_updates_reference>
+
+  <spec_mode_specific>
+    <documentation_references>
+      <include_jira_key>Include Jira issue key in specification documents</include_jira_key>
+      <commit_format>Reference issue in commit messages: [JBS-123] Update spec</commit_format>
+    </documentation_references>
+  </spec_mode_specific>
+</jira_orchestrator_delegation>

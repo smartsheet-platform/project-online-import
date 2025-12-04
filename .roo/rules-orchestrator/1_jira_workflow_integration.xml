@@ -1,0 +1,24 @@
+<jira_workflow_reference>
+  <overview>
+    Complete project online orchestrator workflow with JIRA integration defined in:
+    ../../sdlc/shared/jira-workflow-patterns.md
+
+    This workflow provides task discovery, assignment, and status tracking via JIRA MCP tools.
+  </overview>
+
+  <shared_reference>../../sdlc/shared/jira-workflow-patterns.md</shared_reference>
+
+  <includes>
+    - Workflow Entry Points (Quick Query and Explicit Task workflows)
+    - Task Discovery and Assignment patterns
+    - JIRA MCP Integration (jira_search, jira_get_issue, jira_update_issue, etc.)
+    - New Feature or Enhancement Workflow Execution
+    - Existing Feature or Enhancement Update Workflow Execution
+    - Resume Existing Workflow Execution
+    - Task Filtering and Prioritization via JQL
+    - Git Workflow Integration (branch naming and commands)
+    - User Communication (detection and progress messages)
+    - Error Handling (API connectivity and workflow detection issues)
+    - Automatic Status Updates (see 5_automatic_jira_status_updates.xml)
+  </includes>
+</jira_workflow_reference>
