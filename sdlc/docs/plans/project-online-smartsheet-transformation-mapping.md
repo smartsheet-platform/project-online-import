@@ -299,32 +299,29 @@ def sanitize_workspace_name(project_name: str) -> str:
 
 **Sheet Name**: `{ProjectName} - Summary`
 
-**Sheet Structure**: Key-value pairs (Property | Value columns)
+**Sheet Structure**: Single row with 15 columns containing project metadata
 
-| Row | Column: Property | Column: Value | Source | Data Type |
-|-----|-----------------|---------------|--------|-----------|
-| 1 | Project Online Project ID | `{Guid}` | `Project.Id` | TEXT_NUMBER |
-| 2 | Project Name | `{Name}` | `Project.Name` | TEXT_NUMBER |
-| 3 | Description | `{Description}` | `Project.Description` | TEXT_NUMBER |
-| 4 | Owner | `{Contact Object}` | `Project.Owner` + `Project.OwnerEmail` | CONTACT_LIST |
-| 5 | Start Date | `{Date}` | `Project.StartDate` | DATE |
-| 6 | Finish Date | `{Date}` | `Project.FinishDate` | DATE |
-| 7 | Status | `{Status}` | `Project.ProjectStatus` | PICKLIST (sourced from PMO Standards/Project - Status) |
-| 8 | Priority | `{Priority}` | `Project.Priority` | PICKLIST (sourced from PMO Standards/Project - Priority, 7 levels) |
-| 9 | % Complete | `{Percentage}` | `Project.PercentComplete` | TEXT_NUMBER |
-| 10 | Project Online Created Date | `{Date}` | `Project.CreatedDate` | DATE |
-| 11 | Project Online Modified Date | `{Date}` | `Project.ModifiedDate` | DATE |
-| 12 | Created Date | `{Date}` | System-generated | CREATED_DATE |
-| 13 | Modified Date | `{Date}` | System-generated | MODIFIED_DATE |
-| 14 | Created By | `{Contact}` | System-generated | CREATED_BY |
-| 15 | Modified By | `{Contact}` | System-generated | MODIFIED_BY |
+**Column Definitions** (one project per sheet - single row):
 
-**Column Definitions**:
+| Column Name | Column Type | Width | Source | Transformation Rule | Format/Options | Example Value (Row 1) |
+|-------------|-------------|-------|--------|---------------------|----------------|-----------------------|
+| **Project Online Project ID** | TEXT_NUMBER | 150px | `Project.Id` | Convert Guid to string | Hidden, Locked column | "a1b2c3d4-e5f6-..." |
+| **Project Name** | TEXT_NUMBER | 200px | `Project.Name` | Direct copy | Primary column | "Website Redesign 2024" |
+| **Description** | TEXT_NUMBER | 300px | `Project.Description` | Direct copy | Multi-line text | "Complete redesign of corporate website" |
+| **Owner** | CONTACT_LIST | 150px | `Project.Owner` + `Project.OwnerEmail` | Create contact object | objectValue format | John Doe (john@example.com) |
+| **Start Date** | DATE | 120px | `Project.StartDate` | Convert DateTime to Date | Date format: `yyyy-MM-dd` | "2024-03-15" |
+| **Finish Date** | DATE | 120px | `Project.FinishDate` | Convert DateTime to Date | Date format: `yyyy-MM-dd` | "2024-06-30" |
+| **Status** | PICKLIST | 120px | `Project.ProjectStatus` | Direct copy | Sourced from PMO Standards/Project - Status | "Active" |
+| **Priority** | PICKLIST | 120px | `Project.Priority` | Map priority value to label | Sourced from PMO Standards/Project - Priority, 7 levels | "High" |
+| **% Complete** | TEXT_NUMBER | 100px | `Project.PercentComplete` | Direct copy (0-100) | Format: `0%` | "45%" |
+| **Project Online Created Date** | DATE | 120px | `Project.CreatedDate` | Convert DateTime to Date | User-settable, preserves original PO date | "2024-03-01" |
+| **Project Online Modified Date** | DATE | 120px | `Project.ModifiedDate` | Convert DateTime to Date | User-settable, preserves original PO date | "2024-03-15" |
+| **Created Date** | CREATED_DATE | 120px | System-generated | Auto-populated by Smartsheet | System column, cannot be user-set | "2024-12-03" |
+| **Modified Date** | MODIFIED_DATE | 120px | System-generated | Auto-populated by Smartsheet | System column, cannot be user-set | "2024-12-04" |
+| **Created By** | CREATED_BY | 150px | System-generated | Auto-populated by Smartsheet | System column, contact of creator | User contact |
+| **Modified By** | MODIFIED_BY | 150px | System-generated | Auto-populated by Smartsheet | System column, contact of last editor | User contact |
 
-| Column Name | Column Type | Width | Options/Format |
-|-------------|-------------|-------|----------------|
-| Property | TEXT_NUMBER | 150px | Primary column |
-| Value | ABSTRACT | 300px | Type varies by row |
+**This sheet contains exactly 1 row with the project's summary information across 15 columns.**
 
 ---
 
@@ -383,10 +380,10 @@ project_settings = {
 }
 ```
 
-#### Column Mapping Table
+#### Column Definitions
 
-| Smartsheet Column | Type | Width | Source | Transformation Rule | Format/Options | Example |
-|------------------|------|-------|--------|---------------------|----------------|---------|
+| Column Name | Column Type | Width | Source | Transformation Rule | Format/Options | Example Value (for one task row) |
+|-------------|-------------|-------|--------|---------------------|----------------|----------------------------------|
 | **Task Name** | TEXT_NUMBER | 300px | `Task.TaskName` | Direct copy | Primary column, Hierarchy enabled | "Design Homepage" |
 | **Task ID** | AUTO_NUMBER | 80px | Auto-generated | Format: `{PREFIX}-#####` | Locked column, prefix from project name | "WEB-00001" |
 | **Project Online Task ID** | TEXT_NUMBER | 150px | `Task.Id` | Convert Guid to string | Hidden, Locked column | "a1b2c3d4-e5f6-..." |
@@ -412,6 +409,8 @@ project_settings = {
 | **Modified By** | MODIFIED_BY | 150px | System-generated | Auto-populated by Smartsheet | System column, contact of last editor | User contact |
 
 **Note**: Assignment columns (Contact List type) are added dynamically based on resource types/roles. See Section 4 for details.
+
+**Each row in this sheet represents one task from Project Online.**
 
 #### Data Type Conversions
 
@@ -999,10 +998,10 @@ Row 5: Task 2 (level 0)
 
 **Sheet Type**: Sheet (no hierarchy)
 
-#### Column Mapping Table
+#### Column Definitions
 
-| Smartsheet Column | Type | Width | Source | Transformation Rule | Format/Options | Example |
-|------------------|------|-------|--------|---------------------|----------------|---------|
+| Column Name | Column Type | Width | Source | Transformation Rule | Format/Options | Example Value (for one resource row) |
+|-------------|-------------|-------|--------|---------------------|----------------|-------------------------------------|
 | **Resource ID** | AUTO_NUMBER | 80px | Auto-generated | Format: `{PREFIX}-#####` | Locked column, prefix from project name | "WEB-00042" |
 | **Project Online Resource ID** | TEXT_NUMBER | 150px | `Resource.Id` | Convert Guid to string | Hidden, Locked column | "a1b2c3d4-e5f6-..." |
 | **Contact** | CONTACT_LIST | 200px | `Resource.Name` + `Resource.Email` | Create contact object | Primary column, objectValue format | John Doe (john@example.com) |
@@ -1021,6 +1020,8 @@ Row 5: Task 2 (level 0)
 | **Modified Date** | MODIFIED_DATE | 120px | System-generated | Auto-populated by Smartsheet | System column, cannot be user-set | "2024-12-04" |
 | **Created By** | CREATED_BY | 150px | System-generated | Auto-populated by Smartsheet | System column, contact of creator | User contact |
 | **Modified By** | MODIFIED_BY | 150px | System-generated | Auto-populated by Smartsheet | System column, contact of last editor | User contact |
+
+**Each row in this sheet represents one resource from Project Online.**
 
 #### Data Type Conversions
 
