@@ -76,7 +76,7 @@ describe('TaskTransformer', () => {
       expect(result.sheetName).toContain('Tasks');
       expect(result.rowsCreated).toBe(1);
       expect(result.columns).toBeDefined();
-      expect(result.columns.length).toBeGreaterThan(20);
+      expect(result.columns.length).toBe(18);
     });
 
     it('should enable Gantt and dependencies on project sheet', async () => {
@@ -98,19 +98,18 @@ describe('TaskTransformer', () => {
   });
 
   describe('createTasksSheetColumns', () => {
-    it('should create 23 standard columns in correct order', () => {
+    it('should create 18 standard columns in correct order', () => {
       const projectName = 'Test Project';
       const columns = createTasksSheetColumns(projectName);
 
-      expect(columns.length).toBe(23);
+      expect(columns.length).toBe(18);
 
       // Verify column order
       expect(columns[0].title).toBe('Task Name');
       expect(columns[0].primary).toBe(true);
-      expect(columns[1].title).toBe('Task ID');
-      expect(columns[1].type).toBe('AUTO_NUMBER');
-      expect(columns[2].title).toBe('Project Online Task ID');
-      expect(columns[2].hidden).toBe(true);
+      expect(columns[1].title).toBe('Project Online Task ID');
+      expect(columns[1].type).toBe('TEXT_NUMBER');
+      expect(columns[1].hidden).toBe(true);
     });
 
     it('should configure Task Name as primary column with hierarchy enabled', () => {
@@ -171,14 +170,13 @@ describe('TaskTransformer', () => {
       expect(predecessorColumn?.type).toBe('PREDECESSOR');
     });
 
-    it('should create system columns (Created Date, Modified Date, Created By, Modified By)', () => {
+    it('should include Project Online metadata columns', () => {
       const projectName = 'Test Project';
       const columns = createTasksSheetColumns(projectName);
 
-      expect(columns.some((c) => c.type === 'CREATED_DATE')).toBe(true);
-      expect(columns.some((c) => c.type === 'MODIFIED_DATE')).toBe(true);
-      expect(columns.some((c) => c.type === 'CREATED_BY')).toBe(true);
-      expect(columns.some((c) => c.type === 'MODIFIED_BY')).toBe(true);
+      // Verify Project Online Created Date and Modified Date columns exist
+      expect(columns.some((c) => c.title === 'Project Online Created Date')).toBe(true);
+      expect(columns.some((c) => c.title === 'Project Online Modified Date')).toBe(true);
     });
   });
 
@@ -257,13 +255,13 @@ describe('TaskTransformer', () => {
       expect(milestoneCell?.value).toBe(false);
     });
 
-    it('should set outline level for hierarchy', () => {
+    it('should set toBottom for top-level tasks', () => {
       const task: ProjectOnlineTask = {
         Id: 'task-2',
         ProjectId: 'proj-1',
-        TaskName: 'Sub-task',
+        TaskName: 'Top-level Task',
         TaskIndex: 2,
-        OutlineLevel: 1, // Child task
+        OutlineLevel: 1, // Top level (Project Online: 1 = top level)
         Start: '2024-03-15T09:00:00Z',
         Finish: '2024-03-17T17:00:00Z',
         Duration: 'PT16H',
@@ -276,7 +274,31 @@ describe('TaskTransformer', () => {
       const columnMap = { 'Task Name': 1 };
       const row = createTaskRow(task, columnMap);
 
-      expect(row.indent).toBe(1);
+      expect(row.toBottom).toBe(true);
+      expect(row.indent).toBeUndefined();
+    });
+
+    it('should set indent level for child tasks', () => {
+      const task: ProjectOnlineTask = {
+        Id: 'task-3',
+        ProjectId: 'proj-1',
+        TaskName: 'Child Task',
+        TaskIndex: 3,
+        OutlineLevel: 2, // First indent level (Project Online: 2 = first child)
+        Start: '2024-03-15T09:00:00Z',
+        Finish: '2024-03-17T17:00:00Z',
+        Duration: 'PT16H',
+        PercentComplete: 0,
+        Priority: 500,
+        IsMilestone: false,
+        IsActive: true,
+      };
+
+      const columnMap = { 'Task Name': 1 };
+      const row = createTaskRow(task, columnMap);
+
+      expect(row.indent).toBe(1); // OutlineLevel 2 -> indent 1
+      expect(row.toBottom).toBeUndefined();
     });
   });
 
@@ -553,12 +575,12 @@ describe('TaskTransformer', () => {
     });
 
     it('should return error for missing TaskName', () => {
-      const task: any = {
+      const task = {
         Id: 'task-1',
         ProjectId: 'proj-1',
         TaskIndex: 1,
         OutlineLevel: 0,
-      };
+      } as ProjectOnlineTask;
 
       const result = validateTask(task);
 

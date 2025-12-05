@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-12-05T21:42:02.247Z",
+  "workspace": {
+    "id": 9002412817049476,
+    "name": "Sample Project - DO NOT DELETE",
+    "url": "https://app.smartsheet.com/folders/9002412817049476"
+  },
+  "sheets": {
+    "summary": {
+      "id": 1523512062726020,
+      "name": "Sample Project - DO NOT DELETE - Summary"
+    },
+    "tasks": {
+      "id": 4904029281800068,
+      "name": "Sample Project - DO NOT DELETE - Tasks"
+    },
+    "resources": {
+      "id": 2652229468114820,
+      "name": "Sample Project - DO NOT DELETE - Resources"
+    }
+  },
+  "stats": {
+    "tasks": 5,
+    "resources": 5
+  }
+}

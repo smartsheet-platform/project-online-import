@@ -3,7 +3,7 @@
  * Handles workspace creation, cleanup, and verification using the real Smartsheet SDK
  */
 
-import { SmartsheetClient } from '../../../src/types/SmartsheetClient';
+import { SmartsheetClient, WorkspaceChildrenData } from '../../../src/types/SmartsheetClient';
 
 export interface TestWorkspaceConfig {
   prefix: string;
@@ -117,7 +117,7 @@ export async function cleanupOldTestWorkspaces(
     const response = await client.workspaces?.listWorkspaces?.({
       queryParameters: { includeAll: true },
     });
-    const workspaces = response?.result?.data || [];
+    const workspaces = response?.result || [];
 
     const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
     let deletedCount = 0;
@@ -162,9 +162,9 @@ export async function getSheetFromWorkspace(
 
     // getWorkspaceChildren returns { data: [...] } where each item has resourceType
     // Filter for items with resourceType === 'sheet'
-    const items = response?.data || [];
-    const sheets = items.filter((item: any) => item.resourceType === 'sheet');
-    const sheet = sheets.find((s: any) => s.name === sheetName);
+    const items: WorkspaceChildrenData[] = response?.data || [];
+    const sheets = items.filter((item) => item.resourceType === 'sheet');
+    const sheet = sheets.find((s) => s.name === sheetName);
 
     if (!sheet) {
       return null;
@@ -173,7 +173,7 @@ export async function getSheetFromWorkspace(
     return {
       id: sheet.id!,
       name: sheet.name!,
-      permalink: sheet.permalink || '',
+      permalink: (sheet.permalink as string) || '',
     };
   } catch (error) {
     throw new Error(
@@ -198,13 +198,13 @@ export async function getAllSheetsFromWorkspace(
 
     // getWorkspaceChildren returns { data: [...] } where each item has resourceType
     // Filter for items with resourceType === 'sheet'
-    const items = response?.data || [];
-    const sheets = items.filter((item: any) => item.resourceType === 'sheet');
+    const items: WorkspaceChildrenData[] = response?.data || [];
+    const sheets = items.filter((item) => item.resourceType === 'sheet');
 
-    return sheets.map((sheet: any) => ({
+    return sheets.map((sheet) => ({
       id: sheet.id!,
       name: sheet.name!,
-      permalink: sheet.permalink || '',
+      permalink: (sheet.permalink as string) || '',
     }));
   } catch (error) {
     throw new Error(
@@ -239,14 +239,15 @@ export async function verifyWorkspaceStructure(
  */
 export async function getSheetDetails(client: SmartsheetClient, sheetId: number) {
   try {
-    const sheet = await client.sheets?.getSheet?.({
+    const response = await client.sheets?.getSheet?.({
       id: sheetId,
       queryParameters: {
         level: 2, // Include all row data including parent-child relationships
       },
     });
 
-    return sheet;
+    // Unwrap the API response to get the actual sheet
+    return response?.result || response?.data;
   } catch (error) {
     throw new Error(
       `Failed to get sheet details: ${error instanceof Error ? error.message : JSON.stringify(error)}`
@@ -273,7 +274,7 @@ export async function verifySheetColumns(
   const typeMismatches: Array<{ title: string; expected: string; actual: string }> = [];
 
   for (const expected of expectedColumns) {
-    const actual = columns.find((c: any) => c.title === expected.title);
+    const actual = columns.find((c) => c.title === expected.title);
     if (!actual) {
       missing.push(expected.title);
     } else if (actual.type !== expected.type) {

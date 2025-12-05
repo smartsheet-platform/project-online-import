@@ -87,7 +87,7 @@ export class ODataTaskBuilder {
   /**
    * Set custom fields
    */
-  withCustomFields(fields: Record<string, any>): this {
+  withCustomFields(fields: Record<string, unknown>): this {
     Object.assign(this.task, fields);
     return this;
   }

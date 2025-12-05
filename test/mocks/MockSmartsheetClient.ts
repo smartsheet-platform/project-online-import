@@ -3,7 +3,7 @@
  * Acts as a test spy to verify transformation calls without network requests
  */
 
-import { SmartsheetClient } from '../../src/types/SmartsheetClient';
+import { SmartsheetClient, SmartsheetApiOptions } from '../../src/types/SmartsheetClient';
 import {
   SmartsheetWorkspace,
   SmartsheetSheet,
@@ -355,7 +355,10 @@ export class MockSmartsheetClient implements SmartsheetClient {
   /**
    * Update sheet properties (for enabling Gantt, dependencies, etc.)
    */
-  async updateSheet(sheetId: number, updates: any): Promise<void> {
+  async updateSheet(
+    sheetId: number,
+    updates: Partial<SmartsheetSheet>
+  ): Promise<{ result?: SmartsheetSheet; data?: SmartsheetSheet }> {
     const operation = 'updateSheet';
     this.checkFailure(operation);
 
@@ -366,5 +369,102 @@ export class MockSmartsheetClient implements SmartsheetClient {
 
     // Apply updates to the sheet
     Object.assign(sheet, updates);
+
+    return { result: sheet };
   }
+
+  /**
+   * Add single column to sheet (SDK-style method)
+   */
+  async addColumn(sheetId: number, column: SmartsheetColumn): Promise<SmartsheetColumn> {
+    const operation = 'addColumn';
+    this.checkFailure(operation);
+
+    const sheet = this._sheetStorage.get(sheetId);
+    if (!sheet) {
+      throw new Error(`Sheet not found: ${sheetId}`);
+    }
+
+    const newColumn = {
+      ...column,
+      id: this.nextColumnId++,
+    };
+
+    sheet.columns = [...(sheet.columns || []), newColumn];
+
+    return newColumn;
+  }
+
+  // SDK-style nested object structure
+  workspaces = {
+    createWorkspace: async (options: SmartsheetApiOptions) => {
+      const workspace = await this.createWorkspace(options.body as SmartsheetWorkspace);
+      return { result: workspace };
+    },
+    getWorkspace: async (options: SmartsheetApiOptions) => {
+      const workspace = await this.getWorkspace(options.workspaceId!);
+      return { result: workspace };
+    },
+    getWorkspaceMetadata: async (options: SmartsheetApiOptions) => {
+      const workspace = await this.getWorkspace(options.workspaceId!);
+      return { result: workspace };
+    },
+    getWorkspaceChildren: async (options: SmartsheetApiOptions) => {
+      const workspaceId = options.workspaceId!;
+      const workspace = this._workspaceStorage.get(workspaceId);
+      if (!workspace) {
+        throw new Error(`Workspace not found: ${workspaceId}`);
+      }
+
+      // Return sheets in this workspace
+      const sheets = Array.from(this._sheetStorage.values())
+        .filter((sheet) => {
+          // Check if this sheet was created in this workspace
+          const creation = this.sheetCreations.find((c) => c.sheet.id === sheet.id);
+          return creation && creation.workspaceId === workspaceId;
+        })
+        .map((sheet) => ({
+          id: sheet.id,
+          name: sheet.name,
+          resourceType: 'sheet',
+          permalink: sheet.permalink,
+        }));
+
+      return { data: sheets };
+    },
+    deleteWorkspace: async (options: SmartsheetApiOptions) => {
+      const workspaceId = options.workspaceId!;
+      this._workspaceStorage.delete(workspaceId);
+      return { result: { message: 'Workspace deleted' } };
+    },
+    listWorkspaces: async (_options?: SmartsheetApiOptions) => {
+      const workspaces = Array.from(this._workspaceStorage.values());
+      return { result: workspaces };
+    },
+  };
+
+  sheets = {
+    getSheet: async (options: SmartsheetApiOptions) => {
+      const sheet = await this.getSheet(options.id || options.sheetId!);
+      return { result: sheet };
+    },
+    createSheetInWorkspace: async (options: SmartsheetApiOptions) => {
+      const sheet = await this.createSheetInWorkspace(
+        options.workspaceId!,
+        options.body as SmartsheetSheet
+      );
+      return { result: sheet };
+    },
+    addColumn: async (options: SmartsheetApiOptions) => {
+      const column = await this.addColumn(options.sheetId!, options.body as SmartsheetColumn);
+      return { result: column };
+    },
+    addRows: async (options: SmartsheetApiOptions) => {
+      const rows = await this.addRows(options.sheetId!, options.body as SmartsheetRow[]);
+      return { result: rows };
+    },
+    updateSheet: async (options: SmartsheetApiOptions) => {
+      return this.updateSheet(options.sheetId!, options.body as Partial<SmartsheetSheet>);
+    },
+  };
 }

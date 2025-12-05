@@ -334,7 +334,7 @@ describe('ResourceTransformer', () => {
       );
 
       const updates = mockClient.getColumnUpdates(sheetId);
-      const typeUpdate = updates.find((u: any) => u.columnId === resourceTypeColumnId);
+      const typeUpdate = updates.find((u) => u.columnId === resourceTypeColumnId);
 
       expect(typeUpdate).toBeDefined();
       expect(typeUpdate?.column.type).toBe('PICKLIST');
@@ -375,7 +375,7 @@ describe('ResourceTransformer', () => {
       );
 
       const updates = mockClient.getColumnUpdates(sheetId);
-      const deptUpdate = updates.find((u: any) => u.columnId === departmentColumnId);
+      const deptUpdate = updates.find((u) => u.columnId === departmentColumnId);
 
       expect(deptUpdate).toBeDefined();
       expect(deptUpdate?.column.type).toBe('PICKLIST');

@@ -13,6 +13,7 @@ import {
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { PMOStandardsWorkspaceInfo } from './PMOStandardsTransformer';
 import { convertDateTimeToDate, createContactObject } from './utils';
+import { getColumnMap, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
 
 /**
  * Create Resources sheet with all resources
@@ -380,16 +381,13 @@ export class ResourceTransformer {
     }
 
     // Build columnMap: Start by fetching the existing primary column
+    // For re-run resiliency, we check if columns exist before adding
     const columnMap: Record<string, number> = {};
 
-    // Fetch initial sheet to get primary column (Resource Name)
-    if (!this.client.sheets?.getSheet) {
-      throw new Error('Smartsheet client sheets.getSheet method not available');
-    }
-    const initialSheetResponse = await this.client.sheets.getSheet({ id: sheetId });
-    const initialSheet = initialSheetResponse?.result || initialSheetResponse;
-    if (initialSheet?.columns?.[0]?.id) {
-      columnMap['Resource Name'] = initialSheet.columns[0].id;
+    // Get existing columns from sheet
+    const existingColumnMap = await getColumnMap(this.client, sheetId);
+    if (existingColumnMap['Resource Name']) {
+      columnMap['Resource Name'] = existingColumnMap['Resource Name'].id;
     }
 
     // Discover unique department values for picklist
@@ -403,44 +401,32 @@ export class ResourceTransformer {
         width: 150,
         hidden: true,
         locked: true,
+        index: 1,
       },
-      { title: 'Email', type: 'TEXT_NUMBER', width: 200 },
-      { title: 'Resource Type', type: 'PICKLIST', width: 120 },
-      { title: 'Max Units', type: 'TEXT_NUMBER', width: 100 },
-      { title: 'Standard Rate', type: 'TEXT_NUMBER', width: 120 },
-      { title: 'Overtime Rate', type: 'TEXT_NUMBER', width: 120 },
-      { title: 'Cost Per Use', type: 'TEXT_NUMBER', width: 120 },
-      { title: 'Department', type: 'PICKLIST', width: 150, options: uniqueDepartments },
-      { title: 'Code', type: 'TEXT_NUMBER', width: 100 },
-      { title: 'Is Active', type: 'CHECKBOX', width: 80 },
-      { title: 'Is Generic', type: 'CHECKBOX', width: 80 },
-      { title: 'Project Online Created Date', type: 'DATE', width: 120 },
-      { title: 'Project Online Modified Date', type: 'DATE', width: 120 },
+      { title: 'Email', type: 'TEXT_NUMBER', width: 200, index: 2 },
+      { title: 'Resource Type', type: 'PICKLIST', width: 120, index: 3 },
+      { title: 'Max Units', type: 'TEXT_NUMBER', width: 100, index: 4 },
+      { title: 'Standard Rate', type: 'TEXT_NUMBER', width: 120, index: 5 },
+      { title: 'Overtime Rate', type: 'TEXT_NUMBER', width: 120, index: 6 },
+      { title: 'Cost Per Use', type: 'TEXT_NUMBER', width: 120, index: 7 },
+      { title: 'Department', type: 'PICKLIST', width: 150, options: uniqueDepartments, index: 8 },
+      { title: 'Code', type: 'TEXT_NUMBER', width: 100, index: 9 },
+      { title: 'Is Active', type: 'CHECKBOX', width: 80, index: 10 },
+      { title: 'Is Generic', type: 'CHECKBOX', width: 80, index: 11 },
+      { title: 'Project Online Created Date', type: 'DATE', width: 120, index: 12 },
+      { title: 'Project Online Modified Date', type: 'DATE', width: 120, index: 13 },
     ];
 
-    // Add each column sequentially
-    if (!this.client.sheets?.addColumn) {
-      throw new Error('Smartsheet client sheets.addColumn method not available');
-    }
-    for (let i = 0; i < additionalColumns.length; i++) {
-      const col = additionalColumns[i];
-      const response = await this.client.sheets.addColumn({
-        sheetId,
-        body: {
-          title: col.title,
-          type: col.type as any,
-          width: col.width,
-          index: i + 1, // Add after primary column
-          ...(col.hidden && { hidden: col.hidden }),
-          ...(col.locked && { locked: col.locked }),
-          ...(col.options && col.options.length > 0 && { options: col.options }),
-        },
-      });
+    // Use resiliency helper to add columns (skips existing ones)
+    const addedColumns = await addColumnsIfNotExist(
+      this.client,
+      sheetId,
+      additionalColumns as Array<SmartsheetColumn & { index?: number }>
+    );
 
-      const addedColumn = response?.result || response;
-      if (addedColumn?.id) {
-        columnMap[col.title] = addedColumn.id;
-      }
+    // Add results to column map
+    for (const result of addedColumns) {
+      columnMap[result.title] = result.id;
     }
 
     // Now create rows using the columnMap
@@ -461,8 +447,8 @@ export class ResourceTransformer {
   private buildResourceRow(
     resource: ProjectOnlineResource,
     columnMap: Record<string, number>
-  ): any {
-    const cells: any[] = [];
+  ): SmartsheetRow {
+    const cells: Array<{ columnId: number; value: string | number | boolean }> = [];
 
     // Resource Name (primary column)
     if (columnMap['Resource Name']) {

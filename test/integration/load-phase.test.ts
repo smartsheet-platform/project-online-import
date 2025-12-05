@@ -247,8 +247,8 @@ describe('Load Phase Integration Tests', () => {
 
       // Verify parent-child relationships
       const rows = sheet?.rows || [];
-      const parentRows = rows.filter((r: any) => !r.parentId);
-      const childRows = rows.filter((r: any) => r.parentId);
+      const parentRows = rows.filter((r) => !r.parentId);
+      const childRows = rows.filter((r) => r.parentId);
 
       expect(parentRows.length).toBeGreaterThan(0);
       expect(childRows.length).toBeGreaterThan(0);
@@ -271,8 +271,8 @@ describe('Load Phase Integration Tests', () => {
       const sheet = await getSheetDetails(smartsheetClient, projectResult.sheets.taskSheet.id);
 
       // Build parent-child map
-      const rowsByParent = new Map<number | null, any[]>();
-      sheet?.rows?.forEach((row: any) => {
+      const rowsByParent = new Map<number | null, Array<{ id?: number; parentId?: number }>>();
+      sheet?.rows?.forEach((row) => {
         const parentId = row.parentId || null;
         if (!rowsByParent.has(parentId)) {
           rowsByParent.set(parentId, []);
@@ -284,7 +284,7 @@ describe('Load Phase Integration Tests', () => {
       function getDepth(rowId: number | null, depth: number = 0): number {
         const children = rowsByParent.get(rowId) || [];
         if (children.length === 0) return depth;
-        return Math.max(...children.map((child) => getDepth(child.id, depth + 1)));
+        return Math.max(...children.map((child) => getDepth(child.id || null, depth + 1)));
       }
 
       const maxDepth = getDepth(null);
@@ -314,7 +314,7 @@ describe('Load Phase Integration Tests', () => {
       expect(sheet?.rows?.length).toBe(fixture.tasks.length);
 
       // Duration column should exist and have values
-      const durationColumn = sheet?.columns?.find((c: any) => c.title === 'Duration');
+      const durationColumn = sheet?.columns?.find((c) => c.title === 'Duration');
       expect(durationColumn).toBeDefined();
     }, 60000); // 60 second timeout - API can be slow with column additions
 
@@ -438,7 +438,9 @@ describe('Load Phase Integration Tests', () => {
 
       // Verify system metadata is tracked (every row has createdAt/modifiedAt)
       const sheet = await getSheetDetails(smartsheetClient, projectResult.sheets.taskSheet.id);
-      const rowsWithSystemMetadata = sheet?.rows?.filter((r: any) => r.createdAt && r.modifiedAt);
+      const rowsWithSystemMetadata = sheet?.rows?.filter((r) =>
+        'createdAt' in r && 'modifiedAt' in r && !!r.createdAt && !!r.modifiedAt
+      );
       expect(rowsWithSystemMetadata?.length).toBe(fixture.tasks.length);
     }, 30000); // 30 second timeout for column addition operations
 
@@ -490,11 +492,11 @@ describe('Load Phase Integration Tests', () => {
       // Verify the task row has the primary column (Task Name) populated
       const taskRow = sheet?.rows?.[0];
       expect(taskRow).toBeDefined();
-      const taskNameColumn = sheet?.columns?.find((c: any) => c.primary);
+      const taskNameColumn = sheet?.columns?.find((c) => c.primary);
       expect(taskNameColumn).toBeDefined();
 
       // Verify task name cell is populated
-      const taskNameCell = taskRow?.cells?.find((c: any) => c.columnId === taskNameColumn?.id);
+      const taskNameCell = taskRow?.cells?.find((c) => c.columnId === taskNameColumn?.id);
       expect(taskNameCell?.value).toBeTruthy();
       expect(taskNameCell?.value).toContain('Complete Task');
     }, 60000); // 60 second timeout - API can be slow with all column additions
@@ -679,9 +681,10 @@ describe('Load Phase Integration Tests', () => {
 
       // Verify unique departments were discovered
       const sheet = await getSheetDetails(smartsheetClient, projectResult.sheets.resourceSheet.id);
-      const deptColumn = sheet?.columns?.find((c: any) => c.title === 'Department');
+      const deptColumn = sheet?.columns?.find((c) => c.title === 'Department');
       const uniqueDepts = new Set(fixture.resources.map((r) => r.Department).filter(Boolean));
-      expect(deptColumn?.options?.length).toBeGreaterThanOrEqual(uniqueDepts.size);
+      const optionsArray = Array.isArray(deptColumn?.options) ? deptColumn.options : [];
+      expect(optionsArray.length).toBeGreaterThanOrEqual(uniqueDepts.size);
     }, 60000); // 60 second timeout - API can be slow with resource operations
   });
 
@@ -720,11 +723,11 @@ describe('Load Phase Integration Tests', () => {
 
       // Verify Work resource columns are MULTI_CONTACT_LIST
       const sheet = await getSheetDetails(smartsheetClient, projectResult.sheets.taskSheet.id);
-      const workResourceColumns = sheet?.columns?.filter((c: any) =>
+      const workResourceColumns = sheet?.columns?.filter((c) =>
         fixture.resources.work.some((r) => c.title?.includes(r.Name))
       );
 
-      workResourceColumns?.forEach((col: any) => {
+      workResourceColumns?.forEach((col) => {
         expect(col.type).toBe('MULTI_CONTACT_LIST');
       });
     }, 60000); // 60 second timeout - increased due to API slowness with assignment column creation
@@ -762,13 +765,13 @@ describe('Load Phase Integration Tests', () => {
 
       // Verify Material/Cost resource columns are MULTI_PICKLIST
       const sheet = await getSheetDetails(smartsheetClient, projectResult.sheets.taskSheet.id);
-      const nonWorkResourceColumns = sheet?.columns?.filter((c: any) =>
+      const nonWorkResourceColumns = sheet?.columns?.filter((c) =>
         [...fixture.resources.material, ...fixture.resources.cost].some((r) =>
           c.title?.includes(r.Name)
         )
       );
 
-      nonWorkResourceColumns?.forEach((col: any) => {
+      nonWorkResourceColumns?.forEach((col) => {
         expect(col.type).toBe('MULTI_PICKLIST');
       });
     }, 60000); // 60 second timeout - increased due to API slowness with assignment column creation
@@ -807,8 +810,8 @@ describe('Load Phase Integration Tests', () => {
 
       // Should create both MULTI_CONTACT_LIST and MULTI_PICKLIST columns
       const sheet = await getSheetDetails(smartsheetClient, projectResult.sheets.taskSheet.id);
-      const contactColumns = sheet?.columns?.filter((c: any) => c.type === 'MULTI_CONTACT_LIST');
-      const picklistColumns = sheet?.columns?.filter((c: any) => c.type === 'MULTI_PICKLIST');
+      const contactColumns = sheet?.columns?.filter((c) => c.type === 'MULTI_CONTACT_LIST');
+      const picklistColumns = sheet?.columns?.filter((c) => c.type === 'MULTI_PICKLIST');
 
       expect(contactColumns?.length).toBeGreaterThan(0);
       expect(picklistColumns?.length).toBeGreaterThan(0);
@@ -852,7 +855,9 @@ describe('Load Phase Integration Tests', () => {
   describe('Error Handling Tests', () => {
     test('should handle missing required fields gracefully', async () => {
       // Create invalid project (missing required Name field)
-      const invalidProject: any = { Id: 'test-id' };
+      const invalidProject = { Id: 'test-id' } as Parameters<
+        typeof transformer.transformProject
+      >[0];
       odataClient.addProject(invalidProject);
 
       const workspace = await workspaceManager.createWorkspace('Invalid Project');

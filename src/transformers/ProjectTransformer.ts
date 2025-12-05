@@ -20,6 +20,19 @@ import {
   createContactObject,
   createSheetName,
 } from './utils';
+import {
+  getOrCreateSheet,
+  copyWorkspace,
+  findSheetByPartialName,
+  renameSheet,
+  deleteAllRows,
+} from '../util/SmartsheetHelpers';
+
+/**
+ * Template workspace ID for copying
+ * This workspace contains pre-configured sheets with all columns defined
+ */
+const TEMPLATE_WORKSPACE_ID = 9002412817049476;
 
 /**
  * Transform Project Online project to Smartsheet workspace
@@ -332,7 +345,7 @@ export class ProjectTransformer {
 
   async transformProject(
     project: ProjectOnlineProject,
-    workspaceId: number
+    workspaceId?: number
   ): Promise<{
     workspace: SmartsheetWorkspace;
     sheets: {
@@ -350,68 +363,119 @@ export class ProjectTransformer {
     // Transform to workspace structure
     const workspace = transformProjectToWorkspace(project);
 
-    // Create summary sheet with minimal structure
-    const summaryResponse = await this.client.sheets?.createSheetInWorkspace?.({
-      workspaceId,
-      body: {
-        name: createSheetName(workspace.name, 'Summary'),
-        columns: [
-          {
-            title: 'Project Name',
-            type: 'TEXT_NUMBER',
-            primary: true,
-          },
-        ],
-      },
-    });
+    // NEW BEHAVIOR: If no workspaceId provided, copy from template workspace
+    if (!workspaceId) {
+      const copiedWorkspace = await copyWorkspace(
+        this.client,
+        TEMPLATE_WORKSPACE_ID,
+        workspace.name
+      );
+      workspace.id = copiedWorkspace.id;
+      workspace.permalink = copiedWorkspace.permalink;
 
-    if (!summaryResponse?.result) {
-      throw new Error('Failed to create summary sheet');
+      // Find the three sheets in the copied workspace (template has "Tasks", "Resources", "Summary")
+      const summarySheetFound = await findSheetByPartialName(this.client, workspace.id, 'Summary');
+      const taskSheetFound = await findSheetByPartialName(this.client, workspace.id, 'Tasks');
+      const resourceSheetFound = await findSheetByPartialName(
+        this.client,
+        workspace.id,
+        'Resources'
+      );
+
+      if (!summarySheetFound || !taskSheetFound || !resourceSheetFound) {
+        throw new Error('Failed to find required sheets in workspace after copy from template');
+      }
+
+      // Rename sheets to match project naming convention
+      const summarySheetName = createSheetName(workspace.name, 'Summary');
+      const taskSheetName = createSheetName(workspace.name, 'Tasks');
+      const resourceSheetName = createSheetName(workspace.name, 'Resources');
+
+      const summarySheet = await renameSheet(this.client, summarySheetFound.id, summarySheetName);
+      const taskSheet = await renameSheet(this.client, taskSheetFound.id, taskSheetName);
+      const resourceSheet = await renameSheet(
+        this.client,
+        resourceSheetFound.id,
+        resourceSheetName
+      );
+
+      // Delete all rows from each sheet (keep columns intact)
+      await deleteAllRows(this.client, summarySheet.id);
+      await deleteAllRows(this.client, taskSheet.id);
+      await deleteAllRows(this.client, resourceSheet.id);
+
+      return {
+        workspace,
+        sheets: {
+          summarySheet: {
+            id: summarySheet.id,
+            name: summarySheet.name,
+          },
+          taskSheet: {
+            id: taskSheet.id,
+            name: taskSheet.name,
+          },
+          resourceSheet: {
+            id: resourceSheet.id,
+            name: resourceSheet.name,
+          },
+        },
+      };
     }
 
-    const createdSummary = summaryResponse.result;
+    // OLD BEHAVIOR: If workspaceId provided (for testing), create sheets using getOrCreateSheet
+    workspace.id = workspaceId;
 
-    // Create task sheet (will be populated by TaskTransformer)
-    const taskResponse = await this.client.sheets?.createSheetInWorkspace?.({
-      workspaceId,
-      body: {
-        name: createSheetName(workspace.name, 'Tasks'),
-        columns: [
-          {
-            title: 'Task Name',
-            type: 'TEXT_NUMBER',
-            primary: true,
-          },
-        ],
-      },
+    // Get or create summary sheet with minimal structure
+    // If re-running, this will use the existing sheet
+    const createdSummary = await getOrCreateSheet(this.client, workspaceId, {
+      name: createSheetName(workspace.name, 'Summary'),
+      columns: [
+        {
+          title: 'Project Name',
+          type: 'TEXT_NUMBER',
+          primary: true,
+        },
+      ],
     });
 
-    if (!taskResponse?.result) {
-      throw new Error('Failed to create task sheet');
+    if (!createdSummary?.id) {
+      throw new Error('Failed to get or create summary sheet');
     }
 
-    const taskSheet = taskResponse.result;
-
-    // Create resource sheet (will be populated by ResourceTransformer)
-    const resourceResponse = await this.client.sheets?.createSheetInWorkspace?.({
-      workspaceId,
-      body: {
-        name: createSheetName(workspace.name, 'Resources'),
-        columns: [
-          {
-            title: 'Resource Name',
-            type: 'TEXT_NUMBER',
-            primary: true,
-          },
-        ],
-      },
+    // Get or create task sheet (will be populated by TaskTransformer)
+    // If re-running, this will use the existing sheet
+    const taskSheet = await getOrCreateSheet(this.client, workspaceId, {
+      name: createSheetName(workspace.name, 'Tasks'),
+      columns: [
+        {
+          title: 'Task Name',
+          type: 'TEXT_NUMBER',
+          primary: true,
+        },
+      ],
     });
 
-    if (!resourceResponse?.result) {
-      throw new Error('Failed to create resource sheet');
+    if (!taskSheet?.id) {
+      throw new Error('Failed to get or create task sheet');
     }
 
-    const resourceSheet = resourceResponse.result;
+    // Get or create resource sheet (will be populated by ResourceTransformer)
+    // If re-running, this will use the existing sheet
+    const resourceSheet = await getOrCreateSheet(this.client, workspaceId, {
+      name: createSheetName(workspace.name, 'Resources'),
+      columns: [
+        {
+          title: 'Resource Name',
+          type: 'TEXT_NUMBER',
+          primary: true,
+        },
+      ],
+    });
+
+    if (!resourceSheet?.id) {
+      throw new Error('Failed to get or create resource sheet');
+    }
 
     return {
       workspace: { ...workspace, id: workspaceId },

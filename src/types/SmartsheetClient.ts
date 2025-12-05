@@ -10,6 +10,28 @@ import {
   SmartsheetColumn,
 } from './Smartsheet';
 
+// Types for Smartsheet SDK method options and responses
+export interface SmartsheetApiOptions {
+  id?: number;
+  sheetId?: number;
+  workspaceId?: number;
+  columnId?: number;
+  body?: unknown;
+  queryParameters?: Record<string, unknown>;
+}
+
+export interface SmartsheetApiResponse<T = unknown> {
+  result?: T;
+  data?: T;
+}
+
+export interface WorkspaceChildrenData {
+  resourceType?: string;
+  id?: number;
+  name?: string;
+  [key: string]: unknown;
+}
+
 export interface SmartsheetClient {
   // Direct methods for simple client interface
   createWorkspace?(workspace: SmartsheetWorkspace): Promise<SmartsheetWorkspace>;
@@ -20,29 +42,56 @@ export interface SmartsheetClient {
     columnId: number,
     column: Partial<SmartsheetColumn>
   ): Promise<SmartsheetColumn>;
-  updateSheet?(sheetId: number, updates: any): Promise<void>;
+  updateSheet?(
+    sheetId: number,
+    updates: Partial<SmartsheetSheet>
+  ): Promise<SmartsheetApiResponse<SmartsheetSheet>>;
 
   // Real Smartsheet SDK structure (for integration tests)
   workspaces?: {
-    createWorkspace?: (options: any) => Promise<any>;
-    getWorkspace?: (options: any) => Promise<any>; // Deprecated: Use getWorkspaceMetadata and getWorkspaceChildren
-    getWorkspaceMetadata?: (options: any) => Promise<any>; // Replacement for getWorkspace (metadata only)
-    getWorkspaceChildren?: (options: any) => Promise<any>; // Replacement for getWorkspace (children/sheets)
-    deleteWorkspace?: (options: any) => Promise<any>;
-    listWorkspaces?: (options: any) => Promise<any>;
+    createWorkspace?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetWorkspace>>;
+    getWorkspace?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetWorkspace>>; // Deprecated: Use getWorkspaceMetadata and getWorkspaceChildren
+    getWorkspaceMetadata?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetWorkspace>>; // Replacement for getWorkspace (metadata only)
+    getWorkspaceChildren?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<WorkspaceChildrenData[]>>; // Replacement for getWorkspace (children/sheets)
+    deleteWorkspace?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<{ message: string }>>;
+    listWorkspaces?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetWorkspace[]>>;
   };
   sheets?: {
-    getSheet?: (options: any) => Promise<any>;
-    createSheet?: (options: any) => Promise<any>;
-    createSheetInWorkspace?: (options: any) => Promise<any>;
-    updateSheet?: (options: any) => Promise<any>;
-    deleteSheet?: (options: any) => Promise<any>;
-    addRows?: (options: any) => Promise<any>;
-    addColumn?: (options: any) => Promise<any>;
-    updateRow?: (options: any) => Promise<any>;
-    deleteRows?: (options: any) => Promise<any>;
+    getSheet?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetSheet>>;
+    createSheet?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetSheet>>;
+    createSheetInWorkspace?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetSheet>>;
+    updateSheet?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetSheet>>;
+    deleteSheet?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<{ message: string }>>;
+    addRows?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetRow[]>>;
+    addColumn?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetColumn>>;
+    updateRow?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetRow>>;
+    deleteRows?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<{ message: string }>>;
   };
   columns?: {
-    updateColumn?: (options: any) => Promise<any>;
+    updateColumn?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetColumn>>;
   };
 }

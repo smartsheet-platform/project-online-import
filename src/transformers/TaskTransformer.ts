@@ -7,6 +7,7 @@ import {
 } from '../types/ProjectOnline';
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { convertDateTimeToDate, convertDurationToHoursString } from './utils';
+import { getColumnMap, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
 
 /**
  * Task transformer - converts Project Online Tasks to Smartsheet Tasks sheet rows
@@ -61,10 +62,13 @@ export async function createTasksSheet(
 
   const sheetId = sheet.id!;
 
-  // Enable Gantt and dependencies (project sheet configuration)
-  await client.updateSheet?.(sheetId, {
-    ganttEnabled: true,
-    dependenciesEnabled: true,
+  // Enable dependencies (project sheet configuration)
+  // Note: Gantt view is automatically enabled when dependencies are enabled
+  await client.sheets?.updateSheet?.({
+    sheetId,
+    body: {
+      dependenciesEnabled: true,
+    },
   });
 
   // Build column ID map
@@ -698,21 +702,7 @@ export class TaskTransformer {
 
     // The sheet was created by ProjectTransformer with only a primary "Task Name" column
     // We need to add all the task columns before we can add rows
-
-    // Build column map as we add columns (more reliable than fetching sheet again)
-    const columnMap: Record<string, number> = {};
-
-    // First, get the existing Task Name column ID
-    const initialSheet = await this.client.sheets?.getSheet?.({
-      id: sheetId,
-    });
-
-    if (initialSheet?.columns?.[0]?.id) {
-      columnMap['Task Name'] = initialSheet.columns[0].id;
-      console.log(`DEBUG: Added Task Name column to map with ID ${initialSheet.columns[0].id}`);
-    } else {
-      console.warn(`DEBUG: Could not find Task Name column in initial sheet`);
-    }
+    // For re-run resiliency, we check if columns exist before adding
 
     // Get all task columns (this returns the full column structure including Task Name)
     const allTaskColumns = createTasksSheetColumns('Project'); // Use a placeholder name
@@ -720,39 +710,35 @@ export class TaskTransformer {
     // Remove the first column (Task Name) since it already exists as the primary column
     const columnsToAdd = allTaskColumns.slice(1);
 
-    // Add columns one at a time using the correct SDK method
-    console.log(`DEBUG: Adding ${columnsToAdd.length} columns to sheet ${sheetId}`);
+    console.log(
+      `DEBUG: Adding ${columnsToAdd.length} columns to sheet ${sheetId} (skipping existing)`
+    );
 
-    for (let i = 0; i < columnsToAdd.length; i++) {
-      const column = columnsToAdd[i];
-      try {
-        // Add index to specify position (after existing column 0)
-        const columnWithIndex = { ...column, index: i + 1 };
+    // Add columns with index positions, skipping any that already exist
+    const columnsWithIndex = columnsToAdd.map((col, i) => ({
+      ...col,
+      index: i + 1, // Add after primary column
+    }));
 
-        // Use sheets.addColumn (singular) which is the correct SDK method
-        const addResponse = await this.client.sheets?.addColumn?.({
-          sheetId,
-          body: columnWithIndex,
-        });
+    // Use resiliency helper to add columns (skips existing ones)
+    const addedColumns = await addColumnsIfNotExist(this.client, sheetId, columnsWithIndex);
 
-        console.log(
-          `DEBUG: addColumn response for ${column.title}:`,
-          JSON.stringify(addResponse, null, 2)
-        );
+    // Build column map from results
+    const columnMap: Record<string, number> = {};
 
-        // Extract the added column from response
-        const addedColumn = addResponse?.result || addResponse;
+    // First, get the existing Task Name column from the sheet
+    const existingColumnMap = await getColumnMap(this.client, sheetId);
+    if (existingColumnMap['Task Name']) {
+      columnMap['Task Name'] = existingColumnMap['Task Name'].id;
+      console.log(`DEBUG: Task Name column ID: ${existingColumnMap['Task Name'].id}`);
+    }
 
-        if (addedColumn?.id && column.title) {
-          columnMap[column.title] = addedColumn.id;
-          console.log(`DEBUG: Added column ${column.title} with ID ${addedColumn.id}`);
-        } else {
-          console.warn(`DEBUG: No ID returned for column ${column.title}`);
-        }
-      } catch (error) {
-        console.error(`DEBUG: Failed to add column ${column.title}:`, error);
-        throw error;
-      }
+    // Add all other columns from the add results
+    for (const result of addedColumns) {
+      columnMap[result.title] = result.id;
+      console.log(
+        `DEBUG: Column ${result.title} - ID: ${result.id}, ${result.wasCreated ? 'newly created' : 'already existed'}`
+      );
     }
 
     console.log(
@@ -880,7 +866,7 @@ export class TaskTransformer {
       for (const [groupKey, groupTasks] of tasksByParent.entries()) {
         const rowsToAdd = groupTasks.map((task) => {
           const cells = buildCells(task);
-          const row: any = { cells };
+          const row: SmartsheetRow = { cells };
 
           if (groupKey === 'NO_PARENT') {
             row.toBottom = true;
@@ -900,16 +886,19 @@ export class TaskTransformer {
             body: rowsToAdd,
           });
 
-          const createdRows = addRowsResponse?.result || addRowsResponse || [];
+          const createdRows = addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
+          
+          // Unwrap the API response to get the actual array
+          const rowsArray = Array.isArray(createdRows) ? createdRows : [];
 
           // Map task IDs to row IDs for next level
           groupTasks.forEach((task, index) => {
-            if (createdRows[index]?.id && task.Id) {
-              taskIdToRowId[task.Id] = createdRows[index].id;
+            if (rowsArray[index]?.id && task.Id) {
+              taskIdToRowId[task.Id] = rowsArray[index].id;
             }
           });
 
-          totalRowsCreated += createdRows.length;
+          totalRowsCreated += rowsArray.length;
         } catch (error) {
           console.error(`DEBUG: Failed to add rows at level ${level}, group ${groupKey}:`, error);
           throw error;

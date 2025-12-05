@@ -17,6 +17,7 @@
     "test:integration:debug": "CLEANUP_TEST_WORKSPACES=false bash scripts/run-integration-tests.sh",
     "test:unit": "jest --testPathIgnorePatterns=test/integration",
     "cleanup-test-workspaces": "ts-node scripts/cleanup-test-workspaces.ts",
+    "create-sample-workspace": "ts-node scripts/create-sample-workspace.ts",
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' 'test/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",

@@ -8,6 +8,7 @@
 
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { ProjectOnlineAssignment, ProjectOnlineResource } from '../types/ProjectOnline';
+import { getOrAddColumn } from '../util/SmartsheetHelpers';
 
 export class AssignmentTransformer {
   constructor(private client: SmartsheetClient) {}
@@ -57,46 +58,52 @@ export class AssignmentTransformer {
     let currentIndex = 0;
     if (this.client.sheets?.getSheet) {
       const sheetResponse = await this.client.sheets.getSheet({ id: taskSheetId });
-      const sheet = sheetResponse?.result || sheetResponse;
+      const sheet = sheetResponse?.result || sheetResponse?.data;
       currentIndex = sheet?.columns?.length || 0;
     }
 
-    // Create assignment columns
+    // Create assignment columns with resiliency (skip existing columns)
     let columnsCreated = 0;
 
     // Create MULTI_CONTACT_LIST columns for Work resources
     for (const resource of workResources) {
       const columnName = resource.Name || 'Unknown Resource';
-      if (this.client.sheets?.addColumn) {
-        await this.client.sheets.addColumn({
-          sheetId: taskSheetId,
-          body: {
-            title: columnName,
-            type: 'MULTI_CONTACT_LIST' as any,
-            width: 200,
-            index: currentIndex,
-          },
+      try {
+        // Use resiliency helper - will skip if column already exists
+        await getOrAddColumn(this.client, taskSheetId, {
+          title: columnName,
+          type: 'MULTI_CONTACT_LIST',
+          width: 200,
+          index: currentIndex,
         });
+
+        // Only increment if this was a new column
+        // (getOrAddColumn returns existing columns without error)
         columnsCreated++;
         currentIndex++;
+      } catch (error) {
+        // Log but don't fail - column might already exist
+        console.warn(`Failed to add Work resource column ${columnName}:`, error);
       }
     }
 
     // Create MULTI_PICKLIST columns for Material/Cost resources
     for (const resource of nonWorkResources) {
       const columnName = resource.Name || 'Unknown Resource';
-      if (this.client.sheets?.addColumn) {
-        await this.client.sheets.addColumn({
-          sheetId: taskSheetId,
-          body: {
-            title: columnName,
-            type: 'MULTI_PICKLIST' as any,
-            width: 200,
-            index: currentIndex,
-          },
+      try {
+        // Use resiliency helper - will skip if column already exists
+        await getOrAddColumn(this.client, taskSheetId, {
+          title: columnName,
+          type: 'MULTI_PICKLIST',
+          width: 200,
+          index: currentIndex,
         });
+
         columnsCreated++;
         currentIndex++;
+      } catch (error) {
+        // Log but don't fail - column might already exist
+        console.warn(`Failed to add Material/Cost resource column ${columnName}:`, error);
       }
     }
 
