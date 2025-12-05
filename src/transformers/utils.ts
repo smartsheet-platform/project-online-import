@@ -175,3 +175,24 @@ export function createContactObject(
 
   return contact;
 }
+
+/**
+ * Create sheet name with suffix, ensuring it doesn't exceed Smartsheet's 50-character limit
+ * @param baseName - The base name (usually workspace/project name)
+ * @param suffix - The suffix to append (e.g., "Summary", "Tasks", "Resources")
+ * @returns Sheet name truncated to 50 characters max
+ */
+export function createSheetName(baseName: string, suffix: string): string {
+  const separator = ' - ';
+  const maxLength = 50;
+  const suffixWithSeparator = `${separator}${suffix}`;
+  const availableForBaseName = maxLength - suffixWithSeparator.length;
+
+  if (baseName.length + suffixWithSeparator.length <= maxLength) {
+    return `${baseName}${suffixWithSeparator}`;
+  }
+
+  // Truncate base name to fit within limit, adding ellipsis
+  const truncatedBaseName = baseName.substring(0, availableForBaseName - 3) + '...';
+  return `${truncatedBaseName}${suffixWithSeparator}`;
+}

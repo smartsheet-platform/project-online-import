@@ -50,15 +50,19 @@ export async function createTasksSheet(
 
   // Create sheet with columns
   const columns = createTasksSheetColumns(projectName);
-  const sheet = await client.createSheetInWorkspace(workspaceId, {
+  const sheet = await client.createSheetInWorkspace?.(workspaceId, {
     name: sheetName,
     columns,
   });
 
+  if (!sheet) {
+    throw new Error('Failed to create task sheet');
+  }
+
   const sheetId = sheet.id!;
 
   // Enable Gantt and dependencies (project sheet configuration)
-  await client.updateSheet(sheetId, {
+  await client.updateSheet?.(sheetId, {
     ganttEnabled: true,
     dependenciesEnabled: true,
   });
@@ -74,7 +78,7 @@ export async function createTasksSheet(
   // Create rows for all tasks
   const rows = tasks.map((task) => createTaskRow(task, columnMap));
   if (rows.length > 0) {
-    await client.addRows(sheetId, rows);
+    await client.addRows?.(sheetId, rows);
   }
 
   // Configure picklist columns to reference PMO Standards
@@ -102,9 +106,7 @@ export async function createTasksSheet(
 /**
  * Create column definitions for Tasks sheet
  */
-export function createTasksSheetColumns(projectName: string): SmartsheetColumn[] {
-  const prefix = generateTaskPrefix(projectName);
-
+export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[] {
   return [
     // Primary column
     {
@@ -112,14 +114,6 @@ export function createTasksSheetColumns(projectName: string): SmartsheetColumn[]
       type: 'TEXT_NUMBER',
       primary: true,
       width: 300,
-    },
-    // Auto-number ID
-    {
-      title: 'Task ID',
-      type: 'AUTO_NUMBER',
-      format: `${prefix}-#####`,
-      locked: true,
-      width: 80,
     },
     // Hidden GUID
     {
@@ -149,7 +143,6 @@ export function createTasksSheetColumns(projectName: string): SmartsheetColumn[]
     {
       title: '% Complete',
       type: 'TEXT_NUMBER',
-      format: '0%',
       width: 100,
     },
     {
@@ -213,53 +206,33 @@ export function createTasksSheetColumns(projectName: string): SmartsheetColumn[]
       type: 'DATE',
       width: 120,
     },
-    // System columns
-    {
-      title: 'Created Date',
-      type: 'CREATED_DATE',
-      width: 120,
-    },
-    {
-      title: 'Modified Date',
-      type: 'MODIFIED_DATE',
-      width: 120,
-    },
-    {
-      title: 'Created By',
-      type: 'CREATED_BY',
-      width: 150,
-    },
-    {
-      title: 'Modified By',
-      type: 'MODIFIED_BY',
-      width: 150,
-    },
   ];
 }
 
 /**
  * Generate 3-4 letter prefix from project name for Task IDs
+ * Currently unused - will be needed when AUTO_NUMBER columns are added
  */
-function generateTaskPrefix(projectName: string): string {
-  // Clean and split into words
-  const cleanName = projectName.replace(/[^a-zA-Z0-9\s]/g, ' ');
-  const words = cleanName.split(/\s+/).filter((w) => w.length > 0);
+// function generateTaskPrefix(projectName: string): string {
+//   // Clean and split into words
+//   const cleanName = projectName.replace(/[^a-zA-Z0-9\s]/g, ' ');
+//   const words = cleanName.split(/\s+/).filter((w) => w.length > 0);
 
-  if (words.length === 0) {
-    return 'TSK';
-  }
+//   if (words.length === 0) {
+//     return 'TSK';
+//   }
 
-  // Collect initials from all words
-  const initials = words.map((w) => w[0].toUpperCase()).join('');
+//   // Collect initials from all words
+//   const initials = words.map((w) => w[0].toUpperCase()).join('');
 
-  if (initials.length >= 3) {
-    return initials.substring(0, 4);
-  }
+//   if (initials.length >= 3) {
+//     return initials.substring(0, 4);
+//   }
 
-  // Not enough initials, supplement from first word
-  const firstWord = words[0].toUpperCase();
-  return (initials + firstWord.substring(1)).substring(0, 4);
-}
+//   // Not enough initials, supplement from first word
+//   const firstWord = words[0].toUpperCase();
+//   return (initials + firstWord.substring(1)).substring(0, 4);
+// }
 
 /**
  * Create a Smartsheet row from a Project Online Task
@@ -414,11 +387,25 @@ export function createTaskRow(
     });
   }
 
-  return {
+  // Build row object
+  const row: SmartsheetRow = {
     cells,
-    indent: task.OutlineLevel || 0, // Set hierarchy level
-    toBottom: true,
   };
+
+  // Handle positioning based on hierarchy level
+  // Project Online OutlineLevel: 1 = top level, 2 = first indent, 3 = second indent, etc.
+  // Smartsheet indent: 0 = top level, 1 = first indent, 2 = second indent, etc.
+  const outlineLevel = task.OutlineLevel || 1; // Default to top level
+
+  if (outlineLevel > 1) {
+    // For indented tasks, use indent (cannot use toBottom with indent)
+    row.indent = outlineLevel - 1; // Convert PO level to Smartsheet indent
+  } else {
+    // For top-level tasks (OutlineLevel = 1), use toBottom
+    row.toBottom = true;
+  }
+
+  return row;
 }
 
 /**
@@ -531,7 +518,7 @@ export async function configureTaskPicklistColumns(
 ): Promise<void> {
   // Configure Status column
   const statusRef = pmoStandards.referenceSheets['Task - Status'];
-  await client.updateColumn(sheetId, statusColumnId, {
+  await client.updateColumn?.(sheetId, statusColumnId, {
     type: 'PICKLIST',
     options: {
       strict: true,
@@ -549,7 +536,7 @@ export async function configureTaskPicklistColumns(
 
   // Configure Priority column
   const priorityRef = pmoStandards.referenceSheets['Task - Priority'];
-  await client.updateColumn(sheetId, priorityColumnId, {
+  await client.updateColumn?.(sheetId, priorityColumnId, {
     type: 'PICKLIST',
     options: {
       strict: true,
@@ -567,7 +554,7 @@ export async function configureTaskPicklistColumns(
 
   // Configure Constraint Type column
   const constraintRef = pmoStandards.referenceSheets['Task - Constraint Type'];
-  await client.updateColumn(sheetId, constraintColumnId, {
+  await client.updateColumn?.(sheetId, constraintColumnId, {
     type: 'PICKLIST',
     options: {
       strict: true,
@@ -634,7 +621,7 @@ export async function configureAssignmentColumns(
 
     if (definition.type === 'MULTI_CONTACT_LIST') {
       // Configure to source from Resources sheet Contact column
-      await client.updateColumn(tasksSheetId, columnId, {
+      await client.updateColumn?.(tasksSheetId, columnId, {
         type: 'MULTI_CONTACT_LIST',
         contactOptions: [
           {
@@ -646,7 +633,7 @@ export async function configureAssignmentColumns(
     } else if (definition.type === 'MULTI_PICKLIST') {
       // MULTI_PICKLIST columns for Material and Cost resources
       // These use text-based selection without contact sourcing
-      await client.updateColumn(tasksSheetId, columnId, {
+      await client.updateColumn?.(tasksSheetId, columnId, {
         type: 'MULTI_PICKLIST',
       });
     }
@@ -688,4 +675,253 @@ export function validateTask(task: ProjectOnlineTask): ValidationResult {
     errors,
     warnings,
   };
+}
+
+/**
+ * Class-based wrapper for integration tests
+ * Provides the expected API while using the functional implementation
+ */
+export class TaskTransformer {
+  constructor(private client: SmartsheetClient) {}
+
+  async transformTasks(
+    tasks: ProjectOnlineTask[],
+    sheetId: number
+  ): Promise<{ rowsCreated: number; sheetId: number }> {
+    // Validate all tasks
+    for (const task of tasks) {
+      const validation = validateTask(task);
+      if (!validation.isValid) {
+        throw new Error(`Invalid task ${task.TaskName}: ${validation.errors.join(', ')}`);
+      }
+    }
+
+    // The sheet was created by ProjectTransformer with only a primary "Task Name" column
+    // We need to add all the task columns before we can add rows
+
+    // Build column map as we add columns (more reliable than fetching sheet again)
+    const columnMap: Record<string, number> = {};
+
+    // First, get the existing Task Name column ID
+    const initialSheet = await this.client.sheets?.getSheet?.({
+      id: sheetId,
+    });
+
+    if (initialSheet?.columns?.[0]?.id) {
+      columnMap['Task Name'] = initialSheet.columns[0].id;
+      console.log(`DEBUG: Added Task Name column to map with ID ${initialSheet.columns[0].id}`);
+    } else {
+      console.warn(`DEBUG: Could not find Task Name column in initial sheet`);
+    }
+
+    // Get all task columns (this returns the full column structure including Task Name)
+    const allTaskColumns = createTasksSheetColumns('Project'); // Use a placeholder name
+
+    // Remove the first column (Task Name) since it already exists as the primary column
+    const columnsToAdd = allTaskColumns.slice(1);
+
+    // Add columns one at a time using the correct SDK method
+    console.log(`DEBUG: Adding ${columnsToAdd.length} columns to sheet ${sheetId}`);
+
+    for (let i = 0; i < columnsToAdd.length; i++) {
+      const column = columnsToAdd[i];
+      try {
+        // Add index to specify position (after existing column 0)
+        const columnWithIndex = { ...column, index: i + 1 };
+
+        // Use sheets.addColumn (singular) which is the correct SDK method
+        const addResponse = await this.client.sheets?.addColumn?.({
+          sheetId,
+          body: columnWithIndex,
+        });
+
+        console.log(
+          `DEBUG: addColumn response for ${column.title}:`,
+          JSON.stringify(addResponse, null, 2)
+        );
+
+        // Extract the added column from response
+        const addedColumn = addResponse?.result || addResponse;
+
+        if (addedColumn?.id && column.title) {
+          columnMap[column.title] = addedColumn.id;
+          console.log(`DEBUG: Added column ${column.title} with ID ${addedColumn.id}`);
+        } else {
+          console.warn(`DEBUG: No ID returned for column ${column.title}`);
+        }
+      } catch (error) {
+        console.error(`DEBUG: Failed to add column ${column.title}:`, error);
+        throw error;
+      }
+    }
+
+    console.log(
+      `DEBUG: Final columnMap has ${Object.keys(columnMap).length} columns:`,
+      Object.keys(columnMap)
+    );
+
+    // Helper function to build cells for a task
+    const buildCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
+      const cells: SmartsheetCell[] = [];
+
+      if (columnMap['Task Name']) {
+        cells.push({ columnId: columnMap['Task Name'], value: task.TaskName });
+      }
+      if (columnMap['Project Online Task ID']) {
+        cells.push({ columnId: columnMap['Project Online Task ID'], value: task.Id });
+      }
+      if (columnMap['Start Date'] && task.Start) {
+        cells.push({ columnId: columnMap['Start Date'], value: convertDateTimeToDate(task.Start) });
+      }
+      if (columnMap['End Date'] && task.Finish) {
+        cells.push({ columnId: columnMap['End Date'], value: convertDateTimeToDate(task.Finish) });
+      }
+      // NOTE: Duration is auto-calculated by Smartsheet from Start/End dates
+      // Do NOT set it directly - it will cause a 500 error
+      // if (columnMap['Duration'] && task.Duration) {
+      //   cells.push({ columnId: columnMap['Duration'], value: convertDurationToDecimalDays(task.Duration) });
+      // }
+      if (columnMap['% Complete'] && task.PercentComplete !== undefined) {
+        cells.push({ columnId: columnMap['% Complete'], value: `${task.PercentComplete}%` });
+      }
+      if (columnMap['Status'] && task.PercentComplete !== undefined) {
+        cells.push({
+          columnId: columnMap['Status'],
+          value: deriveTaskStatus(task.PercentComplete),
+        });
+      }
+      if (columnMap['Priority'] && task.Priority !== undefined) {
+        cells.push({ columnId: columnMap['Priority'], value: mapTaskPriority(task.Priority) });
+      }
+      if (columnMap['Work (hrs)'] && task.Work) {
+        cells.push({
+          columnId: columnMap['Work (hrs)'],
+          value: convertDurationToHoursString(task.Work),
+        });
+      }
+      if (columnMap['Actual Work (hrs)'] && task.ActualWork) {
+        cells.push({
+          columnId: columnMap['Actual Work (hrs)'],
+          value: convertDurationToHoursString(task.ActualWork),
+        });
+      }
+      if (columnMap['Milestone']) {
+        cells.push({ columnId: columnMap['Milestone'], value: task.IsMilestone || false });
+      }
+      if (columnMap['Notes'] && task.TaskNotes) {
+        cells.push({ columnId: columnMap['Notes'], value: task.TaskNotes });
+      }
+      if (columnMap['Predecessors'] && task.Predecessors) {
+        cells.push({ columnId: columnMap['Predecessors'], value: task.Predecessors });
+      }
+      if (columnMap['Constraint Type'] && task.ConstraintType) {
+        cells.push({ columnId: columnMap['Constraint Type'], value: task.ConstraintType });
+      }
+      if (columnMap['Constraint Date'] && task.ConstraintDate) {
+        cells.push({
+          columnId: columnMap['Constraint Date'],
+          value: convertDateTimeToDate(task.ConstraintDate),
+        });
+      }
+      if (columnMap['Deadline'] && task.Deadline) {
+        cells.push({
+          columnId: columnMap['Deadline'],
+          value: convertDateTimeToDate(task.Deadline),
+        });
+      }
+      if (columnMap['Project Online Created Date'] && task.CreatedDate) {
+        cells.push({
+          columnId: columnMap['Project Online Created Date'],
+          value: convertDateTimeToDate(task.CreatedDate),
+        });
+      }
+      if (columnMap['Project Online Modified Date'] && task.ModifiedDate) {
+        cells.push({
+          columnId: columnMap['Project Online Modified Date'],
+          value: convertDateTimeToDate(task.ModifiedDate),
+        });
+      }
+
+      return cells;
+    };
+
+    // Add rows in batches by outline level to establish hierarchy
+    // Map task ID to created row ID for parent-child relationships
+    const taskIdToRowId: Record<string, number> = {};
+    let totalRowsCreated = 0;
+
+    // Find max outline level
+    const maxLevel = Math.max(...tasks.map((t) => t.OutlineLevel || 1));
+
+    // Add tasks level by level, grouped by parent
+    for (let level = 1; level <= maxLevel; level++) {
+      const tasksAtLevel = tasks.filter((t) => (t.OutlineLevel || 1) === level);
+      if (tasksAtLevel.length === 0) continue;
+
+      // Group tasks by their parent ID (or 'NO_PARENT' for level 1 or missing parents)
+      const tasksByParent = new Map<string, ProjectOnlineTask[]>();
+
+      for (const task of tasksAtLevel) {
+        let groupKey: string;
+        if (level === 1) {
+          groupKey = 'NO_PARENT';
+        } else {
+          const parentRowId = task.ParentTaskId ? taskIdToRowId[task.ParentTaskId] : null;
+          groupKey = parentRowId ? `PARENT_${parentRowId}` : 'NO_PARENT';
+        }
+
+        if (!tasksByParent.has(groupKey)) {
+          tasksByParent.set(groupKey, []);
+        }
+        tasksByParent.get(groupKey)!.push(task);
+      }
+
+      // Add each group separately (all rows in a batch must use same location attribute)
+      for (const [groupKey, groupTasks] of tasksByParent.entries()) {
+        const rowsToAdd = groupTasks.map((task) => {
+          const cells = buildCells(task);
+          const row: any = { cells };
+
+          if (groupKey === 'NO_PARENT') {
+            row.toBottom = true;
+          } else {
+            // Extract parent ID from groupKey
+            const parentRowId = parseInt(groupKey.replace('PARENT_', ''));
+            row.parentId = parentRowId;
+          }
+
+          return row;
+        });
+
+        // Add this group's rows in a batch
+        try {
+          const addRowsResponse = await this.client.sheets?.addRows?.({
+            sheetId,
+            body: rowsToAdd,
+          });
+
+          const createdRows = addRowsResponse?.result || addRowsResponse || [];
+
+          // Map task IDs to row IDs for next level
+          groupTasks.forEach((task, index) => {
+            if (createdRows[index]?.id && task.Id) {
+              taskIdToRowId[task.Id] = createdRows[index].id;
+            }
+          });
+
+          totalRowsCreated += createdRows.length;
+        } catch (error) {
+          console.error(`DEBUG: Failed to add rows at level ${level}, group ${groupKey}:`, error);
+          throw error;
+        }
+      }
+    }
+
+    console.log(`DEBUG: Created ${totalRowsCreated} total rows with hierarchy`);
+
+    return {
+      rowsCreated: totalRowsCreated,
+      sheetId,
+    };
+  }
 }

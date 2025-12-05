@@ -67,6 +67,11 @@ export interface SmartsheetColumn {
   contactOptions?: SmartsheetContactOptions[];
   validation?: boolean;
   format?: string;
+  autoNumberFormat?: {
+    prefix?: string;
+    suffix?: string;
+    fill?: string;
+  };
   symbol?: string;
   systemColumnType?: string;
 }

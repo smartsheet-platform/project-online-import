@@ -18,6 +18,7 @@ import {
   convertDateTimeToDate,
   mapPriority,
   createContactObject,
+  createSheetName,
 } from './utils';
 
 /**
@@ -237,7 +238,7 @@ export async function configureProjectPicklistColumns(
 ): Promise<void> {
   // Configure Status column to source from "Project - Status" reference sheet
   const statusReferenceSheet = pmoStandards.referenceSheets['Project - Status'];
-  await client.updateColumn(sheetId, statusColumnId, {
+  await client.updateColumn?.(sheetId, statusColumnId, {
     type: 'PICKLIST',
     options: {
       strict: true,
@@ -255,7 +256,7 @@ export async function configureProjectPicklistColumns(
 
   // Configure Priority column to source from "Project - Priority" reference sheet
   const priorityReferenceSheet = pmoStandards.referenceSheets['Project - Priority'];
-  await client.updateColumn(sheetId, priorityColumnId, {
+  await client.updateColumn?.(sheetId, priorityColumnId, {
     type: 'PICKLIST',
     options: {
       strict: true,
@@ -320,4 +321,114 @@ export function validateProject(project: ProjectOnlineProject): ProjectValidatio
     errors,
     warnings,
   };
+}
+
+/**
+ * Class-based wrapper for integration tests
+ * Provides the expected API while using the functional implementation
+ */
+export class ProjectTransformer {
+  constructor(private client: SmartsheetClient) {}
+
+  async transformProject(
+    project: ProjectOnlineProject,
+    workspaceId: number
+  ): Promise<{
+    workspace: SmartsheetWorkspace;
+    sheets: {
+      summarySheet: { id: number; name: string };
+      taskSheet: { id: number; name: string };
+      resourceSheet: { id: number; name: string };
+    };
+  }> {
+    // Validate project
+    const validation = validateProject(project);
+    if (!validation.valid) {
+      throw new Error(`Invalid project: ${validation.errors.join(', ')}`);
+    }
+
+    // Transform to workspace structure
+    const workspace = transformProjectToWorkspace(project);
+
+    // Create summary sheet with minimal structure
+    const summaryResponse = await this.client.sheets?.createSheetInWorkspace?.({
+      workspaceId,
+      body: {
+        name: createSheetName(workspace.name, 'Summary'),
+        columns: [
+          {
+            title: 'Project Name',
+            type: 'TEXT_NUMBER',
+            primary: true,
+          },
+        ],
+      },
+    });
+
+    if (!summaryResponse?.result) {
+      throw new Error('Failed to create summary sheet');
+    }
+
+    const createdSummary = summaryResponse.result;
+
+    // Create task sheet (will be populated by TaskTransformer)
+    const taskResponse = await this.client.sheets?.createSheetInWorkspace?.({
+      workspaceId,
+      body: {
+        name: createSheetName(workspace.name, 'Tasks'),
+        columns: [
+          {
+            title: 'Task Name',
+            type: 'TEXT_NUMBER',
+            primary: true,
+          },
+        ],
+      },
+    });
+
+    if (!taskResponse?.result) {
+      throw new Error('Failed to create task sheet');
+    }
+
+    const taskSheet = taskResponse.result;
+
+    // Create resource sheet (will be populated by ResourceTransformer)
+    const resourceResponse = await this.client.sheets?.createSheetInWorkspace?.({
+      workspaceId,
+      body: {
+        name: createSheetName(workspace.name, 'Resources'),
+        columns: [
+          {
+            title: 'Resource Name',
+            type: 'TEXT_NUMBER',
+            primary: true,
+          },
+        ],
+      },
+    });
+
+    if (!resourceResponse?.result) {
+      throw new Error('Failed to create resource sheet');
+    }
+
+    const resourceSheet = resourceResponse.result;
+
+    return {
+      workspace: { ...workspace, id: workspaceId },
+      sheets: {
+        summarySheet: {
+          id: createdSummary.id!,
+          name: createdSummary.name!,
+        },
+        taskSheet: {
+          id: taskSheet.id!,
+          name: taskSheet.name!,
+        },
+        resourceSheet: {
+          id: resourceSheet.id!,
+          name: resourceSheet.name!,
+        },
+      },
+    };
+  }
 }

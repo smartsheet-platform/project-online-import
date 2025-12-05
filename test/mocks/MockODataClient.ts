@@ -1,6 +1,7 @@
 /**
  * Mock OData client for testing transformation logic
  * Simulates Project Online oData API without requiring network calls
+ * Enhanced with builder pattern support and fixture loading
  */
 
 import {
@@ -47,6 +48,76 @@ export class MockODataClient {
    */
   addAssignment(assignment: ProjectOnlineAssignment): void {
     this.assignments.set(assignment.Id, assignment);
+  }
+
+  /**
+   * Bulk add projects
+   */
+  addProjects(projects: ProjectOnlineProject[]): void {
+    projects.forEach((p) => this.addProject(p));
+  }
+
+  /**
+   * Bulk add tasks
+   */
+  addTasks(tasks: ProjectOnlineTask[]): void {
+    tasks.forEach((t) => this.addTask(t));
+  }
+
+  /**
+   * Bulk add resources
+   */
+  addResources(resources: ProjectOnlineResource[]): void {
+    resources.forEach((r) => this.addResource(r));
+  }
+
+  /**
+   * Bulk add assignments
+   */
+  addAssignments(assignments: ProjectOnlineAssignment[]): void {
+    assignments.forEach((a) => this.addAssignment(a));
+  }
+
+  /**
+   * Load a complete fixture (project, tasks, resources, assignments)
+   */
+  loadFixture(fixture: {
+    project?: ProjectOnlineProject;
+    projects?: ProjectOnlineProject[];
+    tasks?: ProjectOnlineTask[];
+    resources?:
+      | ProjectOnlineResource[]
+      | {
+          work: ProjectOnlineResource[];
+          material: ProjectOnlineResource[];
+          cost: ProjectOnlineResource[];
+        };
+    assignments?: ProjectOnlineAssignment[];
+  }): void {
+    if (fixture.project) {
+      this.addProject(fixture.project);
+    }
+    if (fixture.projects) {
+      this.addProjects(fixture.projects);
+    }
+    if (fixture.tasks) {
+      this.addTasks(fixture.tasks);
+    }
+    if (fixture.resources) {
+      if (Array.isArray(fixture.resources)) {
+        this.addResources(fixture.resources);
+      } else {
+        // Handle categorized resources
+        this.addResources([
+          ...fixture.resources.work,
+          ...fixture.resources.material,
+          ...fixture.resources.cost,
+        ]);
+      }
+    }
+    if (fixture.assignments) {
+      this.addAssignments(fixture.assignments);
+    }
   }
 
   /**

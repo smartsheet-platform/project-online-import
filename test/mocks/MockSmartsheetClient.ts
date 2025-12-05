@@ -45,8 +45,9 @@ interface ColumnUpdateCall {
  * Mock Smartsheet client that tracks all operations as a test spy
  */
 export class MockSmartsheetClient implements SmartsheetClient {
-  private workspaces: Map<number, SmartsheetWorkspace> = new Map();
-  private sheets: Map<number, SmartsheetSheet> = new Map();
+  // Internal storage (renamed to avoid interface conflicts)
+  private _workspaceStorage: Map<number, SmartsheetWorkspace> = new Map();
+  private _sheetStorage: Map<number, SmartsheetSheet> = new Map();
   private nextWorkspaceId: number = 1000;
   private nextSheetId: number = 2000;
   private nextColumnId: number = 3000;
@@ -81,8 +82,8 @@ export class MockSmartsheetClient implements SmartsheetClient {
    * Reset all mock data and test spy state
    */
   reset(): void {
-    this.workspaces.clear();
-    this.sheets.clear();
+    this._workspaceStorage.clear();
+    this._sheetStorage.clear();
     this.workspaceCreations = [];
     this.sheetCreations = [];
     this.columnAdditions = [];
@@ -159,7 +160,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
       permalink: `https://app.smartsheet.com/workspace/${workspaceId}`,
     };
 
-    this.workspaces.set(workspaceId, createdWorkspace);
+    this._workspaceStorage.set(workspaceId, createdWorkspace);
     this.workspaceCreations.push({
       workspace: createdWorkspace,
       timestamp: new Date(),
@@ -175,7 +176,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     const operation = 'getWorkspace';
     this.checkFailure(operation);
 
-    const workspace = this.workspaces.get(workspaceId);
+    const workspace = this._workspaceStorage.get(workspaceId);
     if (!workspace) {
       throw new Error(`Workspace not found: ${workspaceId}`);
     }
@@ -193,7 +194,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     this.checkFailure(operation);
 
     // Verify workspace exists
-    if (!this.workspaces.has(workspaceId)) {
+    if (!this._workspaceStorage.has(workspaceId)) {
       throw new Error(`Workspace not found: ${workspaceId}`);
     }
 
@@ -212,7 +213,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
       permalink: `https://app.smartsheet.com/sheets/${sheetId}`,
     };
 
-    this.sheets.set(sheetId, createdSheet);
+    this._sheetStorage.set(sheetId, createdSheet);
     this.sheetCreations.push({
       workspaceId,
       sheet: createdSheet,
@@ -229,7 +230,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     const operation = 'getSheet';
     this.checkFailure(operation);
 
-    const sheet = this.sheets.get(sheetId);
+    const sheet = this._sheetStorage.get(sheetId);
     if (!sheet) {
       throw new Error(`Sheet not found: ${sheetId}`);
     }
@@ -243,7 +244,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     const operation = 'addColumns';
     this.checkFailure(operation);
 
-    const sheet = this.sheets.get(sheetId);
+    const sheet = this._sheetStorage.get(sheetId);
     if (!sheet) {
       throw new Error(`Sheet not found: ${sheetId}`);
     }
@@ -270,7 +271,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     const operation = 'addRows';
     this.checkFailure(operation);
 
-    const sheet = this.sheets.get(sheetId);
+    const sheet = this._sheetStorage.get(sheetId);
     if (!sheet) {
       throw new Error(`Sheet not found: ${sheetId}`);
     }
@@ -299,7 +300,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     const operation = 'updateRows';
     this.checkFailure(operation);
 
-    const sheet = this.sheets.get(sheetId);
+    const sheet = this._sheetStorage.get(sheetId);
     if (!sheet) {
       throw new Error(`Sheet not found: ${sheetId}`);
     }
@@ -320,7 +321,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     const operation = 'updateColumn';
     this.checkFailure(operation);
 
-    const sheet = this.sheets.get(sheetId);
+    const sheet = this._sheetStorage.get(sheetId);
     if (!sheet) {
       throw new Error(`Sheet not found: ${sheetId}`);
     }
@@ -358,7 +359,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
     const operation = 'updateSheet';
     this.checkFailure(operation);
 
-    const sheet = this.sheets.get(sheetId);
+    const sheet = this._sheetStorage.get(sheetId);
     if (!sheet) {
       throw new Error(`Sheet not found: ${sheetId}`);
     }

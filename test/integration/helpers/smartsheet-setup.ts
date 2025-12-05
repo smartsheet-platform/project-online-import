@@ -1,0 +1,353 @@
+/**
+ * Smartsheet integration test helpers
+ * Handles workspace creation, cleanup, and verification using the real Smartsheet SDK
+ */
+
+import { SmartsheetClient } from '../../../src/types/SmartsheetClient';
+
+export interface TestWorkspaceConfig {
+  prefix: string;
+  cleanupOnSuccess: boolean;
+  cleanupOnFailure: boolean;
+}
+
+export interface TestWorkspace {
+  id: number;
+  name: string;
+  permalink: string;
+  createdAt: Date;
+}
+
+export interface TestSheet {
+  id: number;
+  name: string;
+  permalink: string;
+}
+
+/**
+ * Default configuration from environment variables
+ */
+export function getDefaultConfig(): TestWorkspaceConfig {
+  return {
+    prefix: process.env.TEST_WORKSPACE_PREFIX || 'ETL Test -',
+    cleanupOnSuccess: process.env.CLEANUP_TEST_WORKSPACES !== 'false',
+    cleanupOnFailure: process.env.CLEANUP_TEST_WORKSPACES_ON_FAILURE === 'true',
+  };
+}
+
+/**
+ * Create a test workspace with a unique name
+ * Smartsheet workspace names are limited to 50 characters
+ */
+export async function createTestWorkspace(
+  client: SmartsheetClient,
+  testName: string,
+  config: TestWorkspaceConfig = getDefaultConfig()
+): Promise<TestWorkspace> {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+  // Smartsheet workspace name limit is 50 characters
+  const maxNameLength = 50;
+  const prefixLength = config.prefix.length;
+  const timestampLength = timestamp.length + 1; // +1 for space before timestamp
+  const maxTestNameLength = maxNameLength - prefixLength - timestampLength;
+
+  let truncatedTestName = testName;
+  if (testName.length > maxTestNameLength) {
+    // Truncate and add ellipsis, ensuring we stay within limit
+    truncatedTestName = testName.substring(0, maxTestNameLength - 3) + '...';
+  }
+
+  const workspaceName = `${config.prefix}${truncatedTestName} ${timestamp}`;
+
+  try {
+    const response = await client.workspaces?.createWorkspace?.({
+      body: {
+        name: workspaceName,
+      },
+    });
+
+    // Smartsheet SDK returns: { message, resultCode, result: { id, name, permalink, ... } }
+    const workspaceData = response?.result;
+
+    if (!workspaceData || !workspaceData.id) {
+      throw new Error('Failed to create workspace: Invalid response structure');
+    }
+
+    return {
+      id: workspaceData.id!,
+      name: workspaceData.name!,
+      permalink: workspaceData.permalink!,
+      createdAt: new Date(),
+    };
+  } catch (error) {
+    console.error('Workspace creation error:', error);
+    throw new Error(
+      `Failed to create test workspace: ${error instanceof Error ? error.message : JSON.stringify(error)}`
+    );
+  }
+}
+
+/**
+ * Delete a test workspace
+ */
+export async function deleteTestWorkspace(
+  client: SmartsheetClient,
+  workspaceId: number
+): Promise<void> {
+  try {
+    await client.workspaces?.deleteWorkspace?.({
+      workspaceId,
+    });
+  } catch (error) {
+    console.warn(`Failed to delete workspace ${workspaceId}:`, error);
+    // Don't throw - cleanup is best effort
+  }
+}
+
+/**
+ * Find and cleanup old test workspaces
+ */
+export async function cleanupOldTestWorkspaces(
+  client: SmartsheetClient,
+  olderThanHours: number = 24,
+  config: TestWorkspaceConfig = getDefaultConfig()
+): Promise<number> {
+  try {
+    const response = await client.workspaces?.listWorkspaces?.({
+      queryParameters: { includeAll: true },
+    });
+    const workspaces = response?.result?.data || [];
+
+    const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
+    let deletedCount = 0;
+
+    for (const workspace of workspaces) {
+      if (!workspace.name?.startsWith(config.prefix)) {
+        continue;
+      }
+
+      // Parse timestamp from workspace name
+      const match = workspace.name.match(/(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/);
+      if (match) {
+        const createdAt = new Date(match[1].replace(/-/g, ':'));
+        if (createdAt.getTime() < cutoffTime) {
+          await deleteTestWorkspace(client, workspace.id!);
+          deletedCount++;
+        }
+      }
+    }
+
+    return deletedCount;
+  } catch (error) {
+    console.warn('Failed to cleanup old workspaces:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get a sheet from a workspace by name
+ */
+export async function getSheetFromWorkspace(
+  client: SmartsheetClient,
+  workspaceId: number,
+  sheetName: string
+): Promise<TestSheet | null> {
+  try {
+    // Use non-deprecated API: getWorkspaceChildren instead of getWorkspace
+    const response = await client.workspaces?.getWorkspaceChildren?.({
+      workspaceId,
+      queryParameters: { includeAll: true },
+    });
+
+    // getWorkspaceChildren returns { data: [...] } where each item has resourceType
+    // Filter for items with resourceType === 'sheet'
+    const items = response?.data || [];
+    const sheets = items.filter((item: any) => item.resourceType === 'sheet');
+    const sheet = sheets.find((s: any) => s.name === sheetName);
+
+    if (!sheet) {
+      return null;
+    }
+
+    return {
+      id: sheet.id!,
+      name: sheet.name!,
+      permalink: sheet.permalink || '',
+    };
+  } catch (error) {
+    throw new Error(
+      `Failed to get sheet from workspace: ${error instanceof Error ? error.message : JSON.stringify(error)}`
+    );
+  }
+}
+
+/**
+ * Get all sheets from a workspace
+ */
+export async function getAllSheetsFromWorkspace(
+  client: SmartsheetClient,
+  workspaceId: number
+): Promise<TestSheet[]> {
+  try {
+    // Use non-deprecated API: getWorkspaceChildren instead of getWorkspace
+    const response = await client.workspaces?.getWorkspaceChildren?.({
+      workspaceId,
+      queryParameters: { includeAll: true },
+    });
+
+    // getWorkspaceChildren returns { data: [...] } where each item has resourceType
+    // Filter for items with resourceType === 'sheet'
+    const items = response?.data || [];
+    const sheets = items.filter((item: any) => item.resourceType === 'sheet');
+
+    return sheets.map((sheet: any) => ({
+      id: sheet.id!,
+      name: sheet.name!,
+      permalink: sheet.permalink || '',
+    }));
+  } catch (error) {
+    throw new Error(
+      `Failed to get sheets from workspace: ${error instanceof Error ? error.message : JSON.stringify(error)}`
+    );
+  }
+}
+
+/**
+ * Verify workspace structure matches expected
+ */
+export async function verifyWorkspaceStructure(
+  client: SmartsheetClient,
+  workspaceId: number,
+  expectedSheetNames: string[]
+): Promise<{ success: boolean; missing: string[]; extra: string[] }> {
+  const sheets = await getAllSheetsFromWorkspace(client, workspaceId);
+  const actualNames = sheets.map((s) => s.name);
+
+  const missing = expectedSheetNames.filter((name) => !actualNames.includes(name));
+  const extra = actualNames.filter((name) => !expectedSheetNames.includes(name));
+
+  return {
+    success: missing.length === 0 && extra.length === 0,
+    missing,
+    extra,
+  };
+}
+
+/**
+ * Get full sheet details including columns and rows
+ */
+export async function getSheetDetails(client: SmartsheetClient, sheetId: number) {
+  try {
+    const sheet = await client.sheets?.getSheet?.({
+      id: sheetId,
+      queryParameters: {
+        level: 2, // Include all row data including parent-child relationships
+      },
+    });
+
+    return sheet;
+  } catch (error) {
+    throw new Error(
+      `Failed to get sheet details: ${error instanceof Error ? error.message : JSON.stringify(error)}`
+    );
+  }
+}
+
+/**
+ * Verify sheet column structure
+ */
+export async function verifySheetColumns(
+  client: SmartsheetClient,
+  sheetId: number,
+  expectedColumns: Array<{ title: string; type: string }>
+): Promise<{
+  success: boolean;
+  missing: string[];
+  typeMismatches: Array<{ title: string; expected: string; actual: string }>;
+}> {
+  const sheet = await getSheetDetails(client, sheetId);
+  const columns = sheet?.columns || [];
+
+  const missing: string[] = [];
+  const typeMismatches: Array<{ title: string; expected: string; actual: string }> = [];
+
+  for (const expected of expectedColumns) {
+    const actual = columns.find((c: any) => c.title === expected.title);
+    if (!actual) {
+      missing.push(expected.title);
+    } else if (actual.type !== expected.type) {
+      typeMismatches.push({
+        title: expected.title,
+        expected: expected.type,
+        actual: actual.type!,
+      });
+    }
+  }
+
+  return {
+    success: missing.length === 0 && typeMismatches.length === 0,
+    missing,
+    typeMismatches,
+  };
+}
+
+/**
+ * Verify sheet row count
+ */
+export async function verifySheetRowCount(
+  client: SmartsheetClient,
+  sheetId: number,
+  expectedCount: number,
+  tolerance: number = 0
+): Promise<{ success: boolean; expected: number; actual: number }> {
+  const sheet = await getSheetDetails(client, sheetId);
+  const actualCount = sheet?.rows?.length || 0;
+
+  return {
+    success: Math.abs(actualCount - expectedCount) <= tolerance,
+    expected: expectedCount,
+    actual: actualCount,
+  };
+}
+
+/**
+ * Create a test workspace manager for use in tests
+ */
+export class TestWorkspaceManager {
+  private workspaces: TestWorkspace[] = [];
+  private config: TestWorkspaceConfig;
+  public client: SmartsheetClient;
+
+  constructor(client: SmartsheetClient, config?: Partial<TestWorkspaceConfig>) {
+    this.client = client;
+    this.config = { ...getDefaultConfig(), ...config };
+  }
+
+  async createWorkspace(testName: string): Promise<TestWorkspace> {
+    const workspace = await createTestWorkspace(this.client, testName, this.config);
+    this.workspaces.push(workspace);
+    return workspace;
+  }
+
+  async cleanup(testPassed: boolean = true): Promise<void> {
+    const shouldCleanup = testPassed ? this.config.cleanupOnSuccess : this.config.cleanupOnFailure;
+
+    if (!shouldCleanup) {
+      console.log('Skipping workspace cleanup (preserving for inspection)');
+      this.workspaces.forEach((ws) => {
+        console.log(`  - ${ws.name}: ${ws.permalink}`);
+      });
+      return;
+    }
+
+    for (const workspace of this.workspaces) {
+      await deleteTestWorkspace(this.client, workspace.id);
+    }
+    this.workspaces = [];
+  }
+
+  getWorkspaces(): TestWorkspace[] {
+    return [...this.workspaces];
+  }
+}

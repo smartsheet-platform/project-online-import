@@ -48,6 +48,9 @@ export async function createPMOStandardsWorkspace(
   client: SmartsheetClient
 ): Promise<PMOStandardsWorkspaceInfo> {
   // Create workspace
+  if (!client.createWorkspace) {
+    throw new Error('SmartsheetClient does not support createWorkspace');
+  }
   const workspace = await client.createWorkspace({
     name: 'PMO Standards',
   });
@@ -89,6 +92,9 @@ export async function ensureStandardReferenceSheet(
     ],
   };
 
+  if (!client.createSheetInWorkspace) {
+    throw new Error('SmartsheetClient does not support createSheetInWorkspace');
+  }
   const createdSheet = await client.createSheetInWorkspace(workspaceId, sheet);
   const nameColumnId = createdSheet.columns![0].id!;
 
@@ -103,6 +109,9 @@ export async function ensureStandardReferenceSheet(
     ],
   }));
 
+  if (!client.addRows) {
+    throw new Error('SmartsheetClient does not support addRows');
+  }
   await client.addRows(createdSheet.id!, rows);
 
   return {

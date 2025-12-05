@@ -274,7 +274,7 @@ export async function configureResourcePicklistColumns(
 ): Promise<void> {
   // Configure Resource Type column
   const resourceTypeRef = pmoStandards.referenceSheets['Resource - Type'];
-  await client.updateColumn(sheetId, resourceTypeColumnId, {
+  await client.updateColumn?.(sheetId, resourceTypeColumnId, {
     type: 'PICKLIST',
     options: {
       strict: true,
@@ -292,7 +292,7 @@ export async function configureResourcePicklistColumns(
 
   // Configure Department column
   const departmentRef = pmoStandards.referenceSheets['Resource - Department'];
-  await client.updateColumn(sheetId, departmentColumnId, {
+  await client.updateColumn?.(sheetId, departmentColumnId, {
     type: 'PICKLIST',
     options: {
       strict: true,
@@ -358,4 +358,227 @@ export function validateResource(resource: ProjectOnlineResource): ResourceValid
     errors,
     warnings,
   };
+}
+
+/**
+ * Class-based wrapper for integration tests
+ * Provides the expected API while using the functional implementation
+ */
+export class ResourceTransformer {
+  constructor(private client: SmartsheetClient) {}
+
+  async transformResources(
+    resources: ProjectOnlineResource[],
+    sheetId: number
+  ): Promise<{ rowsCreated: number; sheetId: number }> {
+    // Validate all resources
+    for (const resource of resources) {
+      const validation = validateResource(resource);
+      if (!validation.valid) {
+        throw new Error(`Invalid resource ${resource.Name}: ${validation.errors.join(', ')}`);
+      }
+    }
+
+    // Build columnMap: Start by fetching the existing primary column
+    const columnMap: Record<string, number> = {};
+
+    // Fetch initial sheet to get primary column (Resource Name)
+    if (!this.client.sheets?.getSheet) {
+      throw new Error('Smartsheet client sheets.getSheet method not available');
+    }
+    const initialSheetResponse = await this.client.sheets.getSheet({ id: sheetId });
+    const initialSheet = initialSheetResponse?.result || initialSheetResponse;
+    if (initialSheet?.columns?.[0]?.id) {
+      columnMap['Resource Name'] = initialSheet.columns[0].id;
+    }
+
+    // Discover unique department values for picklist
+    const uniqueDepartments = discoverResourceDepartments(resources);
+
+    // Define additional columns to add (excluding primary which already exists)
+    const additionalColumns = [
+      {
+        title: 'Project Online Resource ID',
+        type: 'TEXT_NUMBER',
+        width: 150,
+        hidden: true,
+        locked: true,
+      },
+      { title: 'Email', type: 'TEXT_NUMBER', width: 200 },
+      { title: 'Resource Type', type: 'PICKLIST', width: 120 },
+      { title: 'Max Units', type: 'TEXT_NUMBER', width: 100 },
+      { title: 'Standard Rate', type: 'TEXT_NUMBER', width: 120 },
+      { title: 'Overtime Rate', type: 'TEXT_NUMBER', width: 120 },
+      { title: 'Cost Per Use', type: 'TEXT_NUMBER', width: 120 },
+      { title: 'Department', type: 'PICKLIST', width: 150, options: uniqueDepartments },
+      { title: 'Code', type: 'TEXT_NUMBER', width: 100 },
+      { title: 'Is Active', type: 'CHECKBOX', width: 80 },
+      { title: 'Is Generic', type: 'CHECKBOX', width: 80 },
+      { title: 'Project Online Created Date', type: 'DATE', width: 120 },
+      { title: 'Project Online Modified Date', type: 'DATE', width: 120 },
+    ];
+
+    // Add each column sequentially
+    if (!this.client.sheets?.addColumn) {
+      throw new Error('Smartsheet client sheets.addColumn method not available');
+    }
+    for (let i = 0; i < additionalColumns.length; i++) {
+      const col = additionalColumns[i];
+      const response = await this.client.sheets.addColumn({
+        sheetId,
+        body: {
+          title: col.title,
+          type: col.type as any,
+          width: col.width,
+          index: i + 1, // Add after primary column
+          ...(col.hidden && { hidden: col.hidden }),
+          ...(col.locked && { locked: col.locked }),
+          ...(col.options && col.options.length > 0 && { options: col.options }),
+        },
+      });
+
+      const addedColumn = response?.result || response;
+      if (addedColumn?.id) {
+        columnMap[col.title] = addedColumn.id;
+      }
+    }
+
+    // Now create rows using the columnMap
+    if (resources.length > 0) {
+      if (!this.client.sheets?.addRows) {
+        throw new Error('Smartsheet client sheets.addRows method not available');
+      }
+      const rows = resources.map((resource) => this.buildResourceRow(resource, columnMap));
+      await this.client.sheets.addRows({ sheetId, body: rows });
+    }
+
+    return {
+      rowsCreated: resources.length,
+      sheetId,
+    };
+  }
+
+  private buildResourceRow(
+    resource: ProjectOnlineResource,
+    columnMap: Record<string, number>
+  ): any {
+    const cells: any[] = [];
+
+    // Resource Name (primary column)
+    if (columnMap['Resource Name']) {
+      cells.push({
+        columnId: columnMap['Resource Name'],
+        value: resource.Name,
+      });
+    }
+
+    // Project Online Resource ID
+    if (columnMap['Project Online Resource ID']) {
+      cells.push({
+        columnId: columnMap['Project Online Resource ID'],
+        value: resource.Id,
+      });
+    }
+
+    // Email
+    if (columnMap['Email']) {
+      cells.push({
+        columnId: columnMap['Email'],
+        value: resource.Email || '',
+      });
+    }
+
+    // Resource Type
+    if (columnMap['Resource Type']) {
+      cells.push({
+        columnId: columnMap['Resource Type'],
+        value: resource.ResourceType || '',
+      });
+    }
+
+    // Max Units (convert decimal to percentage)
+    if (columnMap['Max Units']) {
+      cells.push({
+        columnId: columnMap['Max Units'],
+        value: resource.MaxUnits !== undefined ? convertMaxUnits(resource.MaxUnits) : '',
+      });
+    }
+
+    // Standard Rate
+    if (columnMap['Standard Rate']) {
+      cells.push({
+        columnId: columnMap['Standard Rate'],
+        value: resource.StandardRate !== undefined ? resource.StandardRate : '',
+      });
+    }
+
+    // Overtime Rate
+    if (columnMap['Overtime Rate']) {
+      cells.push({
+        columnId: columnMap['Overtime Rate'],
+        value: resource.OvertimeRate !== undefined ? resource.OvertimeRate : '',
+      });
+    }
+
+    // Cost Per Use
+    if (columnMap['Cost Per Use']) {
+      cells.push({
+        columnId: columnMap['Cost Per Use'],
+        value: resource.CostPerUse !== undefined ? resource.CostPerUse : '',
+      });
+    }
+
+    // Department
+    if (columnMap['Department']) {
+      cells.push({
+        columnId: columnMap['Department'],
+        value: resource.Department || '',
+      });
+    }
+
+    // Code
+    if (columnMap['Code']) {
+      cells.push({
+        columnId: columnMap['Code'],
+        value: resource.Code || '',
+      });
+    }
+
+    // Is Active
+    if (columnMap['Is Active']) {
+      cells.push({
+        columnId: columnMap['Is Active'],
+        value: resource.IsActive,
+      });
+    }
+
+    // Is Generic
+    if (columnMap['Is Generic']) {
+      cells.push({
+        columnId: columnMap['Is Generic'],
+        value: resource.IsGeneric,
+      });
+    }
+
+    // Project Online Created Date
+    if (columnMap['Project Online Created Date']) {
+      cells.push({
+        columnId: columnMap['Project Online Created Date'],
+        value: resource.CreatedDate ? convertDateTimeToDate(resource.CreatedDate) : '',
+      });
+    }
+
+    // Project Online Modified Date
+    if (columnMap['Project Online Modified Date']) {
+      cells.push({
+        columnId: columnMap['Project Online Modified Date'],
+        value: resource.ModifiedDate ? convertDateTimeToDate(resource.ModifiedDate) : '',
+      });
+    }
+
+    return {
+      toBottom: true,
+      cells,
+    };
+  }
 }
