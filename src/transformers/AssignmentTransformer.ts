@@ -9,9 +9,17 @@
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { ProjectOnlineAssignment, ProjectOnlineResource } from '../types/ProjectOnline';
 import { getOrAddColumn } from '../util/SmartsheetHelpers';
+import { Logger } from '../util/Logger';
 
 export class AssignmentTransformer {
-  constructor(private client: SmartsheetClient) {}
+  private logger?: Logger;
+
+  constructor(
+    private client: SmartsheetClient,
+    logger?: Logger
+  ) {
+    this.logger = logger;
+  }
 
   /**
    * Transform assignments to task sheet assignment columns
@@ -83,7 +91,7 @@ export class AssignmentTransformer {
         currentIndex++;
       } catch (error) {
         // Log but don't fail - column might already exist
-        console.warn(`Failed to add Work resource column ${columnName}:`, error);
+        this.logger?.warn(`Failed to add Work resource column ${columnName}`, error);
       }
     }
 
@@ -103,7 +111,7 @@ export class AssignmentTransformer {
         currentIndex++;
       } catch (error) {
         // Log but don't fail - column might already exist
-        console.warn(`Failed to add Material/Cost resource column ${columnName}:`, error);
+        this.logger?.warn(`Failed to add Material/Cost resource column ${columnName}`, error);
       }
     }
 

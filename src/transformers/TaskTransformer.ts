@@ -8,6 +8,7 @@ import {
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { convertDateTimeToDate, convertDurationToHoursString } from './utils';
 import { getColumnMap, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
+import { Logger } from '../util/Logger';
 
 /**
  * Task transformer - converts Project Online Tasks to Smartsheet Tasks sheet rows
@@ -686,7 +687,14 @@ export function validateTask(task: ProjectOnlineTask): ValidationResult {
  * Provides the expected API while using the functional implementation
  */
 export class TaskTransformer {
-  constructor(private client: SmartsheetClient) {}
+  private logger?: Logger;
+
+  constructor(
+    private client: SmartsheetClient,
+    logger?: Logger
+  ) {
+    this.logger = logger;
+  }
 
   async transformTasks(
     tasks: ProjectOnlineTask[],
@@ -710,8 +718,8 @@ export class TaskTransformer {
     // Remove the first column (Task Name) since it already exists as the primary column
     const columnsToAdd = allTaskColumns.slice(1);
 
-    console.log(
-      `DEBUG: Adding ${columnsToAdd.length} columns to sheet ${sheetId} (skipping existing)`
+    this.logger?.debug(
+      `Adding ${columnsToAdd.length} columns to task sheet ${sheetId} (skipping existing)`
     );
 
     // Add columns with index positions, skipping any that already exist
@@ -730,20 +738,19 @@ export class TaskTransformer {
     const existingColumnMap = await getColumnMap(this.client, sheetId);
     if (existingColumnMap['Task Name']) {
       columnMap['Task Name'] = existingColumnMap['Task Name'].id;
-      console.log(`DEBUG: Task Name column ID: ${existingColumnMap['Task Name'].id}`);
+      this.logger?.debug(`Task Name column ID: ${existingColumnMap['Task Name'].id}`);
     }
 
     // Add all other columns from the add results
     for (const result of addedColumns) {
       columnMap[result.title] = result.id;
-      console.log(
-        `DEBUG: Column ${result.title} - ID: ${result.id}, ${result.wasCreated ? 'newly created' : 'already existed'}`
+      this.logger?.debug(
+        `Column ${result.title} - ID: ${result.id}, ${result.wasCreated ? 'newly created' : 'already existed'}`
       );
     }
 
-    console.log(
-      `DEBUG: Final columnMap has ${Object.keys(columnMap).length} columns:`,
-      Object.keys(columnMap)
+    this.logger?.debug(
+      `Final columnMap has ${Object.keys(columnMap).length} columns: ${Object.keys(columnMap).join(', ')}`
     );
 
     // Helper function to build cells for a task
@@ -901,13 +908,13 @@ export class TaskTransformer {
 
           totalRowsCreated += rowsArray.length;
         } catch (error) {
-          console.error(`DEBUG: Failed to add rows at level ${level}, group ${groupKey}:`, error);
+          this.logger?.error(`Failed to add task rows at level ${level}, group ${groupKey}`, error);
           throw error;
         }
       }
     }
 
-    console.log(`DEBUG: Created ${totalRowsCreated} total rows with hierarchy`);
+    this.logger?.debug(`Created ${totalRowsCreated} total task rows with hierarchy`);
 
     return {
       rowsCreated: totalRowsCreated,

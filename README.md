@@ -111,12 +111,13 @@ npm test
 
 ## Documentation
 
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
+Comprehensive documentation is available in the [`sdlc/docs/project/`](sdlc/docs/project/) directory:
 
-- **[Architecture](docs/Architecture.md)** - System design, components, data flow, and implementation details
-- **[Smartsheet Structure](docs/Smartsheet-Structure.md)** - Workspace organization, sheet structures, and data type mappings
-- **[Sheet References](docs/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
-- **[Project Plan](docs/Project-Plan.md)** - Implementation progress, completed items, open tasks, and timeline
+- **[Architecture](sdlc/docs/project/Architecture.md)** - System design, components, data flow, and implementation details
+- **[Smartsheet Structure](sdlc/docs/project/Smartsheet-Structure.md)** - Workspace organization, sheet structures, and data type mappings
+- **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
+- **[CLI Usage Guide](sdlc/docs/project/CLI-Usage-Guide.md)** - Complete CLI command reference and troubleshooting
+- **[Project Plan](sdlc/docs/project/Project-Plan.md)** - Implementation progress, completed items, open tasks, and timeline
 
 Additional planning documents:
 - [Architecture Plan](sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md) - Detailed ETL architecture and implementation phases
@@ -126,11 +127,16 @@ Additional planning documents:
 
 ```
 .
-├── docs/                      # Project documentation
-│   ├── Architecture.md        # System architecture
-│   ├── Smartsheet-Structure.md # Smartsheet asset structure
-│   ├── Sheet-References.md    # Cross-sheet references
-│   └── Project-Plan.md        # Implementation plan and progress
+├── sdlc/                      # SDLC documentation and plans
+│   └── docs/
+│       ├── project/           # Project documentation
+│       │   ├── Architecture.md
+│       │   ├── CLI-Usage-Guide.md
+│       │   ├── Project-Plan.md
+│       │   ├── Sheet-References.md
+│       │   └── Smartsheet-Structure.md
+│       ├── plans/             # Architecture and transformation plans
+│       └── specs/             # Technical specifications
 ├── src/                       # Source code
 │   ├── cli.ts                 # CLI entry point
 │   ├── index.ts               # Main export file
@@ -154,7 +160,6 @@ Additional planning documents:
 │   ├── integration/           # Integration tests
 │   └── mocks/                 # Mock implementations
 ├── memory-bank/               # Project context and progress
-├── sdlc/                      # SDLC documentation and plans
 ├── dist/                      # Compiled output (generated)
 ├── coverage/                  # Test coverage reports (generated)
 └── node_modules/              # Dependencies (generated)
@@ -177,7 +182,7 @@ This tool implements an Extract-Transform-Load (ETL) pattern:
 - **PMO Standards** - Centralized reference sheets for consistent picklist values
 - **Type Safety** - Full TypeScript implementation with comprehensive type definitions
 
-See [Architecture.md](docs/Architecture.md) for complete details.
+See [Architecture.md](sdlc/docs/project/Architecture.md) for complete details.
 
 ## Contributing
 

@@ -5,6 +5,7 @@
 
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { SmartsheetSheet, SmartsheetRow } from '../types/Smartsheet';
+import { Logger } from '../util/Logger';
 
 /**
  * Standard reference sheets with predefined values
@@ -46,16 +47,18 @@ export interface PMOStandardsWorkspaceInfo {
  *
  * @param client - Smartsheet client
  * @param existingWorkspaceId - Optional workspace ID to use instead of creating new
+ * @param logger - Optional logger for debug output
  */
 export async function createPMOStandardsWorkspace(
   client: SmartsheetClient,
-  existingWorkspaceId?: number
+  existingWorkspaceId?: number,
+  logger?: Logger
 ): Promise<PMOStandardsWorkspaceInfo> {
   let workspace;
 
   if (existingWorkspaceId) {
     // Use existing workspace
-    console.log(`[PMO Standards] Using existing workspace ID: ${existingWorkspaceId}`);
+    logger?.debug(`Using existing PMO Standards workspace ID: ${existingWorkspaceId}`);
     if (!client.workspaces?.getWorkspace) {
       throw new Error('SmartsheetClient does not support getWorkspace');
     }
@@ -65,7 +68,7 @@ export async function createPMOStandardsWorkspace(
     }
   } else {
     // Create new workspace
-    console.log(`[PMO Standards] Creating new PMO Standards workspace`);
+    logger?.debug(`Creating new PMO Standards workspace`);
     if (!client.createWorkspace) {
       throw new Error('SmartsheetClient does not support createWorkspace');
     }
@@ -78,7 +81,13 @@ export async function createPMOStandardsWorkspace(
   const referenceSheets: Record<string, ReferenceSheetInfo> = {};
 
   for (const [sheetName, values] of Object.entries(STANDARD_REFERENCE_SHEETS)) {
-    const sheetInfo = await ensureStandardReferenceSheet(client, workspace.id!, sheetName, values);
+    const sheetInfo = await ensureStandardReferenceSheet(
+      client,
+      workspace.id!,
+      sheetName,
+      values,
+      logger
+    );
     referenceSheets[sheetName] = sheetInfo;
   }
 
@@ -98,13 +107,14 @@ export async function ensureStandardReferenceSheet(
   client: SmartsheetClient,
   workspaceId: number,
   sheetName: string,
-  predefinedValues: string[]
+  predefinedValues: string[],
+  logger?: Logger
 ): Promise<ReferenceSheetInfo> {
   // Check if sheet already exists in workspace
   const existingSheet = await findSheetInWorkspace(client, workspaceId, sheetName);
 
   if (existingSheet) {
-    console.log(`[PMO Standards] ✓ Found existing sheet: ${sheetName} (ID: ${existingSheet.id})`);
+    logger?.debug(`Found existing PMO Standards sheet: ${sheetName} (ID: ${existingSheet.id})`);
 
     // Find the Name column (should be primary column)
     const nameColumn = existingSheet.columns?.find((c) => c.title === 'Name' || c.primary);
@@ -127,8 +137,8 @@ export async function ensureStandardReferenceSheet(
     // Add missing values
     const missingValues = predefinedValues.filter((v) => !existingValues.has(v));
     if (missingValues.length > 0) {
-      console.log(
-        `[PMO Standards]   Adding ${missingValues.length} missing values to ${sheetName}`
+      logger?.debug(
+        `Adding ${missingValues.length} missing values to ${sheetName}: ${missingValues.join(', ')}`
       );
       const rows: SmartsheetRow[] = missingValues.map((value) => ({
         toBottom: true,
@@ -145,7 +155,7 @@ export async function ensureStandardReferenceSheet(
       }
       await client.addRows(existingSheet.id!, rows);
     } else {
-      console.log(`[PMO Standards]   All values already present in ${sheetName}`);
+      logger?.debug(`All ${predefinedValues.length} values already present in ${sheetName}`);
     }
 
     return {
@@ -158,7 +168,9 @@ export async function ensureStandardReferenceSheet(
   }
 
   // Sheet doesn't exist, create it
-  console.log(`[PMO Standards] Creating new sheet: ${sheetName}`);
+  logger?.debug(
+    `Creating new PMO Standards sheet: ${sheetName} with ${predefinedValues.length} values`
+  );
   const sheet: SmartsheetSheet = {
     name: sheetName,
     columns: [

@@ -3,6 +3,8 @@
  * Provides resilient API calling with automatic retries and increasing delays.
  */
 
+import { Logger } from './Logger';
+
 /**
  * Delay for a specified number of milliseconds
  */
@@ -15,8 +17,10 @@ export class ExponentialBackoff {
   private maxTries: number;
   private backoffTime: number;
   private tries: number;
+  private logger?: Logger;
 
-  constructor(maximumNumberOfTries: number, initialBackoffMilliseconds: number) {
+  constructor(maximumNumberOfTries: number, initialBackoffMilliseconds: number, logger?: Logger) {
+    this.logger = logger;
     // Validate BEFORE defaulting to ensure we catch invalid values
     if (!(maximumNumberOfTries > 0)) {
       throw new Error('Maximum Number of Tries must be greater than zero.');
@@ -51,7 +55,11 @@ export class ExponentialBackoff {
    */
   evalStop(error: Error, raise: boolean = false): void {
     if (this.tries === this.maxTries) {
-      console.error(error);
+      if (this.logger) {
+        this.logger.error(`Max retries (${this.maxTries}) exceeded`, error);
+      } else {
+        console.error(error);
+      }
       if (raise) {
         throw error;
       }
@@ -65,6 +73,7 @@ export class ExponentialBackoff {
  * @param operationFunction - Async function to execute with retry logic
  * @param maximumNumberOfTries - Maximum retry attempts (default: 5)
  * @param initialBackoffMilliseconds - Initial delay in milliseconds (default: 1000)
+ * @param logger - Optional logger for retry messages
  * @returns Promise resolving to the operation result
  * @throws Error if all retries are exhausted
  *
@@ -73,16 +82,18 @@ export class ExponentialBackoff {
  * const result = await tryWith(
  *   () => oDataClient.getProjects({ limit: 100 }),
  *   5,
- *   1000
+ *   1000,
+ *   logger
  * );
  * ```
  */
 export async function tryWith<T>(
   operationFunction: () => Promise<T>,
   maximumNumberOfTries: number = 5,
-  initialBackoffMilliseconds: number = 1000
+  initialBackoffMilliseconds: number = 1000,
+  logger?: Logger
 ): Promise<T> {
-  const backoff = new ExponentialBackoff(maximumNumberOfTries, initialBackoffMilliseconds);
+  const backoff = new ExponentialBackoff(maximumNumberOfTries, initialBackoffMilliseconds, logger);
 
   while (await backoff.continue()) {
     try {
