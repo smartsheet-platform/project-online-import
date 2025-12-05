@@ -438,8 +438,8 @@ describe('Load Phase Integration Tests', () => {
 
       // Verify system metadata is tracked (every row has createdAt/modifiedAt)
       const sheet = await getSheetDetails(smartsheetClient, projectResult.sheets.taskSheet.id);
-      const rowsWithSystemMetadata = sheet?.rows?.filter((r) =>
-        'createdAt' in r && 'modifiedAt' in r && !!r.createdAt && !!r.modifiedAt
+      const rowsWithSystemMetadata = sheet?.rows?.filter(
+        (r) => 'createdAt' in r && 'modifiedAt' in r && !!r.createdAt && !!r.modifiedAt
       );
       expect(rowsWithSystemMetadata?.length).toBe(fixture.tasks.length);
     }, 30000); // 30 second timeout for column addition operations

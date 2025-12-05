@@ -886,8 +886,9 @@ export class TaskTransformer {
             body: rowsToAdd,
           });
 
-          const createdRows = addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
-          
+          const createdRows =
+            addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
+
           // Unwrap the API response to get the actual array
           const rowsArray = Array.isArray(createdRows) ? createdRows : [];
 
