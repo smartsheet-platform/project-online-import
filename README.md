@@ -109,21 +109,83 @@ npm run format:check
 npm test
 ```
 
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Architecture](docs/Architecture.md)** - System design, components, data flow, and implementation details
+- **[Smartsheet Structure](docs/Smartsheet-Structure.md)** - Workspace organization, sheet structures, and data type mappings
+- **[Sheet References](docs/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
+- **[Project Plan](docs/Project-Plan.md)** - Implementation progress, completed items, open tasks, and timeline
+
+Additional planning documents:
+- [Architecture Plan](sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md) - Detailed ETL architecture and implementation phases
+- [Transformation Mapping](sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md) - Property mappings and data conversion specifications
+
 ## Project Structure
 
 ```
 .
-├── src/              # Source code
-│   ├── cli.ts        # CLI entry point
-│   ├── index.ts      # Main export file
-│   └── lib/          # Core library code
-│       └── importer.ts
-├── test/             # Unit tests
-│   └── importer.test.ts
-├── dist/             # Compiled output (generated)
-├── coverage/         # Test coverage reports (generated)
-└── node_modules/     # Dependencies (generated)
+├── docs/                      # Project documentation
+│   ├── Architecture.md        # System architecture
+│   ├── Smartsheet-Structure.md # Smartsheet asset structure
+│   ├── Sheet-References.md    # Cross-sheet references
+│   └── Project-Plan.md        # Implementation plan and progress
+├── src/                       # Source code
+│   ├── cli.ts                 # CLI entry point
+│   ├── index.ts               # Main export file
+│   ├── lib/                   # Core library code
+│   │   └── importer.ts
+│   ├── transformers/          # Data transformation layer
+│   │   ├── ProjectTransformer.ts
+│   │   ├── TaskTransformer.ts
+│   │   ├── ResourceTransformer.ts
+│   │   ├── AssignmentTransformer.ts
+│   │   ├── PMOStandardsTransformer.ts
+│   │   └── utils.ts
+│   ├── types/                 # TypeScript type definitions
+│   │   ├── ProjectOnline.ts
+│   │   ├── Smartsheet.ts
+│   │   └── SmartsheetClient.ts
+│   └── util/                  # Utility classes
+│       └── ExponentialBackoff.ts
+├── test/                      # Tests
+│   ├── unit/                  # Unit tests
+│   ├── integration/           # Integration tests
+│   └── mocks/                 # Mock implementations
+├── memory-bank/               # Project context and progress
+├── sdlc/                      # SDLC documentation and plans
+├── dist/                      # Compiled output (generated)
+├── coverage/                  # Test coverage reports (generated)
+└── node_modules/              # Dependencies (generated)
 ```
+
+## Architecture Overview
+
+This tool implements an Extract-Transform-Load (ETL) pattern:
+
+1. **Extract** - Fetch data from Project Online oData API (future)
+2. **Transform** - Convert Project Online entities to Smartsheet format
+3. **Load** - Create Smartsheet workspaces, sheets, and populate data
+
+### Key Features
+
+- **Workspace per Project** - Each Project Online project becomes a dedicated Smartsheet workspace
+- **Three Sheets per Project** - Summary, Tasks, and Resources
+- **Hierarchical Tasks** - Maintains task hierarchy from Project Online
+- **Resource Type Handling** - Work resources use contact lists, Material/Cost use picklists
+- **PMO Standards** - Centralized reference sheets for consistent picklist values
+- **Type Safety** - Full TypeScript implementation with comprehensive type definitions
+
+See [Architecture.md](docs/Architecture.md) for complete details.
+
+## Contributing
+
+This project follows TypeScript best practices and maintains high code quality standards. Please ensure:
+
+- All code passes `npm run typecheck`, `npm run lint`, and `npm test`
+- New features include appropriate tests
+- Documentation is updated for significant changes
 
 ## License
 
