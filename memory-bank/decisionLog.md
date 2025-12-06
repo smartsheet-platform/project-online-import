@@ -217,7 +217,7 @@ Workspace: {ProjectName} (sanitized, NO prefix)
 
 **Status**: Approved - Architecture Complete
 
-**Reference**: Complete architecture plan at [`sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md`](../sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md)
+**Reference**: Complete architecture plan at [`sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md`](../sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md)
 
 ---
 

@@ -509,8 +509,8 @@ npm start -- validate --source <url>
 ### Documentation
 - [Smartsheet API Reference](https://smartsheet.redoc.ly/)
 - [Project Online REST API](https://docs.microsoft.com/en-us/previous-versions/office/project-odata/jj163015(v=office.15))
-- [Architecture Plan](../sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md)
-- [Transformation Mapping](../sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md)
+- [Architecture Plan](../architecture/project-online-smartsheet-etl-architecture-plan.md)
+- [Transformation Mapping](../architecture/project-online-smartsheet-transformation-mapping.md)
 
 ### Key Files
 - CLI: [`src/cli.ts`](../src/cli.ts)

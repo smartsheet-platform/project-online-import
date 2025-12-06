@@ -418,5 +418,5 @@ scripts/
 
 For questions or issues:
 - Review test scenarios: `test/integration/load-phase-test-scenarios.md`
-- Check transformation spec: `sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md`
+- Check transformation spec: `sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md`
 - See integration test docs: `test/integration/README.md`

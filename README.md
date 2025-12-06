@@ -120,8 +120,8 @@ Comprehensive documentation is available in the [`sdlc/docs/project/`](sdlc/docs
 - **[Project Plan](sdlc/docs/project/Project-Plan.md)** - Implementation progress, completed items, open tasks, and timeline
 
 Additional planning documents:
-- [Architecture Plan](sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md) - Detailed ETL architecture and implementation phases
-- [Transformation Mapping](sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md) - Property mappings and data conversion specifications
+- [Architecture Plan](sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md) - Detailed ETL architecture and implementation phases
+- [Transformation Mapping](sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md) - Property mappings and data conversion specifications
 
 ## Project Structure
 

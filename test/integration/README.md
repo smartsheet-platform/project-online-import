@@ -296,5 +296,5 @@ When adding new test scenarios:
 ## References
 
 - Test Scenarios: `test/integration/load-phase-test-scenarios.md`
-- Transformation Spec: `sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md`
+- Transformation Spec: `sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md`
 - Smartsheet API: https://smartsheet-platform.github.io/api-docs/

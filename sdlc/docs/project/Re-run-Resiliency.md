@@ -295,7 +295,7 @@ See the implementation in:
 
 - [Architecture Document](Architecture.md) - Overall system design
 - [Smartsheet Structure](Smartsheet-Structure.md) - Sheet and column organization
-- [Transformation Mapping](../sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md) - Data transformation rules
+- [Transformation Mapping](../architecture/project-online-smartsheet-transformation-mapping.md) - Data transformation rules
 
 ---
 

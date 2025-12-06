@@ -3,8 +3,8 @@
 ## Completed
 - ✅ Initial project scoping and requirements gathering
 - ✅ Memory bank structure creation
-- ✅ Comprehensive architecture plan: [`sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md`](../sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md)
-- ✅ Detailed transformation mapping: [`sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md`](../sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md)
+- ✅ Comprehensive architecture plan: [`sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md`](../sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md)
+- ✅ Detailed transformation mapping: [`sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md`](../sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md)
 - ✅ CLI interface specification with multiple operation modes
 - ✅ ETL pipeline architecture (6 components defined)
 - ✅ API integration patterns (Project Online oData + Smartsheet SDK)

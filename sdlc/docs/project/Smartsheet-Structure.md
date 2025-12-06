@@ -514,7 +514,7 @@ Workspace: Enterprise System Migration
 - [Architecture Document](Architecture.md)
 - [Sheet References Document](Sheet-References.md)
 - [Smartsheet API Documentation](https://smartsheet.redoc.ly/)
-- [Transformation Mapping Spec](../sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md)
+- [Transformation Mapping Spec](../architecture/project-online-smartsheet-transformation-mapping.md)
 
 ---
 

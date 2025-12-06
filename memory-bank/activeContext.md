@@ -7,8 +7,8 @@ Architecture and transformation specifications COMPLETE with TypeScript language
 Architecture & Design - Specification Complete
 
 ## Completed Architecture Work
-- ✅ Comprehensive architecture plan: [`sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md`](../sdlc/docs/plans/project-online-smartsheet-etl-architecture-plan.md) (TypeScript)
-- ✅ Detailed transformation mapping: [`sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md`](../sdlc/docs/plans/project-online-smartsheet-transformation-mapping.md) (TypeScript)
+- ✅ Comprehensive architecture plan: [`sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md`](../sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md) (TypeScript)
+- ✅ Detailed transformation mapping: [`sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md`](../sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md) (TypeScript)
 - ✅ CLI user experience designed with multiple operation modes
 - ✅ ETL pipeline architecture defined (Extract → Transform → Load)
 - ✅ Configuration management approach specified (.env with development controls)
