@@ -6,7 +6,7 @@
 import * as smartsheet from 'smartsheet';
 import { SmartsheetClient } from '../../src/types/SmartsheetClient';
 import { ProjectOnlineImporter } from '../../src/lib/importer';
-import { TestWorkspaceManager } from './helpers/smartsheet-setup';
+import { TestWorkspaceManager, getAllSheetsFromWorkspace } from './helpers/smartsheet-setup';
 import * as fixtures from './helpers/odata-fixtures';
 
 describe('PMO Standards Integration Tests', () => {
@@ -129,27 +129,25 @@ describe('PMO Standards Integration Tests', () => {
         workspaceManager.trackWorkspace(result.workspaceId);
 
         // Get workspace details to find summary sheet
-        const workspace = await smartsheetClient.workspaces?.getWorkspace?.({
-          workspaceId: result.workspaceId,
-          queryParameters: { loadAll: true },
-        });
-
-        expect(workspace).toBeDefined();
-        const summarySheet = workspace?.sheets?.find((s) => s.name?.includes('Summary'));
+        const sheets = await getAllSheetsFromWorkspace(smartsheetClient, result.workspaceId);
+        
+        expect(sheets.length).toBeGreaterThan(0);
+        const summarySheet = sheets.find((s: any) => s.name?.includes('Summary'));
         expect(summarySheet).toBeDefined();
 
         // Get summary sheet details
-        const sheet = await smartsheetClient.sheets?.getSheet?.({
+        const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
           sheetId: summarySheet!.id!,
         });
+        const sheet = sheetResponse?.data || sheetResponse?.result;
 
         // Verify Status column exists and is configured as PICKLIST
-        const statusColumn = sheet?.columns?.find((c) => c.title === 'Status');
+        const statusColumn = sheet?.columns?.find((c: any) => c.title === 'Status');
         expect(statusColumn).toBeDefined();
         expect(statusColumn?.type).toBe('PICKLIST');
 
         // Verify Priority column exists and is configured as PICKLIST
-        const priorityColumn = sheet?.columns?.find((c) => c.title === 'Priority');
+        const priorityColumn = sheet?.columns?.find((c: any) => c.title === 'Priority');
         expect(priorityColumn).toBeDefined();
         expect(priorityColumn?.type).toBe('PICKLIST');
 
@@ -174,32 +172,30 @@ describe('PMO Standards Integration Tests', () => {
         workspaceManager.trackWorkspace(result.workspaceId);
 
         // Get workspace details to find task sheet
-        const workspace = await smartsheetClient.workspaces?.getWorkspace?.({
-          workspaceId: result.workspaceId,
-          queryParameters: { loadAll: true },
-        });
-
-        expect(workspace).toBeDefined();
-        const taskSheet = workspace?.sheets?.find((s) => s.name?.includes('Tasks'));
+        const sheets = await getAllSheetsFromWorkspace(smartsheetClient, result.workspaceId);
+        
+        expect(sheets.length).toBeGreaterThan(0);
+        const taskSheet = sheets.find((s: any) => s.name?.includes('Tasks'));
         expect(taskSheet).toBeDefined();
 
         // Get task sheet details
-        const sheet = await smartsheetClient.sheets?.getSheet?.({
+        const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
           sheetId: taskSheet!.id!,
         });
+        const sheet = sheetResponse?.data || sheetResponse?.result;
 
         // Verify Status column exists and is configured as PICKLIST
-        const statusColumn = sheet?.columns?.find((c) => c.title === 'Status');
+        const statusColumn = sheet?.columns?.find((c: any) => c.title === 'Status');
         expect(statusColumn).toBeDefined();
         expect(statusColumn?.type).toBe('PICKLIST');
 
         // Verify Priority column exists and is configured as PICKLIST
-        const priorityColumn = sheet?.columns?.find((c) => c.title === 'Priority');
+        const priorityColumn = sheet?.columns?.find((c: any) => c.title === 'Priority');
         expect(priorityColumn).toBeDefined();
         expect(priorityColumn?.type).toBe('PICKLIST');
 
         // Verify Constraint Type column exists and is configured as PICKLIST
-        const constraintColumn = sheet?.columns?.find((c) => c.title === 'Constraint Type');
+        const constraintColumn = sheet?.columns?.find((c: any) => c.title === 'Constraint Type');
         expect(constraintColumn).toBeDefined();
         expect(constraintColumn?.type).toBe('PICKLIST');
 
@@ -224,20 +220,18 @@ describe('PMO Standards Integration Tests', () => {
         workspaceManager.trackWorkspace(result.workspaceId);
 
         // Get task sheet
-        const workspace = await smartsheetClient.workspaces?.getWorkspace?.({
-          workspaceId: result.workspaceId,
-          queryParameters: { loadAll: true },
-        });
-
-        const taskSheet = workspace?.sheets?.find((s) => s.name?.includes('Tasks'));
+        const sheets = await getAllSheetsFromWorkspace(smartsheetClient, result.workspaceId);
+        
+        const taskSheet = sheets.find((s: any) => s.name?.includes('Tasks'));
         expect(taskSheet).toBeDefined();
 
-        const sheet = await smartsheetClient.sheets?.getSheet?.({
+        const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
           sheetId: taskSheet!.id!,
         });
+        const sheet = sheetResponse?.data || sheetResponse?.result;
 
         // Verify Status column has expected values
-        const statusColumn = sheet?.columns?.find((c) => c.title === 'Status');
+        const statusColumn = sheet?.columns?.find((c: any) => c.title === 'Status');
         expect(statusColumn).toBeDefined();
 
         // Note: The actual picklist values come from the reference sheet via CELL_LINK
@@ -383,16 +377,13 @@ describe('PMO Standards Integration Tests', () => {
         console.log(`[PMO Standards Test]   - Assignment columns: ${result.assignmentsImported}`);
 
         // Verify workspace structure
-        const workspace = await smartsheetClient.workspaces?.getWorkspace?.({
-          workspaceId: result.workspaceId,
-          queryParameters: { loadAll: true },
-        });
+        const sheets = await getAllSheetsFromWorkspace(smartsheetClient, result.workspaceId);
 
-        expect(workspace?.sheets?.length).toBeGreaterThanOrEqual(3);
+        expect(sheets.length).toBeGreaterThanOrEqual(3);
 
-        const summarySheet = workspace?.sheets?.find((s) => s.name?.includes('Summary'));
-        const taskSheet = workspace?.sheets?.find((s) => s.name?.includes('Tasks'));
-        const resourceSheet = workspace?.sheets?.find((s) => s.name?.includes('Resources'));
+        const summarySheet = sheets.find((s) => s.name?.includes('Summary'));
+        const taskSheet = sheets.find((s) => s.name?.includes('Tasks'));
+        const resourceSheet = sheets.find((s) => s.name?.includes('Resources'));
 
         expect(summarySheet).toBeDefined();
         expect(taskSheet).toBeDefined();

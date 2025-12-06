@@ -331,6 +331,21 @@ export class TestWorkspaceManager {
     return workspace;
   }
 
+  /**
+   * Track an existing workspace for cleanup (e.g., workspace created by importer)
+   */
+  trackWorkspace(workspaceId: number, workspaceName?: string): void {
+    // Check if already tracked
+    if (!this.workspaces.find((ws) => ws.id === workspaceId)) {
+      this.workspaces.push({
+        id: workspaceId,
+        name: workspaceName || `Workspace ${workspaceId}`,
+        permalink: '',
+        createdAt: new Date(),
+      });
+    }
+  }
+
   async cleanup(testPassed: boolean = true): Promise<void> {
     const shouldCleanup = testPassed ? this.config.cleanupOnSuccess : this.config.cleanupOnFailure;
 

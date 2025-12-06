@@ -296,7 +296,8 @@ export class ProjectOnlineImporter {
     }
 
     // Get sheet to find Status and Priority column IDs
-    const sheet = await this.smartsheetClient.sheets?.getSheet?.({ sheetId: summarySheetId });
+    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({ sheetId: summarySheetId });
+    const sheet = sheetResponse?.data || sheetResponse?.result;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get summary sheet ${summarySheetId}`,
@@ -304,8 +305,8 @@ export class ProjectOnlineImporter {
       );
     }
 
-    const statusColumn = sheet.columns?.find((c) => c.title === 'Status');
-    const priorityColumn = sheet.columns?.find((c) => c.title === 'Priority');
+    const statusColumn = sheet.columns?.find((c: any) => c.title === 'Status');
+    const priorityColumn = sheet.columns?.find((c: any) => c.title === 'Priority');
 
     if (!statusColumn?.id || !priorityColumn?.id) {
       throw ErrorHandler.dataError(
@@ -335,7 +336,8 @@ export class ProjectOnlineImporter {
     }
 
     // Get sheet to find column IDs
-    const sheet = await this.smartsheetClient.sheets?.getSheet?.({ sheetId: taskSheetId });
+    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({ sheetId: taskSheetId });
+    const sheet = sheetResponse?.data || sheetResponse?.result;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get task sheet ${taskSheetId}`,
@@ -343,9 +345,9 @@ export class ProjectOnlineImporter {
       );
     }
 
-    const statusColumn = sheet.columns?.find((c) => c.title === 'Status');
-    const priorityColumn = sheet.columns?.find((c) => c.title === 'Priority');
-    const constraintColumn = sheet.columns?.find((c) => c.title === 'Constraint Type');
+    const statusColumn = sheet.columns?.find((c: any) => c.title === 'Status');
+    const priorityColumn = sheet.columns?.find((c: any) => c.title === 'Priority');
+    const constraintColumn = sheet.columns?.find((c: any) => c.title === 'Constraint Type');
 
     if (!statusColumn?.id || !priorityColumn?.id || !constraintColumn?.id) {
       throw ErrorHandler.dataError(

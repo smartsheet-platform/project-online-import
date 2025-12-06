@@ -62,7 +62,8 @@ export async function createPMOStandardsWorkspace(
     if (!client.workspaces?.getWorkspace) {
       throw new Error('SmartsheetClient does not support getWorkspace');
     }
-    workspace = await client.workspaces.getWorkspace({ workspaceId: existingWorkspaceId });
+    const workspaceResponse = await client.workspaces.getWorkspace({ workspaceId: existingWorkspaceId });
+    workspace = workspaceResponse.data || workspaceResponse.result;
     if (!workspace) {
       throw new Error(`Workspace ${existingWorkspaceId} not found`);
     }
@@ -123,11 +124,12 @@ export async function ensureStandardReferenceSheet(
     }
 
     // Get existing rows to check which values are already present
-    const existingSheet2 = await client.sheets?.getSheet?.({ sheetId: existingSheet.id! });
+    const existingSheet2Response = await client.sheets?.getSheet?.({ sheetId: existingSheet.id! });
+    const existingSheet2 = existingSheet2Response?.data || existingSheet2Response?.result;
     const existingValues = new Set<string>();
     if (existingSheet2?.rows) {
       for (const row of existingSheet2.rows) {
-        const nameCell = row.cells?.find((c) => c.columnId === nameColumn.id);
+        const nameCell = row.cells?.find((c: any) => c.columnId === nameColumn.id);
         if (nameCell?.value) {
           existingValues.add(String(nameCell.value));
         }
@@ -144,7 +146,7 @@ export async function ensureStandardReferenceSheet(
         toBottom: true,
         cells: [
           {
-            columnId: nameColumn.id,
+            columnId: nameColumn.id!,
             value,
           },
         ],
@@ -221,14 +223,20 @@ async function findSheetInWorkspace(
   workspaceId: number,
   sheetName: string
 ): Promise<SmartsheetSheet | undefined> {
-  if (!client.workspaces?.getWorkspace) {
-    throw new Error('SmartsheetClient does not support getWorkspace');
+  // Use getWorkspaceChildren to get sheets (getWorkspace is deprecated and doesn't include sheets in response)
+  if (!client.workspaces?.getWorkspaceChildren) {
+    throw new Error('SmartsheetClient does not support getWorkspaceChildren');
   }
 
-  const workspace = await client.workspaces.getWorkspace({ workspaceId });
-  if (!workspace?.sheets) {
-    return undefined;
-  }
+  const childrenResponse = await client.workspaces.getWorkspaceChildren({
+    workspaceId,
+    queryParameters: { includeAll: true },
+  });
+  const children = childrenResponse?.data || [];
 
-  return workspace.sheets.find((s) => s.name === sheetName);
+  // Filter for sheets and find by name
+  const sheets = children.filter((item: any) => item.resourceType === 'sheet');
+  const sheet = sheets.find((s: any) => s.name === sheetName);
+
+  return sheet as SmartsheetSheet | undefined;
 }

@@ -590,13 +590,13 @@ Week 6: Testing & Documentation 🚧 (Partial)
    - Implement oData client
    - Add OAuth authentication
    - Test entity extraction
+   - Connect extraction to existing CLI import command
 
-2. **CLI integration** (Priority: MEDIUM)
-   - Connect extraction to transformation pipeline
-   - Add progress reporting
-   - Implement dry-run mode
-   - Enhance error handling
-   - Test end-to-end flow
+2. **End-to-end testing** (Priority: HIGH - BLOCKED on extraction layer)
+   - Test complete Extract → Transform → Load pipeline
+   - Validate CLI progress reporting with real data extraction
+   - Test dry-run mode with actual Project Online data
+   - Verify error handling with real API responses
 
 3. **Documentation completion** (Priority: HIGH)
    - User guide for PS team
