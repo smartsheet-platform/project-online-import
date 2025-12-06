@@ -44,7 +44,7 @@ export class ProjectOnlineClient {
     this.logger = logger ?? new Logger();
     this.authHandler = new MSALAuthHandler(config, this.logger);
     this.backoff = new ExponentialBackoff({
-      maxRetries: this.config.maxRetries,
+      maxRetries: this.config.maxRetries!,
       initialDelayMs: 1000,
       maxDelayMs: 30000,
     });
@@ -113,9 +113,7 @@ export class ProjectOnlineClient {
     // Rate limiting
     if (status === 429) {
       const retryAfter = error.response?.headers['retry-after'];
-      throw ErrorHandler.rateLimitError(
-        retryAfter ? parseInt(retryAfter) * 1000 : undefined
-      );
+      throw ErrorHandler.rateLimitError(retryAfter ? parseInt(retryAfter) * 1000 : undefined);
     }
 
     // Server errors (5xx)
@@ -228,8 +226,9 @@ export class ProjectOnlineClient {
       pageCount++;
       this.logger.debug(`Fetching ${entityName} page ${pageCount}...`);
 
-      const response = await this.executeGet<ODataCollectionResponse<T>>(nextLink);
-      
+      const response: ODataCollectionResponse<T> =
+        await this.executeGet<ODataCollectionResponse<T>>(nextLink);
+
       if (response.value && response.value.length > 0) {
         allItems.push(...response.value);
         this.logger.debug(`  Retrieved ${response.value.length} items (total: ${allItems.length})`);
@@ -237,7 +236,7 @@ export class ProjectOnlineClient {
 
       // Check for next page
       nextLink = response['@odata.nextLink'];
-      
+
       // Handle relative URLs
       if (nextLink && !nextLink.startsWith('http')) {
         const baseUrl = this.config.projectOnlineUrl.replace(/\/$/, '');
@@ -245,7 +244,9 @@ export class ProjectOnlineClient {
       }
     }
 
-    this.logger.debug(`Completed fetching ${allItems.length} ${entityName} items in ${pageCount} page(s)`);
+    this.logger.debug(
+      `Completed fetching ${allItems.length} ${entityName} items in ${pageCount} page(s)`
+    );
 
     return {
       value: allItems,
@@ -256,7 +257,9 @@ export class ProjectOnlineClient {
   /**
    * Get all projects
    */
-  async getProjects(options?: ODataQueryOptions): Promise<ODataCollectionResponse<ProjectOnlineProject>> {
+  async getProjects(
+    options?: ODataQueryOptions
+  ): Promise<ODataCollectionResponse<ProjectOnlineProject>> {
     const queryString = this.buildQueryString(options);
     const url = `/Projects${queryString}`;
     return this.fetchAllPages<ProjectOnlineProject>(url, 'Projects');
@@ -267,10 +270,14 @@ export class ProjectOnlineClient {
    */
   async getProject(projectId: string): Promise<ProjectOnlineProject> {
     const url = `/Projects('${projectId}')`;
-    const response = await this.executeGet<{ d: ProjectOnlineProject }>(url);
-    
+    const response: { d?: ProjectOnlineProject } | ProjectOnlineProject =
+      await this.executeGet<{ d: ProjectOnlineProject } | ProjectOnlineProject>(url);
+
     // OData verbose format wraps the result in a 'd' property
-    return response.d || (response as any);
+    if ('d' in response && response.d) {
+      return response.d;
+    }
+    return response as ProjectOnlineProject;
   }
 
   /**
@@ -298,7 +305,9 @@ export class ProjectOnlineClient {
   /**
    * Get all resources
    */
-  async getResources(options?: ODataQueryOptions): Promise<ODataCollectionResponse<ProjectOnlineResource>> {
+  async getResources(
+    options?: ODataQueryOptions
+  ): Promise<ODataCollectionResponse<ProjectOnlineResource>> {
     const queryString = this.buildQueryString(options);
     const url = `/Resources${queryString}`;
     return this.fetchAllPages<ProjectOnlineResource>(url, 'Resources');
@@ -367,7 +376,7 @@ export class ProjectOnlineClient {
   async testConnection(): Promise<boolean> {
     try {
       this.logger.info('Testing connection to Project Online...');
-      
+
       // Test authentication
       const authSuccess = await this.authHandler.testAuthentication();
       if (!authSuccess) {
@@ -376,11 +385,13 @@ export class ProjectOnlineClient {
 
       // Try to fetch projects (with $top=1 to minimize data)
       await this.getProjects({ $top: 1 });
-      
+
       this.logger.success('✓ Connection to Project Online successful');
       return true;
     } catch (error) {
-      this.logger.error(`✗ Connection test failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `✗ Connection test failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       return false;
     }
   }

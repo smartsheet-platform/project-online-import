@@ -62,10 +62,7 @@ export class MSALAuthHandler {
     }
 
     if (!this.config.projectOnlineUrl) {
-      throw ErrorHandler.configError(
-        'PROJECT_ONLINE_URL',
-        'Project Online site URL is required'
-      );
+      throw ErrorHandler.configError('PROJECT_ONLINE_URL', 'Project Online site URL is required');
     }
 
     // Validate URL format
@@ -110,9 +107,8 @@ export class MSALAuthHandler {
         scopes: [`${sharePointDomain}/.default`],
       };
 
-      const response = await this.confidentialClientApp.acquireTokenByClientCredential(
-        tokenRequest
-      );
+      const response =
+        await this.confidentialClientApp.acquireTokenByClientCredential(tokenRequest);
 
       if (!response || !response.accessToken) {
         throw ErrorHandler.authError(
@@ -127,9 +123,11 @@ export class MSALAuthHandler {
         expiresOn: response.expiresOn ?? new Date(Date.now() + 3600000), // Default 1 hour
       };
 
-      this.logger.debug(`Access token acquired, expires: ${this.cachedToken.expiresOn.toISOString()}`);
+      this.logger.debug(
+        `Access token acquired, expires: ${this.cachedToken.expiresOn.toISOString()}`
+      );
       return this.cachedToken;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof msal.AuthError) {
         throw ErrorHandler.authError(
           `MSAL authentication error: ${error.errorCode}`,
@@ -141,7 +139,8 @@ export class MSALAuthHandler {
             '  • Admin consent not granted'
         );
       }
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw ErrorHandler.authError('Authentication failed', errorMessage);
     }
   }
 
@@ -172,7 +171,9 @@ export class MSALAuthHandler {
       this.logger.success('✓ Authentication successful');
       return true;
     } catch (error) {
-      this.logger.error(`✗ Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `✗ Authentication failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       return false;
     }
   }
