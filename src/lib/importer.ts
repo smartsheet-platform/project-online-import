@@ -5,6 +5,7 @@ import {
   ProjectOnlineResource,
   ProjectOnlineAssignment,
 } from '../types/ProjectOnline';
+import { ProjectOnlineClient, ProjectOnlineClientConfig } from './ProjectOnlineClient';
 import {
   ProjectTransformer,
   configureProjectPicklistColumns,
@@ -52,6 +53,7 @@ export interface ImportResult {
 
 export class ProjectOnlineImporter {
   private smartsheetClient?: SmartsheetClient;
+  private projectOnlineClient?: ProjectOnlineClient;
   private pmoStandardsWorkspace?: PMOStandardsWorkspaceInfo;
   private logger: Logger;
   private errorHandler: ErrorHandler;
@@ -73,39 +75,91 @@ export class ProjectOnlineImporter {
   }
 
   /**
+   * Set Project Online client (for dependency injection in tests)
+   */
+  setProjectOnlineClient(client: ProjectOnlineClient): void {
+    this.projectOnlineClient = client;
+  }
+
+  /**
+   * Initialize Project Online client from configuration
+   */
+  private initializeProjectOnlineClient(): void {
+    if (this.projectOnlineClient) {
+      return; // Already initialized (e.g., for testing)
+    }
+
+    // Read configuration from environment
+    const config: ProjectOnlineClientConfig = {
+      tenantId: process.env.TENANT_ID || '',
+      clientId: process.env.CLIENT_ID || '',
+      clientSecret: process.env.CLIENT_SECRET || '',
+      projectOnlineUrl: process.env.PROJECT_ONLINE_URL || '',
+    };
+
+    this.projectOnlineClient = new ProjectOnlineClient(config, this.logger);
+  }
+
+  /**
    * Import data from Project Online to Smartsheet
    */
   async import(options: ImportOptions): Promise<void> {
     if (!options.source) {
-      throw ErrorHandler.validationError('source', 'a valid Project Online URL');
+      throw ErrorHandler.validationError('source', 'a valid Project Online project ID (GUID)');
     }
 
     if (!options.destination) {
       throw ErrorHandler.validationError('destination', 'a valid Smartsheet destination ID');
     }
 
-    this.logger.info(`📥 Source: ${options.source}`);
-    this.logger.info(`📤 Destination: ${options.destination}`);
+    this.logger.info(`📥 Source: Project Online project ${options.source}`);
+    this.logger.info(`📤 Destination: Smartsheet workspace ${options.destination}`);
 
     if (options.dryRun) {
-      this.logger.warn('🚨 Dry run mode - no changes will be made');
-      this.logger.info('\nIn dry-run mode, the tool will:');
+      this.logger.warn('\n🚨 Dry run mode - no changes will be made\n');
+      this.logger.info('In dry-run mode, the tool will:');
       this.logger.info('  • Validate configuration');
-      this.logger.info('  • Connect to Project Online (when implemented)');
+      this.logger.info('  • Connect to Project Online');
+      this.logger.info('  • Extract project data');
       this.logger.info('  • Process data transformations');
       this.logger.info('  • Skip all Smartsheet write operations\n');
+      
+      // Initialize clients
+      this.initializeProjectOnlineClient();
+      
+      // Test connection
+      this.logger.info('Testing Project Online connection...');
+      const connected = await this.projectOnlineClient!.testConnection();
+      if (!connected) {
+        throw ErrorHandler.connectionError('Failed to connect to Project Online');
+      }
+      
+      // Extract data
+      this.logger.info(`\nExtracting data for project ${options.source}...`);
+      const data = await this.projectOnlineClient!.extractProjectData(options.source);
+      
+      this.logger.success(`\n✅ Dry run completed successfully!`);
+      this.logger.info(`   Project: ${data.project.Name}`);
+      this.logger.info(`   Tasks: ${data.tasks.length}`);
+      this.logger.info(`   Resources: ${data.resources.length}`);
+      this.logger.info(`   Assignments: ${data.assignments.length}\n`);
       return;
     }
 
-    // Placeholder for actual implementation
-    // TODO: Implement extraction layer integration
-    this.logger.warn(
-      '\n⚠️  Extraction layer not yet implemented. ' +
-        'This command currently requires direct ProjectImportData.\n'
-    );
-    this.logger.info(
-      '💡 To import a project, use the importProject() method directly with ProjectImportData.\n'
-    );
+    // Initialize clients
+    this.initializeProjectOnlineClient();
+
+    // Extract data from Project Online
+    this.logger.info('\n📥 Extracting data from Project Online...\n');
+    const data = await this.projectOnlineClient!.extractProjectData(options.source);
+
+    // Import the extracted data
+    await this.importProject({
+      project: data.project,
+      tasks: data.tasks,
+      resources: data.resources,
+      assignments: data.assignments,
+    });
   }
 
   /**
@@ -377,28 +431,68 @@ export class ProjectOnlineImporter {
 
     this.logger.info(`Validating source: ${source}\n`);
 
-    // Basic URL validation
+    // Validate source is a GUID
+    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!source) {
-      errors.push('Source URL is required');
-    } else if (!source.startsWith('http://') && !source.startsWith('https://')) {
-      errors.push('Source must be a valid URL (http:// or https://)');
+      errors.push('Source project ID is required');
+    } else if (!guidPattern.test(source)) {
+      errors.push('Source must be a valid Project Online project ID (GUID format)');
     } else {
-      try {
-        new URL(source);
-        this.logger.success('✓ Source URL format is valid');
-      } catch {
-        errors.push('Source URL is malformed');
-      }
+      this.logger.success('✓ Project ID format is valid');
     }
 
-    // TODO: Add actual Project Online connectivity validation when extraction layer is implemented
-    this.logger.info('ℹ️  Full connectivity validation pending extraction layer implementation');
+    // Check Project Online configuration
+    const poConfig = {
+      tenantId: process.env.TENANT_ID,
+      clientId: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      projectOnlineUrl: process.env.PROJECT_ONLINE_URL,
+    };
+
+    if (!poConfig.tenantId) {
+      errors.push('TENANT_ID environment variable is not set');
+    } else {
+      this.logger.success('✓ Azure AD Tenant ID is configured');
+    }
+
+    if (!poConfig.clientId) {
+      errors.push('CLIENT_ID environment variable is not set');
+    } else {
+      this.logger.success('✓ Azure AD Client ID is configured');
+    }
+
+    if (!poConfig.clientSecret) {
+      errors.push('CLIENT_SECRET environment variable is not set');
+    } else {
+      this.logger.success('✓ Azure AD Client Secret is configured');
+    }
+
+    if (!poConfig.projectOnlineUrl) {
+      errors.push('PROJECT_ONLINE_URL environment variable is not set');
+    } else {
+      this.logger.success('✓ Project Online URL is configured');
+    }
 
     // Check Smartsheet configuration
     if (!process.env.SMARTSHEET_API_TOKEN) {
       errors.push('SMARTSHEET_API_TOKEN environment variable is not set');
     } else {
       this.logger.success('✓ Smartsheet API token is configured');
+    }
+
+    // If all config is present, test connectivity
+    if (errors.length === 0) {
+      try {
+        this.logger.info('\n🔌 Testing Project Online connection...');
+        this.initializeProjectOnlineClient();
+        const connected = await this.projectOnlineClient!.testConnection();
+        
+        if (!connected) {
+          errors.push('Failed to connect to Project Online');
+        }
+      } catch (error) {
+        errors.push(`Connection test failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
 
     return {

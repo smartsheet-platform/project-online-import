@@ -230,4 +230,47 @@ export class ErrorHandler {
   static dataError(issue: string, suggestion: string): DataError {
     return new DataError(`Data error: ${issue}`, suggestion);
   }
+
+  /**
+   * Create authentication error with actionable message
+   */
+  static authError(message: string, suggestion: string): ConnectionError {
+    return new ConnectionError(
+      `Authentication error: ${message}`,
+      suggestion
+    );
+  }
+
+  /**
+   * Create rate limit error with actionable message
+   */
+  static rateLimitError(retryAfterMs?: number): ConnectionError {
+    const waitTime = retryAfterMs
+      ? `Wait ${Math.ceil(retryAfterMs / 1000)} seconds`
+      : 'Wait a few minutes';
+    
+    return new ConnectionError(
+      'API rate limit exceeded',
+      `${waitTime} before retrying. Consider reducing the request rate or batch size.`,
+      { retryAfterMs }
+    );
+  }
+
+  /**
+   * Create API error with actionable message
+   */
+  static apiError(message: string, details?: string): ConnectionError {
+    return new ConnectionError(
+      message,
+      'Check the service status and your network connection. If the problem persists, contact support.',
+      details
+    );
+  }
+
+  /**
+   * Create network error with actionable message
+   */
+  static networkError(message: string, suggestion: string): ConnectionError {
+    return new ConnectionError(message, suggestion);
+  }
 }
