@@ -78,9 +78,9 @@ describe('ProjectOnlineClient', () => {
 
       it('should throw error for non-existent project', async () => {
         // Act & Assert
-        await expect(
-          mockClient.getProject('99999999-9999-9999-9999-999999999999')
-        ).rejects.toThrow('Project not found');
+        await expect(mockClient.getProject('99999999-9999-9999-9999-999999999999')).rejects.toThrow(
+          'Project not found'
+        );
       });
     });
 
@@ -179,10 +179,7 @@ describe('ProjectOnlineClient', () => {
           .asWorkResource()
           .build();
 
-        const resource2 = new ODataResourceBuilder()
-          .withName('Steel')
-          .asMaterialResource()
-          .build();
+        const resource2 = new ODataResourceBuilder().withName('Steel').asMaterialResource().build();
 
         mockClient.addResources([resource1, resource2]);
 
@@ -197,17 +194,11 @@ describe('ProjectOnlineClient', () => {
 
       it('should handle different resource types', async () => {
         // Arrange
-        const workResource = new ODataResourceBuilder()
-          .asWorkResource()
-          .build();
+        const workResource = new ODataResourceBuilder().asWorkResource().build();
 
-        const materialResource = new ODataResourceBuilder()
-          .asMaterialResource()
-          .build();
+        const materialResource = new ODataResourceBuilder().asMaterialResource().build();
 
-        const costResource = new ODataResourceBuilder()
-          .asCostResource()
-          .build();
+        const costResource = new ODataResourceBuilder().asCostResource().build();
 
         mockClient.addResources([workResource, materialResource, costResource]);
 
@@ -229,7 +220,7 @@ describe('ProjectOnlineClient', () => {
         const taskId1 = 'task-1';
         const taskId2 = 'task-2';
         const resourceId = 'resource-1';
-        
+
         const assignment1 = new ODataAssignmentBuilder()
           .forProject(projectId)
           .forTask(taskId1)
@@ -290,7 +281,7 @@ describe('ProjectOnlineClient', () => {
     it('should handle API failures with retry logic', async () => {
       // Note: MockODataClient simulates failure behavior for testing
       // Real retry logic in ProjectOnlineClient will be tested with actual credentials
-      
+
       // Arrange
       mockClient.setFailureMode(true, 2); // Fail first 2 attempts
 
@@ -349,7 +340,7 @@ describe('ProjectOnlineClient', () => {
       const taskId2 = tasks[1].Id;
       const resourceId1 = resources[0].Id;
       const resourceId2 = resources[1].Id;
-      
+
       const assignments = [
         new ODataAssignmentBuilder()
           .forProject(projectId)
@@ -395,15 +386,9 @@ describe('ProjectOnlineClient', () => {
         new ODataTaskBuilder().withProjectId(project.Id).withName('Task 2').build(),
       ];
       const fixtureResources = {
-        work: [
-          new ODataResourceBuilder().asWorkResource().withName('John').build(),
-        ],
-        material: [
-          new ODataResourceBuilder().asMaterialResource().withName('Steel').build(),
-        ],
-        cost: [
-          new ODataResourceBuilder().asCostResource().withName('Travel').build(),
-        ],
+        work: [new ODataResourceBuilder().asWorkResource().withName('John').build()],
+        material: [new ODataResourceBuilder().asMaterialResource().withName('Steel').build()],
+        cost: [new ODataResourceBuilder().asCostResource().withName('Travel').build()],
       };
       const assignments = [
         new ODataAssignmentBuilder()
@@ -413,7 +398,7 @@ describe('ProjectOnlineClient', () => {
           .withWork(40)
           .build(),
       ];
-      
+
       const fixture = {
         project,
         tasks,

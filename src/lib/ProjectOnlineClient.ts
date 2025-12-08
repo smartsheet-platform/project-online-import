@@ -270,8 +270,9 @@ export class ProjectOnlineClient {
    */
   async getProject(projectId: string): Promise<ProjectOnlineProject> {
     const url = `/Projects('${projectId}')`;
-    const response: { d?: ProjectOnlineProject } | ProjectOnlineProject =
-      await this.executeGet<{ d: ProjectOnlineProject } | ProjectOnlineProject>(url);
+    const response: { d?: ProjectOnlineProject } | ProjectOnlineProject = await this.executeGet<
+      { d: ProjectOnlineProject } | ProjectOnlineProject
+    >(url);
 
     // OData verbose format wraps the result in a 'd' property
     if ('d' in response && response.d) {

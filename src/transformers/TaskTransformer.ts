@@ -753,6 +753,9 @@ export class TaskTransformer {
       `Final columnMap has ${Object.keys(columnMap).length} columns: ${Object.keys(columnMap).join(', ')}`
     );
 
+    // Note: Dependencies should already be enabled on sheets created from template
+    // For test sheets, dependencies will be auto-enabled when predecessor column is added
+
     // Helper function to build cells for a task
     const buildCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
       const cells: SmartsheetCell[] = [];
@@ -893,10 +896,9 @@ export class TaskTransformer {
             body: rowsToAdd,
           });
 
+          // Unwrap the API response to get the actual array
           const createdRows =
             addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
-
-          // Unwrap the API response to get the actual array
           const rowsArray = Array.isArray(createdRows) ? createdRows : [];
 
           // Map task IDs to row IDs for next level
@@ -908,7 +910,9 @@ export class TaskTransformer {
 
           totalRowsCreated += rowsArray.length;
         } catch (error) {
-          this.logger?.error(`Failed to add task rows at level ${level}, group ${groupKey}`, error);
+          this.logger?.error(
+            `Failed to add task rows at level ${level}, group ${groupKey}: ${error instanceof Error ? error.message : String(error)}`
+          );
           throw error;
         }
       }

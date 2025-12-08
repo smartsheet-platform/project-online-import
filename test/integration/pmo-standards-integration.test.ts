@@ -130,7 +130,7 @@ describe('PMO Standards Integration Tests', () => {
 
         // Get workspace details to find summary sheet
         const sheets = await getAllSheetsFromWorkspace(smartsheetClient, result.workspaceId);
-        
+
         expect(sheets.length).toBeGreaterThan(0);
         const summarySheet = sheets.find((s: any) => s.name?.includes('Summary'));
         expect(summarySheet).toBeDefined();
@@ -173,7 +173,7 @@ describe('PMO Standards Integration Tests', () => {
 
         // Get workspace details to find task sheet
         const sheets = await getAllSheetsFromWorkspace(smartsheetClient, result.workspaceId);
-        
+
         expect(sheets.length).toBeGreaterThan(0);
         const taskSheet = sheets.find((s: any) => s.name?.includes('Tasks'));
         expect(taskSheet).toBeDefined();
@@ -221,7 +221,7 @@ describe('PMO Standards Integration Tests', () => {
 
         // Get task sheet
         const sheets = await getAllSheetsFromWorkspace(smartsheetClient, result.workspaceId);
-        
+
         const taskSheet = sheets.find((s: any) => s.name?.includes('Tasks'));
         expect(taskSheet).toBeDefined();
 

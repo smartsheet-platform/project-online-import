@@ -23,6 +23,7 @@ export interface SmartsheetSheet {
   rows?: SmartsheetRow[];
   accessLevel?: string;
   permalink?: string;
+  dependenciesEnabled?: boolean;
 }
 
 /**

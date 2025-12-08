@@ -62,7 +62,9 @@ export async function createPMOStandardsWorkspace(
     if (!client.workspaces?.getWorkspace) {
       throw new Error('SmartsheetClient does not support getWorkspace');
     }
-    const workspaceResponse = await client.workspaces.getWorkspace({ workspaceId: existingWorkspaceId });
+    const workspaceResponse = await client.workspaces.getWorkspace({
+      workspaceId: existingWorkspaceId,
+    });
     workspace = workspaceResponse.data || workspaceResponse.result;
     if (!workspace) {
       throw new Error(`Workspace ${existingWorkspaceId} not found`);

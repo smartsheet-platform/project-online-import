@@ -123,21 +123,21 @@ export class ProjectOnlineImporter {
       this.logger.info('  • Extract project data');
       this.logger.info('  • Process data transformations');
       this.logger.info('  • Skip all Smartsheet write operations\n');
-      
+
       // Initialize clients
       this.initializeProjectOnlineClient();
-      
+
       // Test connection
       this.logger.info('Testing Project Online connection...');
       const connected = await this.projectOnlineClient!.testConnection();
       if (!connected) {
         throw ErrorHandler.connectionError('Failed to connect to Project Online');
       }
-      
+
       // Extract data
       this.logger.info(`\nExtracting data for project ${options.source}...`);
       const data = await this.projectOnlineClient!.extractProjectData(options.source);
-      
+
       this.logger.success(`\n✅ Dry run completed successfully!`);
       this.logger.info(`   Project: ${data.project.Name}`);
       this.logger.info(`   Tasks: ${data.tasks.length}`);
@@ -350,7 +350,9 @@ export class ProjectOnlineImporter {
     }
 
     // Get sheet to find Status and Priority column IDs
-    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({ sheetId: summarySheetId });
+    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({
+      sheetId: summarySheetId,
+    });
     const sheet = sheetResponse?.data || sheetResponse?.result;
     if (!sheet) {
       throw ErrorHandler.dataError(
@@ -486,12 +488,14 @@ export class ProjectOnlineImporter {
         this.logger.info('\n🔌 Testing Project Online connection...');
         this.initializeProjectOnlineClient();
         const connected = await this.projectOnlineClient!.testConnection();
-        
+
         if (!connected) {
           errors.push('Failed to connect to Project Online');
         }
       } catch (error) {
-        errors.push(`Connection test failed: ${error instanceof Error ? error.message : String(error)}`);
+        errors.push(
+          `Connection test failed: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 

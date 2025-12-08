@@ -235,10 +235,7 @@ export class ErrorHandler {
    * Create authentication error with actionable message
    */
   static authError(message: string, suggestion: string): ConnectionError {
-    return new ConnectionError(
-      `Authentication error: ${message}`,
-      suggestion
-    );
+    return new ConnectionError(`Authentication error: ${message}`, suggestion);
   }
 
   /**
@@ -248,7 +245,7 @@ export class ErrorHandler {
     const waitTime = retryAfterMs
       ? `Wait ${Math.ceil(retryAfterMs / 1000)} seconds`
       : 'Wait a few minutes';
-    
+
     return new ConnectionError(
       'API rate limit exceeded',
       `${waitTime} before retrying. Consider reducing the request rate or batch size.`,

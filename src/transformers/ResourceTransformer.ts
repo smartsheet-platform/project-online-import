@@ -430,16 +430,22 @@ export class ResourceTransformer {
     }
 
     // Now create rows using the columnMap
+    let rowsActuallyCreated = 0;
     if (resources.length > 0) {
       if (!this.client.sheets?.addRows) {
         throw new Error('Smartsheet client sheets.addRows method not available');
       }
       const rows = resources.map((resource) => this.buildResourceRow(resource, columnMap));
-      await this.client.sheets.addRows({ sheetId, body: rows });
+      const addRowsResponse = await this.client.sheets.addRows({ sheetId, body: rows });
+
+      // Extract the actual created rows from the response
+      const createdRows = addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
+      const rowsArray = Array.isArray(createdRows) ? createdRows : [];
+      rowsActuallyCreated = rowsArray.length;
     }
 
     return {
-      rowsCreated: resources.length,
+      rowsCreated: rowsActuallyCreated,
       sheetId,
     };
   }
