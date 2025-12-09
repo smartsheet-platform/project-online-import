@@ -1,3 +1,28 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Re-run Resiliency](./Re-run-Resiliency.md)
+
+📍 **Current**: Sheet References
+
+**Next**: [Authentication Setup →](./Authentication-Setup.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. **Sheet References** (You are here)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and structure
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
 # Smartsheet Cross-Sheet References
 
 ## Overview
@@ -620,13 +645,37 @@ async function configureContactColumn(
 
 ## References
 
-- [Architecture Document](Architecture.md)
-- [Smartsheet Structure Document](Smartsheet-Structure.md)
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and implementation
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and structure
 - [Smartsheet API - Column Types](https://smartsheet.redoc.ly/#section/Column-Types)
 - [Smartsheet API - Cell Links](https://smartsheet.redoc.ly/#section/Cell-Links)
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024-12-05  
+**📚 Implementation Guide Series**
+
+**Previous**: [← Re-run Resiliency](./Re-run-Resiliency.md)
+
+📍 **Current**: Sheet References
+
+**Next**: [Authentication Setup →](./Authentication-Setup.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. **Sheet References** (You are here)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and structure
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
+**Document Version**: 1.0
+**Last Updated**: 2024-12-05
 **Status**: Current Implementation

@@ -223,7 +223,7 @@ All API calls use retry logic:
 ### Test Organization
 - **Unit Tests**: `test/*.test.ts` - Individual transformer/utility tests
 - **Integration Tests**: `test/integration/*.test.ts` - End-to-end scenarios
-- **Mocks**: `test/mocks/` - Mock API clients and builders
+- **Mocks**: `test/unit/` - Mock API clients and builders
 - **Fixtures**: `test/integration/helpers/` - OData and Smartsheet test data
 
 ### Test Patterns
@@ -246,7 +246,7 @@ npm run test:integration  # Integration tests (requires .env.test)
 2. Create transformer in `src/transformers/`
 3. Add utilities to `src/transformers/utils.ts` if needed
 4. Integrate into `src/lib/importer.ts` pipeline
-5. Add tests in `test/transformers/`
+5. Add tests in `test/unit/transformers/`
 6. Update documentation in `sdlc/docs/project/`
 
 ### Adding a New API Client Method

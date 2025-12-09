@@ -1,3 +1,28 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Sheet References](./Sheet-References.md)
+
+📍 **Current**: Authentication Setup
+
+**Next**: [CLI Usage Guide →](./CLI-Usage-Guide.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. [Sheet References](./Sheet-References.md)
+7. **Authentication Setup** (You are here)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [CLI Usage Guide](./CLI-Usage-Guide.md) - Command-line interface usage
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
 # Project Online Authentication Setup Guide
 
 This guide walks through setting up Azure AD authentication for the Project Online to Smartsheet ETL tool.
@@ -317,7 +342,7 @@ These values are built into the client and provide reliable operation for most s
 ### Internal Resources
 
 - [Project Plan](./Project-Plan.md) - Implementation status
-- [Architecture](./Architecture.md) - System architecture
+- [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md) - System architecture overview
 - [CLI Usage Guide](./CLI-Usage-Guide.md) - Command reference
 
 ### Getting Help
@@ -332,6 +357,30 @@ If you encounter issues not covered in this guide:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024-12-05  
+**📚 Implementation Guide Series**
+
+**Previous**: [← Sheet References](./Sheet-References.md)
+
+📍 **Current**: Authentication Setup
+
+**Next**: [CLI Usage Guide →](./CLI-Usage-Guide.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. [Sheet References](./Sheet-References.md)
+7. **Authentication Setup** (You are here)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [CLI Usage Guide](./CLI-Usage-Guide.md) - Command-line interface usage
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
+**Document Version**: 1.0
+**Last Updated**: 2024-12-05
 **Next Review**: After first production deployment

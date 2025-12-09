@@ -111,55 +111,91 @@ npm test
 
 ## Documentation
 
-Comprehensive documentation is available in the [`sdlc/docs/project/`](sdlc/docs/project/) directory:
+Comprehensive documentation is organized in a guided reading series. Follow this recommended order:
 
-- **[Architecture](sdlc/docs/project/Architecture.md)** - System design, components, data flow, and implementation details
-- **[Smartsheet Structure](sdlc/docs/project/Smartsheet-Structure.md)** - Workspace organization, sheet structures, and data type mappings
-- **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
-- **[CLI Usage Guide](sdlc/docs/project/CLI-Usage-Guide.md)** - Complete CLI command reference and troubleshooting
-- **[Project Plan](sdlc/docs/project/Project-Plan.md)** - Implementation progress, completed items, open tasks, and timeline
-
-Additional planning documents:
-- [Architecture Plan](sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md) - Detailed ETL architecture and implementation phases
-- [Transformation Mapping](sdlc/docs/architecture/project-online-smartsheet-transformation-mapping.md) - Property mappings and data conversion specifications
+1. **[Project Online Migration Overview](sdlc/docs/architecture/01-project-online-migration-overview.md)** - Business context, high-level approach, and system overview
+2. **[ETL System Design](sdlc/docs/architecture/02-etl-system-design.md)** - Component architecture and implementation details
+3. **[Data Transformation Guide](sdlc/docs/architecture/03-data-transformation-guide.md)** - Data mappings, output structure, and transformation specifications
+4. **[Template-Based Workspace Creation](sdlc/docs/project/Template-Based-Workspace-Creation.md)** - Efficient workspace creation using templates
+5. **[Re-run Resiliency](sdlc/docs/project/Re-run-Resiliency.md)** - Idempotent operations and multi-run support
+6. **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
+7. **[Authentication Setup](sdlc/docs/project/Authentication-Setup.md)** - Credential configuration for Project Online and Smartsheet
+8. **[CLI Usage Guide](sdlc/docs/project/CLI-Usage-Guide.md)** - Complete CLI command reference and examples
+9. **[Troubleshooting Playbook](sdlc/docs/code/troubleshooting-playbook.md)** - Common issues and solutions
+10. **[Code Conventions](sdlc/docs/code/conventions.md)** - Naming, formatting, and style standards
+11. **[Code Patterns](sdlc/docs/code/patterns.md)** - Recommended implementation patterns
+12. **[Anti-Patterns](sdlc/docs/code/anti-patterns.md)** - Common mistakes to avoid
+13. **[API Services Catalog](sdlc/docs/api-reference/api-services-catalog.md)** - External API integration reference
+14. **[Test Suite Guide](test/README.md)** - Testing strategy, scenarios, and implementation
 
 ## Project Structure
 
 ```
 .
-├── sdlc/                      # SDLC documentation and plans
-│   └── docs/
-│       ├── project/           # Project documentation
-│       │   ├── Architecture.md
-│       │   ├── CLI-Usage-Guide.md
-│       │   ├── Project-Plan.md
-│       │   ├── Sheet-References.md
-│       │   └── Smartsheet-Structure.md
-│       ├── plans/             # Architecture and transformation plans
-│       └── specs/             # Technical specifications
+├── sdlc/                      # SDLC documentation and configuration
+│   ├── docs/
+│   │   ├── architecture/      # System architecture documentation
+│   │   │   ├── 01-project-online-migration-overview.md
+│   │   │   ├── 02-etl-system-design.md
+│   │   │   ├── 03-data-transformation-guide.md
+│   │   │   ├── claude-agent-system.md
+│   │   │   └── ultra-dry-architecture.md
+│   │   ├── project/           # Implementation guides
+│   │   │   ├── Authentication-Setup.md
+│   │   │   ├── CLI-Usage-Guide.md
+│   │   │   ├── Re-run-Resiliency.md
+│   │   │   ├── Sheet-References.md
+│   │   │   └── Template-Based-Workspace-Creation.md
+│   │   ├── code/              # Code standards and patterns
+│   │   │   ├── anti-patterns.md
+│   │   │   ├── conventions.md
+│   │   │   ├── patterns.md
+│   │   │   └── troubleshooting-playbook.md
+│   │   ├── api-reference/     # API integration reference
+│   │   │   └── api-services-catalog.md
+│   │   └── specs/             # Technical specifications
+│   │       ├── E2E-Integration-Tests.md
+│   │       └── Project-Plan.md
+│   ├── shared/                # Shared documentation for Roo/Claude
+│   └── memory-bank/           # SDLC context and progress tracking
 ├── src/                       # Source code
 │   ├── cli.ts                 # CLI entry point
 │   ├── index.ts               # Main export file
 │   ├── lib/                   # Core library code
-│   │   └── importer.ts
+│   │   ├── importer.ts        # ETL orchestration
+│   │   ├── ProjectOnlineClient.ts  # Project Online API client
+│   │   └── auth/
+│   │       └── MSALAuthHandler.ts  # Microsoft authentication
 │   ├── transformers/          # Data transformation layer
-│   │   ├── ProjectTransformer.ts
-│   │   ├── TaskTransformer.ts
-│   │   ├── ResourceTransformer.ts
 │   │   ├── AssignmentTransformer.ts
 │   │   ├── PMOStandardsTransformer.ts
+│   │   ├── ProjectTransformer.ts
+│   │   ├── ResourceTransformer.ts
+│   │   ├── TaskTransformer.ts
 │   │   └── utils.ts
 │   ├── types/                 # TypeScript type definitions
 │   │   ├── ProjectOnline.ts
 │   │   ├── Smartsheet.ts
 │   │   └── SmartsheetClient.ts
 │   └── util/                  # Utility classes
-│       └── ExponentialBackoff.ts
-├── test/                      # Tests
-│   ├── unit/                  # Unit tests
+│       ├── ConfigManager.ts
+│       ├── ErrorHandler.ts
+│       ├── ExponentialBackoff.ts
+│       ├── Logger.ts
+│       ├── ProgressReporter.ts
+│       └── SmartsheetHelpers.ts
+├── test/                      # Test suite
+│   ├── unit/                  # Unit tests with mocks
+│   │   ├── builders/          # Test data builders
+│   │   ├── transformers/      # Transformer unit tests
+│   │   ├── MockODataClient.ts
+│   │   └── MockSmartsheetClient.ts
 │   ├── integration/           # Integration tests
-│   └── mocks/                 # Mock implementations
-├── memory-bank/               # Project context and progress
+│   │   ├── scenarios/         # Test scenario definitions
+│   │   └── helpers/           # Test utilities
+│   └── README.md              # Test suite documentation
+├── memory-bank/               # Main app project context
+├── scripts/                   # Utility scripts
 ├── dist/                      # Compiled output (generated)
 ├── coverage/                  # Test coverage reports (generated)
 └── node_modules/              # Dependencies (generated)
@@ -182,7 +218,7 @@ This tool implements an Extract-Transform-Load (ETL) pattern:
 - **PMO Standards** - Centralized reference sheets for consistent picklist values
 - **Type Safety** - Full TypeScript implementation with comprehensive type definitions
 
-See [Architecture.md](sdlc/docs/project/Architecture.md) for complete details.
+See [Project Online Migration Overview](sdlc/docs/architecture/01-project-online-migration-overview.md) and [ETL System Design](sdlc/docs/architecture/02-etl-system-design.md) for complete details.
 
 ## Contributing
 

@@ -1,3 +1,35 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Code Conventions](./conventions.md)
+
+📍 **Current**: Code Patterns
+
+**Next**: [Anti-Patterns →](./anti-patterns.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
+10. [Code Conventions](./conventions.md)
+11. **Code Patterns** (You are here)
+12. [Anti-Patterns](./anti-patterns.md)
+13. [API Services Catalog](../api-reference/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [Code Conventions](./conventions.md) - Coding standards and naming conventions
+- [Anti-Patterns](./anti-patterns.md) - Common mistakes to avoid
+- [ETL System Design](../architecture/02-etl-system-design.md) - Component architecture details
+
+---
+
 # Project Online Import - Code Patterns
 
 This document catalogs recurring code patterns used throughout the project. Understanding these patterns will help you write code that's consistent with the existing codebase.
@@ -94,7 +126,7 @@ export abstract class BaseTransformer<TSource, TTarget> {
 
 **Implementation**:
 ```typescript
-// test/mocks/builders/ODataProjectBuilder.ts
+// test/unit/builders/ODataProjectBuilder.ts
 export class ODataProjectBuilder {
   private project: Partial<ProjectOnlineProject> = {};
   
@@ -589,7 +621,7 @@ for (const task of tasks) {
 
 **Implementation**:
 ```typescript
-// test/mocks/MockSmartsheetClient.ts
+// test/unit/MockSmartsheetClient.ts
 export class MockSmartsheetClient implements SmartsheetClient {
   public createSheetInWorkspaceCalls: any[] = [];
   
@@ -695,3 +727,36 @@ When you need to add a new pattern:
 4. Document with examples
 5. Add tests
 6. Update this guide
+
+---
+
+**📚 Implementation Guide Series**
+
+**Previous**: [← Code Conventions](./conventions.md)
+
+📍 **Current**: Code Patterns
+
+**Next**: [Anti-Patterns →](./anti-patterns.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
+10. [Code Conventions](./conventions.md)
+11. **Code Patterns** (You are here)
+12. [Anti-Patterns](./anti-patterns.md)
+13. [API Services Catalog](../api-reference/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [Code Conventions](./conventions.md) - Coding standards and naming conventions
+- [Anti-Patterns](./anti-patterns.md) - Common mistakes to avoid
+- [ETL System Design](../architecture/02-etl-system-design.md) - Component architecture details
+
+---

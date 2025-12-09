@@ -5,7 +5,7 @@
 - **Purpose**: Comprehensive specification for populating Project Online with diverse test data
 - **Related Specs**: 
   - [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md) - 31 integration test scenarios
-  - [`sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md`](../architecture/project-online-smartsheet-etl-architecture-plan.md) - ETL architecture
+  - [`sdlc/docs/architecture/02-etl-system-design.md`](../architecture/02-etl-system-design.md) - ETL architecture
 
 ## Executive Summary
 
@@ -811,7 +811,7 @@ The script is successful when:
 ## Related Documentation
 
 - **Integration Test Spec**: [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md)
-- **ETL Architecture**: [`sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md`](../architecture/project-online-smartsheet-etl-architecture-plan.md)
+- **ETL Architecture**: [`sdlc/docs/architecture/02-etl-system-design.md`](../architecture/02-etl-system-design.md)
 - **E2E Test Spec**: [`sdlc/docs/specs/Project-Online-E2E-Integration-Tests.md`](./Project-Online-E2E-Integration-Tests.md) (to be created)
 - **Project Online Client**: [`src/lib/ProjectOnlineClient.ts`](../../../src/lib/ProjectOnlineClient.ts)
 

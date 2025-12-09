@@ -8,8 +8,8 @@ import {
   ensureStandardReferenceSheet,
   STANDARD_REFERENCE_SHEETS,
   PMOStandardsWorkspaceInfo,
-} from '../../src/transformers/PMOStandardsTransformer';
-import { MockSmartsheetClient } from '../mocks/MockSmartsheetClient';
+} from '../../../src/transformers/PMOStandardsTransformer';
+import { MockSmartsheetClient } from '../MockSmartsheetClient';
 
 describe('PMOStandardsTransformer', () => {
   let mockClient: MockSmartsheetClient;

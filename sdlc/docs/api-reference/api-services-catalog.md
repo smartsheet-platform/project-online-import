@@ -1,3 +1,35 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Anti-Patterns](../code/anti-patterns.md)
+
+📍 **Current**: API Services Catalog
+
+**Next**: [Test Suite Guide →](../../test/README.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
+10. [Code Conventions](../code/conventions.md)
+11. [Code Patterns](../code/patterns.md)
+12. [Anti-Patterns](../code/anti-patterns.md)
+13. **API Services Catalog** (You are here)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [ETL System Design](../architecture/02-etl-system-design.md) - Component architecture and integration details
+- [Authentication Setup](../project/Authentication-Setup.md) - Credential configuration and setup
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - API data mapping specifications
+
+---
+
 # API Services Reference
 
 This catalog provides a comprehensive reference for all APIs and services used by the Project Online to Smartsheet ETL application.
@@ -333,9 +365,9 @@ RATE_LIMIT_PER_MINUTE=300
 ### Testing
 
 **Test Approach:**
-- Unit tests: Mock API clients ([`MockODataClient`](../../test/mocks/MockODataClient.ts), [`MockSmartsheetClient`](../../test/mocks/MockSmartsheetClient.ts))
+- Unit tests: Mock API clients ([`MockODataClient`](../../test/unit/MockODataClient.ts), [`MockSmartsheetClient`](../../test/unit/MockSmartsheetClient.ts))
 - Integration tests: Use real Smartsheet workspace (requires API token)
-- Test data: Builder pattern for OData entities ([`test/mocks/builders/`](../../test/mocks/builders/))
+- Test data: Builder pattern for OData entities ([`test/unit/builders/`](../../test/unit/builders/))
 
 **Test Workspace:**
 - Use dedicated test workspace for integration tests
@@ -469,3 +501,36 @@ const resources = await client.getResources();
 ---
 
 *Last Updated: 2025-12-08*
+
+---
+
+**📚 Implementation Guide Series**
+
+**Previous**: [← Anti-Patterns](../code/anti-patterns.md)
+
+📍 **Current**: API Services Catalog
+
+**Next**: [Test Suite Guide →](../../test/README.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
+10. [Code Conventions](../code/conventions.md)
+11. [Code Patterns](../code/patterns.md)
+12. [Anti-Patterns](../code/anti-patterns.md)
+13. **API Services Catalog** (You are here)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [ETL System Design](../architecture/02-etl-system-design.md) - Component architecture and integration details
+- [Authentication Setup](../project/Authentication-Setup.md) - Credential configuration and setup
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - API data mapping specifications
+
+---

@@ -217,7 +217,7 @@ Workspace: {ProjectName} (sanitized, NO prefix)
 
 **Status**: Approved - Architecture Complete
 
-**Reference**: Complete architecture plan at [`sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md`](../sdlc/docs/architecture/project-online-smartsheet-etl-architecture-plan.md)
+**Reference**: Architecture overview at [`sdlc/docs/architecture/01-project-online-migration-overview.md`](../sdlc/docs/architecture/01-project-online-migration-overview.md), system design at [`sdlc/docs/architecture/02-etl-system-design.md`](../sdlc/docs/architecture/02-etl-system-design.md), and transformation guide at [`sdlc/docs/architecture/03-data-transformation-guide.md`](../sdlc/docs/architecture/03-data-transformation-guide.md)
 
 ---
 

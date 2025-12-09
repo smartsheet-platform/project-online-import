@@ -7,7 +7,7 @@
  * - Material/Cost resources (non-people) → MULTI_PICKLIST columns
  */
 
-import { ODataAssignmentBuilder } from '../../mocks/builders/ODataAssignmentBuilder';
+import { ODataAssignmentBuilder } from '../../unit/builders/ODataAssignmentBuilder';
 import {
   ProjectOnlineAssignment,
   ProjectOnlineResource,

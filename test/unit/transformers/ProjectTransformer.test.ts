@@ -1,14 +1,14 @@
-import { configureProjectPicklistColumns } from '../../src/transformers/ProjectTransformer';
-import { createPMOStandardsWorkspace } from '../../src/transformers/PMOStandardsTransformer';
-import { MockSmartsheetClient } from '../mocks/MockSmartsheetClient';
-import { SmartsheetPicklistOption } from '../../src/types/Smartsheet';
+import { configureProjectPicklistColumns } from '../../../src/transformers/ProjectTransformer';
+import { createPMOStandardsWorkspace } from '../../../src/transformers/PMOStandardsTransformer';
+import { MockSmartsheetClient } from '../MockSmartsheetClient';
+import { SmartsheetPicklistOption } from '../../../src/types/Smartsheet';
 
 import {
   transformProjectToWorkspace,
   createProjectSummarySheet,
   validateProject,
-} from '../../src/transformers/ProjectTransformer';
-import { ProjectOnlineProject } from '../../src/types/ProjectOnline';
+} from '../../../src/transformers/ProjectTransformer';
+import { ProjectOnlineProject } from '../../../src/types/ProjectOnline';
 
 describe('ProjectTransformer', () => {
   const mockProject: ProjectOnlineProject = {

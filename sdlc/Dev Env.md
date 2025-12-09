@@ -251,8 +251,8 @@ npm test -- --testNamePattern="should create"
 ### Test Structure
 
 - **Unit Tests**: Located in `test/` directory mirroring `src/` structure
-  - `test/transformers/` - Transformation logic tests
-  - `test/mocks/` - Mock implementations for testing
+  - `test/unit/transformers/` - Transformation logic tests
+  - `test/unit/` - Mock implementations for testing
   - `test/utils/` - Utility function tests
 
 - **Test Naming**: `*.test.ts` files with descriptive test suites
@@ -263,14 +263,14 @@ npm test -- --testNamePattern="should create"
 
 ```
 test/
-├── mocks/
+├── unit/
 │   ├── MockSmartsheetClient.ts   # Mock Smartsheet SDK
-│   └── MockODataClient.ts         # Mock Project Online oData client
-├── transformers/
-│   ├── ProjectTransformer.test.ts
-│   ├── ResourceTransformer.test.ts
-│   ├── TaskTransformer.test.ts
-│   └── AssignmentTransformer.test.ts
+│   ├── MockODataClient.ts         # Mock Project Online oData client
+│   └── transformers/
+│       ├── ProjectTransformer.test.ts
+│       ├── ResourceTransformer.test.ts
+│       ├── TaskTransformer.test.ts
+│       └── AssignmentTransformer.test.ts
 └── utils/
     └── utils.test.ts
 ```

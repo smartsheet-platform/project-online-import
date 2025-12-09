@@ -3,11 +3,11 @@
  * Tests HTTP client behavior, pagination, rate limiting, and error handling
  */
 
-import { MockODataClient } from '../mocks/MockODataClient';
-import { ODataProjectBuilder } from '../mocks/builders/ODataProjectBuilder';
-import { ODataTaskBuilder } from '../mocks/builders/ODataTaskBuilder';
-import { ODataResourceBuilder } from '../mocks/builders/ODataResourceBuilder';
-import { ODataAssignmentBuilder } from '../mocks/builders/ODataAssignmentBuilder';
+import { MockODataClient } from '../unit/MockODataClient';
+import { ODataProjectBuilder } from '../unit/builders/ODataProjectBuilder';
+import { ODataTaskBuilder } from '../unit/builders/ODataTaskBuilder';
+import { ODataResourceBuilder } from '../unit/builders/ODataResourceBuilder';
+import { ODataAssignmentBuilder } from '../unit/builders/ODataAssignmentBuilder';
 
 describe('ProjectOnlineClient', () => {
   let mockClient: MockODataClient;

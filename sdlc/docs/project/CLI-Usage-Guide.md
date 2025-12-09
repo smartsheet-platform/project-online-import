@@ -1,3 +1,32 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Authentication Setup](./Authentication-Setup.md)
+
+📍 **Current**: CLI Usage Guide
+
+**Next**: [Troubleshooting Playbook →](../code/troubleshooting-playbook.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. [Sheet References](./Sheet-References.md)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. **CLI Usage Guide** (You are here)
+9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
+10. [Code Conventions](../code/conventions.md)
+11. [Code Patterns](../code/patterns.md)
+12. [Anti-Patterns](../code/anti-patterns.md)
+
+**🔗 Related Documentation**:
+- [Authentication Setup](./Authentication-Setup.md) - Azure AD and credential configuration
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
 # CLI Usage Guide
 
 ## Overview
@@ -714,9 +743,9 @@ npm run cli import ... --verbose
 ### Getting Help
 
 **Check documentation**:
-- [Architecture.md](./Architecture.md) - System design
+- [ETL System Design](../architecture/02-etl-system-design.md) - System design and architecture
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Data mappings and output structure
 - [Project-Plan.md](./Project-Plan.md) - Implementation status
-- [Smartsheet-Structure.md](./Smartsheet-Structure.md) - Output structure
 
 **Report issues**:
 1. Run command with `--verbose` flag
@@ -816,6 +845,34 @@ Planned CLI improvements:
 - [ ] **Export configuration**: Generate configuration from existing workspace
 - [ ] **Resume capability**: Resume interrupted imports from checkpoint
 - [ ] **Rollback capability**: Undo failed imports
+
+---
+
+**📚 Implementation Guide Series**
+
+**Previous**: [← Authentication Setup](./Authentication-Setup.md)
+
+📍 **Current**: CLI Usage Guide
+
+**Next**: [Troubleshooting Playbook →](../code/troubleshooting-playbook.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. [Sheet References](./Sheet-References.md)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. **CLI Usage Guide** (You are here)
+9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
+10. [Code Conventions](../code/conventions.md)
+11. [Code Patterns](../code/patterns.md)
+12. [Anti-Patterns](../code/anti-patterns.md)
+
+**🔗 Related Documentation**:
+- [Authentication Setup](./Authentication-Setup.md) - Azure AD and credential configuration
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
 
 ---
 

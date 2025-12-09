@@ -1,5 +1,5 @@
-import { MockSmartsheetClient } from '../mocks/MockSmartsheetClient';
-import { ProjectOnlineTask, PMOStandardsWorkspaceInfo } from '../../src/types/ProjectOnline';
+import { MockSmartsheetClient } from '../MockSmartsheetClient';
+import { ProjectOnlineTask, PMOStandardsWorkspaceInfo } from '../../../src/types/ProjectOnline';
 import {
   createTasksSheet,
   createTasksSheetColumns,
@@ -11,7 +11,7 @@ import {
   discoverAssignmentColumns,
   configureAssignmentColumns,
   validateTask,
-} from '../../src/transformers/TaskTransformer';
+} from '../../../src/transformers/TaskTransformer';
 
 describe('TaskTransformer', () => {
   let mockClient: MockSmartsheetClient;

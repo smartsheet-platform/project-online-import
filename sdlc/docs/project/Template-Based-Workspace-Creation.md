@@ -1,3 +1,28 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+
+📍 **Current**: Template-Based Workspace Creation
+
+**Next**: [Re-run Resiliency →](./Re-run-Resiliency.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. **Template-Based Workspace Creation** (You are here)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. [Sheet References](./Sheet-References.md)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and transformations
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
 # Template-Based Workspace Creation
 
 ## Overview
@@ -233,5 +258,31 @@ Error: Insufficient permissions to copy workspace
 ## Related Documentation
 
 - [Re-run Resiliency](./Re-run-Resiliency.md) - Sheet and column existence checking
-- [Architecture](./Architecture.md) - Overall system architecture
-- [Smartsheet Structure](./Smartsheet-Structure.md) - Sheet and column details
+- [ETL System Design](../architecture/02-etl-system-design.md) - Overall system architecture and implementation
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete sheet and column details
+
+---
+
+**📚 Implementation Guide Series**
+
+**Previous**: [← Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+
+📍 **Current**: Template-Based Workspace Creation
+
+**Next**: [Re-run Resiliency →](./Re-run-Resiliency.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. **Template-Based Workspace Creation** (You are here)
+5. [Re-run Resiliency](./Re-run-Resiliency.md)
+6. [Sheet References](./Sheet-References.md)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and transformations
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---

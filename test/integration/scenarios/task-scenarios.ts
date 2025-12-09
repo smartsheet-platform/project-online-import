@@ -3,7 +3,7 @@
  * These correspond to test scenarios in load-phase-test-scenarios.md
  */
 
-import { ODataTaskBuilder } from '../../mocks/builders/ODataTaskBuilder';
+import { ODataTaskBuilder } from '../../unit/builders/ODataTaskBuilder';
 import { ProjectOnlineTask } from '../../../src/types/ProjectOnline';
 
 /**

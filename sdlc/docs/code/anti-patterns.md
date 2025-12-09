@@ -1,3 +1,35 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Code Patterns](./patterns.md)
+
+📍 **Current**: Anti-Patterns
+
+**Next**: [API Services Catalog →](../api-reference/api-services-catalog.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
+10. [Code Conventions](./conventions.md)
+11. [Code Patterns](./patterns.md)
+12. **Anti-Patterns** (You are here)
+13. [API Services Catalog](../api-reference/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [Code Patterns](./patterns.md) - Recommended implementation patterns
+- [Code Conventions](./conventions.md) - Coding standards and best practices
+- [Troubleshooting Playbook](./troubleshooting-playbook.md) - Debugging and resolution strategies
+
+---
+
 # Project Online Import - Anti-Patterns
 
 This document identifies common mistakes, code smells, and anti-patterns to avoid. Learning what NOT to do is as important as learning best practices.
@@ -820,3 +852,36 @@ If you find yourself thinking:
 - "The tests are too hard" → Design issue, not test issue
 
 Stop and refactor. Future you will thank you.
+
+---
+
+**📚 Implementation Guide Series**
+
+**Previous**: [← Code Patterns](./patterns.md)
+
+📍 **Current**: Anti-Patterns
+
+**Next**: [API Services Catalog →](../api-reference/api-services-catalog.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
+10. [Code Conventions](./conventions.md)
+11. [Code Patterns](./patterns.md)
+12. **Anti-Patterns** (You are here)
+13. [API Services Catalog](../api-reference/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [Code Patterns](./patterns.md) - Recommended implementation patterns
+- [Code Conventions](./conventions.md) - Coding standards and best practices
+- [Troubleshooting Playbook](./troubleshooting-playbook.md) - Debugging and resolution strategies
+
+---

@@ -2,7 +2,7 @@
  * Tests for SmartsheetHelpers resiliency utilities
  */
 
-import { MockSmartsheetClient } from '../mocks/MockSmartsheetClient';
+import { MockSmartsheetClient } from '../unit/MockSmartsheetClient';
 import {
   findSheetInWorkspace,
   getOrCreateSheet,

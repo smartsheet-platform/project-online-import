@@ -3,7 +3,7 @@
  * These correspond to test scenarios in load-phase-test-scenarios.md
  */
 
-import { ODataResourceBuilder } from '../../mocks/builders/ODataResourceBuilder';
+import { ODataResourceBuilder } from '../../unit/builders/ODataResourceBuilder';
 import { ProjectOnlineResource } from '../../../src/types/ProjectOnline';
 
 /**

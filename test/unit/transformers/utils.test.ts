@@ -8,7 +8,7 @@ import {
   generateProjectPrefix,
   convertMaxUnits,
   createContactObject,
-} from '../../src/transformers/utils';
+} from '../../../src/transformers/utils';
 
 describe('Transformation Utils', () => {
   describe('sanitizeWorkspaceName', () => {

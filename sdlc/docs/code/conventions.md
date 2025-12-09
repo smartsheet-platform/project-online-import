@@ -1,3 +1,35 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Troubleshooting Playbook](./troubleshooting-playbook.md)
+
+📍 **Current**: Code Conventions
+
+**Next**: [Code Patterns →](./patterns.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
+10. **Code Conventions** (You are here)
+11. [Code Patterns](./patterns.md)
+12. [Anti-Patterns](./anti-patterns.md)
+13. [API Services Catalog](../api-reference/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [Code Patterns](./patterns.md) - Recurring implementation patterns
+- [Anti-Patterns](./anti-patterns.md) - Common mistakes to avoid
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture overview
+
+---
+
 # Project Online Import - Code Conventions
 
 This document describes coding standards, naming conventions, file organization patterns, and development workflows used in this project.
@@ -54,7 +86,7 @@ npm run format      # Format all code
 - `src/lib/auth/` - Lowercase singular/plural as appropriate
 - `src/transformers/` - Plural for collections
 - `test/integration/` - Kebab-case for multi-word
-- `test/mocks/builders/` - Nested organization
+- `test/unit/builders/` - Nested organization
 
 ### Variables and Functions
 
@@ -190,7 +222,7 @@ test/
 │       ├── project-scenarios.ts
 │       ├── resource-scenarios.ts
 │       └── task-scenarios.ts
-└── mocks/                    # Mock implementations
+└── unit/                     # Mock implementations
     ├── MockODataClient.ts
     ├── MockSmartsheetClient.ts
     └── builders/             # Test data builders
@@ -690,3 +722,36 @@ If you're unsure about any convention:
 4. Discuss in team meeting
 
 When in doubt, consistency with existing code takes precedence.
+
+---
+
+**📚 Implementation Guide Series**
+
+**Previous**: [← Troubleshooting Playbook](./troubleshooting-playbook.md)
+
+📍 **Current**: Code Conventions
+
+**Next**: [Code Patterns →](./patterns.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
+10. **Code Conventions** (You are here)
+11. [Code Patterns](./patterns.md)
+12. [Anti-Patterns](./anti-patterns.md)
+13. [API Services Catalog](../api-reference/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
+
+**🔗 Related Documentation**:
+- [Code Patterns](./patterns.md) - Recurring implementation patterns
+- [Anti-Patterns](./anti-patterns.md) - Common mistakes to avoid
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture overview
+
+---

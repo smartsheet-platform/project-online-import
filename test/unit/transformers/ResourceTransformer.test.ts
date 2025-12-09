@@ -10,10 +10,10 @@ import {
   configureResourcePicklistColumns,
   discoverResourceDepartments,
   validateResource,
-} from '../../src/transformers/ResourceTransformer';
-import { ProjectOnlineResource } from '../../src/types/ProjectOnline';
-import { MockSmartsheetClient } from '../mocks/MockSmartsheetClient';
-import { PMOStandardsWorkspaceInfo } from '../../src/transformers/PMOStandardsTransformer';
+} from '../../../src/transformers/ResourceTransformer';
+import { ProjectOnlineResource } from '../../../src/types/ProjectOnline';
+import { MockSmartsheetClient } from '../MockSmartsheetClient';
+import { PMOStandardsWorkspaceInfo } from '../../../src/transformers/PMOStandardsTransformer';
 
 describe('ResourceTransformer', () => {
   const projectName = 'Test Project';

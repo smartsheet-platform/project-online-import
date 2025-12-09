@@ -42,13 +42,13 @@ This document tracks the implementation progress of the Project Online to Smarts
   - User requirements captured (Professional Services team needs)
 
 - [x] **Architecture design**
-  - High-level architecture defined ([Architecture Plan](../plans/project-online-smartsheet-etl-architecture-plan.md))
+  - High-level architecture defined ([ETL System Design](../architecture/02-etl-system-design.md))
   - Component design completed
   - ETL pipeline pattern established
   - Memory bank structure created
 
 - [x] **Detailed transformation mapping**
-  - 50+ property mappings documented ([Transformation Mapping](../plans/project-online-smartsheet-transformation-mapping.md))
+  - 50+ property mappings documented ([Data Transformation Guide](../architecture/03-data-transformation-guide.md))
   - Data type conversion specifications
   - Naming conventions and value patterns
   - Validation rules and quality checks
@@ -732,13 +732,14 @@ Week 6: Testing & Documentation 🚧 (Partial)
 
 ## References
 
-- [Architecture Document](Architecture.md)
-- [Smartsheet Structure Document](Smartsheet-Structure.md)
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and implementation details
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Data mappings and output structure details
 - [Sheet References Document](Sheet-References.md)
 - [CLI Usage Guide](CLI-Usage-Guide.md)
 - [Project Online Authentication Setup](Project-Online-Authentication-Setup.md)
-- [Architecture Plan](../plans/project-online-smartsheet-etl-architecture-plan.md)
-- [Transformation Mapping](../plans/project-online-smartsheet-transformation-mapping.md)
+- [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+- [ETL System Design](../architecture/02-etl-system-design.md)
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
 - [Integration Test Progress](../../../test/integration/PROGRESS.md)
 - [Memory Bank Progress](../../../memory-bank/progress.md)
 

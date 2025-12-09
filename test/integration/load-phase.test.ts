@@ -10,7 +10,7 @@
  * - Verify: Transformation → Load → Smartsheet state
  */
 
-import { MockODataClient } from '../mocks/MockODataClient';
+import { MockODataClient } from '../unit/MockODataClient';
 import {
   TestWorkspaceManager,
   getSheetDetails,

@@ -3,7 +3,7 @@
  * These correspond to test scenarios in load-phase-test-scenarios.md
  */
 
-import { ODataProjectBuilder } from '../../mocks/builders/ODataProjectBuilder';
+import { ODataProjectBuilder } from '../../unit/builders/ODataProjectBuilder';
 import { ProjectOnlineProject } from '../../../src/types/ProjectOnline';
 
 /**

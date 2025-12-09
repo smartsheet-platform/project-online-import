@@ -1,3 +1,28 @@
+---
+**📚 Implementation Guide Series**
+
+**Previous**: [← Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+
+📍 **Current**: Re-run Resiliency
+
+**Next**: [Sheet References →](./Sheet-References.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. **Re-run Resiliency** (You are here)
+6. [Sheet References](./Sheet-References.md)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md) - Template-based workspace approach
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
 # Re-run Resiliency
 
 ## Overview
@@ -297,11 +322,34 @@ See the implementation in:
 
 ## Related Documentation
 
-- [Architecture Document](Architecture.md) - Overall system design
-- [Smartsheet Structure](Smartsheet-Structure.md) - Sheet and column organization
-- [Transformation Mapping](../architecture/project-online-smartsheet-transformation-mapping.md) - Data transformation rules
+- [ETL System Design](../architecture/02-etl-system-design.md) - Overall system design and implementation details
+- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Data transformation rules and sheet structure
 
 ---
 
-**Version**: 1.0  
+**📚 Implementation Guide Series**
+
+**Previous**: [← Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+
+📍 **Current**: Re-run Resiliency
+
+**Next**: [Sheet References →](./Sheet-References.md)
+
+**Complete Series**:
+1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
+2. [ETL System Design](../architecture/02-etl-system-design.md)
+3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+5. **Re-run Resiliency** (You are here)
+6. [Sheet References](./Sheet-References.md)
+7. [Authentication Setup](./Authentication-Setup.md)
+8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+
+**🔗 Related Documentation**:
+- [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md) - Template-based workspace approach
+- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
+
+---
+
+**Version**: 1.0
 **Status**: Implemented and Tested
