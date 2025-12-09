@@ -107,6 +107,7 @@ export async function deleteTestWorkspace(
 
 /**
  * Find and cleanup old test workspaces
+ * Note: This deletes workspaces OLDER than the specified hours (opposite of the main cleanup script)
  */
 export async function cleanupOldTestWorkspaces(
   client: SmartsheetClient,
@@ -114,27 +115,55 @@ export async function cleanupOldTestWorkspaces(
   config: TestWorkspaceConfig = getDefaultConfig()
 ): Promise<number> {
   try {
-    const response = await client.workspaces?.listWorkspaces?.({
-      queryParameters: { includeAll: true },
-    });
-    const workspaces = response?.result || [];
+    // Get ALL workspaces with token-based pagination
+    let allWorkspaces: any[] = [];
+    let lastKey: string | undefined = undefined;
+    
+    do {
+      const queryParams: any = {
+        paginationType: 'token'
+      };
+      if (lastKey) {
+        queryParams.lastKey = lastKey;
+      }
+      
+      const response = await client.workspaces?.listWorkspaces?.({
+        queryParameters: queryParams,
+      });
+
+      const workspacesInPage = response?.data || [];
+      allWorkspaces = allWorkspaces.concat(workspacesInPage);
+      
+      // Check for next page using lastKey
+      lastKey = response?.lastKey;
+    } while (lastKey);
+
+    // Filter to only owned workspaces with matching prefix
+    const ownedWorkspaces = allWorkspaces.filter(
+      (ws: any) => ws.accessLevel === 'OWNER' && (!config.prefix || ws.name?.startsWith(config.prefix))
+    );
 
     const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
     let deletedCount = 0;
 
-    for (const workspace of workspaces) {
-      if (!workspace.name?.startsWith(config.prefix)) {
-        continue;
-      }
+    // Fetch detailed info for each owned workspace to get createdAt timestamp
+    for (const workspace of ownedWorkspaces) {
+      try {
+        const workspaceInfo = await client.workspaces?.getWorkspaceMetadata?.({
+          workspaceId: workspace.id,
+        });
 
-      // Parse timestamp from workspace name
-      const match = workspace.name.match(/(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/);
-      if (match) {
-        const createdAt = new Date(match[1].replace(/-/g, ':'));
-        if (createdAt.getTime() < cutoffTime) {
-          await deleteTestWorkspace(client, workspace.id!);
-          deletedCount++;
+        const createdAt = workspaceInfo?.createdAt;
+        if (createdAt) {
+          const createdDate = new Date(createdAt);
+          // Delete if created BEFORE cutoff time (older than N hours)
+          if (createdDate.getTime() < cutoffTime) {
+            await deleteTestWorkspace(client, workspace.id!);
+            deletedCount++;
+          }
         }
+      } catch (error) {
+        console.warn(`Could not fetch/delete workspace ${workspace.name}:`, error);
       }
     }
 
