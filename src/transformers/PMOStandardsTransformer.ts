@@ -72,12 +72,18 @@ export async function createPMOStandardsWorkspace(
   } else {
     // Create new workspace
     logger?.debug(`Creating new PMO Standards workspace`);
-    if (!client.createWorkspace) {
+    if (!client.workspaces?.createWorkspace) {
       throw new Error('SmartsheetClient does not support createWorkspace');
     }
-    workspace = await client.createWorkspace({
-      name: 'PMO Standards',
+    const workspaceResponse = await client.workspaces.createWorkspace({
+      body: {
+        name: 'PMO Standards',
+      },
     });
+    workspace = workspaceResponse.data || workspaceResponse.result;
+    if (!workspace) {
+      throw new Error('Failed to create PMO Standards workspace');
+    }
   }
 
   // Ensure all standard reference sheets exist (create if missing, reuse if existing)
@@ -126,7 +132,7 @@ export async function ensureStandardReferenceSheet(
     }
 
     // Get existing rows to check which values are already present
-    const existingSheet2Response = await client.sheets?.getSheet?.({ sheetId: existingSheet.id! });
+    const existingSheet2Response = await client.sheets?.getSheet?.({ id: existingSheet.id! });
     const existingSheet2 = existingSheet2Response?.data || existingSheet2Response?.result;
     const existingValues = new Set<string>();
     if (existingSheet2?.rows) {
@@ -154,10 +160,13 @@ export async function ensureStandardReferenceSheet(
         ],
       }));
 
-      if (!client.addRows) {
+      if (!client.sheets?.addRows) {
         throw new Error('SmartsheetClient does not support addRows');
       }
-      await client.addRows(existingSheet.id!, rows);
+      await client.sheets.addRows({
+        sheetId: existingSheet.id!,
+        body: rows,
+      });
     } else {
       logger?.debug(`All ${predefinedValues.length} values already present in ${sheetName}`);
     }
@@ -186,10 +195,17 @@ export async function ensureStandardReferenceSheet(
     ],
   };
 
-  if (!client.createSheetInWorkspace) {
+  if (!client.sheets?.createSheetInWorkspace) {
     throw new Error('SmartsheetClient does not support createSheetInWorkspace');
   }
-  const createdSheet = await client.createSheetInWorkspace(workspaceId, sheet);
+  const createSheetResponse = await client.sheets.createSheetInWorkspace({
+    workspaceId,
+    body: sheet,
+  });
+  const createdSheet = createSheetResponse.data || createSheetResponse.result;
+  if (!createdSheet) {
+    throw new Error(`Failed to create sheet: ${sheetName}`);
+  }
   const nameColumnId = createdSheet.columns![0].id!;
 
   // Add all predefined values as rows
@@ -203,10 +219,13 @@ export async function ensureStandardReferenceSheet(
     ],
   }));
 
-  if (!client.addRows) {
+  if (!client.sheets?.addRows) {
     throw new Error('SmartsheetClient does not support addRows');
   }
-  await client.addRows(createdSheet.id!, rows);
+  await client.sheets.addRows({
+    sheetId: createdSheet.id!,
+    body: rows,
+  });
 
   return {
     sheetId: createdSheet.id!,

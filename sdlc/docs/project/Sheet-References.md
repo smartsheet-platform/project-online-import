@@ -1,4 +1,3 @@
----
 **📚 Implementation Guide Series**
 
 **Previous**: [← Re-run Resiliency](./Re-run-Resiliency.md)
@@ -11,17 +10,18 @@
 1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
 2. [ETL System Design](../architecture/02-etl-system-design.md)
 3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](./Re-run-Resiliency.md)
-6. **Sheet References** (You are here)
-7. [Authentication Setup](./Authentication-Setup.md)
-8. [CLI Usage Guide](./CLI-Usage-Guide.md)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
+9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
+10. [Code Conventions](../code/conventions.md)
+11. [Code Patterns](../code/patterns.md)
+12. [Anti-Patterns](../code/anti-patterns.md)
+13. [API Services Catalog](../code/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
 
-**🔗 Related Documentation**:
-- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and structure
-- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
-
----
 
 # Smartsheet Cross-Sheet References
 
@@ -673,8 +673,6 @@ async function configureContactColumn(
 **🔗 Related Documentation**:
 - [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and structure
 - [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
-
----
 
 **Document Version**: 1.0
 **Last Updated**: 2024-12-05

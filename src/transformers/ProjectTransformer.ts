@@ -20,13 +20,7 @@ import {
   createContactObject,
   createSheetName,
 } from './utils';
-import {
-  getOrCreateSheet,
-  copyWorkspace,
-  findSheetByPartialName,
-  renameSheet,
-  deleteAllRows,
-} from '../util/SmartsheetHelpers';
+import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
 
 /**
  * Template workspace ID for copying
@@ -251,37 +245,45 @@ export async function configureProjectPicklistColumns(
 ): Promise<void> {
   // Configure Status column to source from "Project - Status" reference sheet
   const statusReferenceSheet = pmoStandards.referenceSheets['Project - Status'];
-  await client.updateColumn?.(sheetId, statusColumnId, {
-    type: 'PICKLIST',
-    options: {
-      strict: true,
-      options: [
-        {
-          value: {
-            objectType: 'CELL_LINK',
-            sheetId: statusReferenceSheet.sheetId,
-            columnId: statusReferenceSheet.columnId,
+  await client.columns?.updateColumn?.({
+    sheetId,
+    columnId: statusColumnId,
+    body: {
+      type: 'PICKLIST',
+      options: {
+        strict: true,
+        options: [
+          {
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: statusReferenceSheet.sheetId,
+              columnId: statusReferenceSheet.columnId,
+            },
           },
-        },
-      ],
+        ],
+      },
     },
   });
 
   // Configure Priority column to source from "Project - Priority" reference sheet
   const priorityReferenceSheet = pmoStandards.referenceSheets['Project - Priority'];
-  await client.updateColumn?.(sheetId, priorityColumnId, {
-    type: 'PICKLIST',
-    options: {
-      strict: true,
-      options: [
-        {
-          value: {
-            objectType: 'CELL_LINK',
-            sheetId: priorityReferenceSheet.sheetId,
-            columnId: priorityReferenceSheet.columnId,
+  await client.columns?.updateColumn?.({
+    sheetId,
+    columnId: priorityColumnId,
+    body: {
+      type: 'PICKLIST',
+      options: {
+        strict: true,
+        options: [
+          {
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: priorityReferenceSheet.sheetId,
+              columnId: priorityReferenceSheet.columnId,
+            },
           },
-        },
-      ],
+        ],
+      },
     },
   });
 }
@@ -363,61 +365,77 @@ export class ProjectTransformer {
     // Transform to workspace structure
     const workspace = transformProjectToWorkspace(project);
 
-    // NEW BEHAVIOR: If no workspaceId provided, copy from template workspace
+    // NEW BEHAVIOR: If no workspaceId provided, create new workspace with sheets
+    // Note: Smartsheet API doesn't support workspace copying, so we create empty workspace
+    // and sheets from scratch
     if (!workspaceId) {
-      const copiedWorkspace = await copyWorkspace(
-        this.client,
-        TEMPLATE_WORKSPACE_ID,
-        workspace.name
-      );
-      workspace.id = copiedWorkspace.id;
-      workspace.permalink = copiedWorkspace.permalink;
+      const newWorkspace = await copyWorkspace(this.client, TEMPLATE_WORKSPACE_ID, workspace.name);
+      workspace.id = newWorkspace.id;
+      workspace.permalink = newWorkspace.permalink;
 
-      // Find the three sheets in the copied workspace (template has "Tasks", "Resources", "Summary")
-      const summarySheetFound = await findSheetByPartialName(this.client, workspace.id, 'Summary');
-      const taskSheetFound = await findSheetByPartialName(this.client, workspace.id, 'Tasks');
-      const resourceSheetFound = await findSheetByPartialName(
-        this.client,
-        workspace.id,
-        'Resources'
-      );
-
-      if (!summarySheetFound || !taskSheetFound || !resourceSheetFound) {
-        throw new Error('Failed to find required sheets in workspace after copy from template');
-      }
-
-      // Rename sheets to match project naming convention
+      // Create the three sheets in the new workspace
       const summarySheetName = createSheetName(workspace.name, 'Summary');
       const taskSheetName = createSheetName(workspace.name, 'Tasks');
       const resourceSheetName = createSheetName(workspace.name, 'Resources');
 
-      const summarySheet = await renameSheet(this.client, summarySheetFound.id, summarySheetName);
-      const taskSheet = await renameSheet(this.client, taskSheetFound.id, taskSheetName);
-      const resourceSheet = await renameSheet(
-        this.client,
-        resourceSheetFound.id,
-        resourceSheetName
-      );
+      // Step 1: Get or create summary sheet with just primary column
+      const summarySheet = await getOrCreateSheet(this.client, workspace.id, {
+        name: summarySheetName,
+        columns: [
+          {
+            title: 'Project Name',
+            type: 'TEXT_NUMBER',
+            primary: true,
+          },
+        ],
+      });
 
-      // Delete all rows from each sheet (keep columns intact)
-      await deleteAllRows(this.client, summarySheet.id);
-      await deleteAllRows(this.client, taskSheet.id);
-      await deleteAllRows(this.client, resourceSheet.id);
+      // Step 2: Ensure ALL needed columns exist (addColumnsIfNotExist filters out existing ones)
+      // Filter out system columns that can't be created via API AND the primary column we just created
+      const allSummaryColumns = createProjectSummaryColumns();
+      const systemColumnTypes = ['CREATED_DATE', 'MODIFIED_DATE', 'CREATED_BY', 'MODIFIED_BY'];
+      const columnsToEnsure = allSummaryColumns
+        .filter((col) => !systemColumnTypes.includes(col.type || ''))
+        .filter((col) => col.title !== 'Project Name'); // Skip primary column we just created
+
+      await addColumnsIfNotExist(this.client, summarySheet.id!, columnsToEnsure);
+
+      const taskSheet = await getOrCreateSheet(this.client, workspace.id, {
+        name: taskSheetName,
+        columns: [
+          {
+            title: 'Task Name',
+            type: 'TEXT_NUMBER',
+            primary: true,
+          },
+        ],
+      });
+
+      const resourceSheet = await getOrCreateSheet(this.client, workspace.id, {
+        name: resourceSheetName,
+        columns: [
+          {
+            title: 'Resource Name',
+            type: 'TEXT_NUMBER',
+            primary: true,
+          },
+        ],
+      });
 
       return {
         workspace,
         sheets: {
           summarySheet: {
-            id: summarySheet.id,
-            name: summarySheet.name,
+            id: summarySheet.id!,
+            name: summarySheet.name!,
           },
           taskSheet: {
-            id: taskSheet.id,
-            name: taskSheet.name,
+            id: taskSheet.id!,
+            name: taskSheet.name!,
           },
           resourceSheet: {
-            id: resourceSheet.id,
-            name: resourceSheet.name,
+            id: resourceSheet.id!,
+            name: resourceSheet.name!,
           },
         },
       };
@@ -426,8 +444,7 @@ export class ProjectTransformer {
     // OLD BEHAVIOR: If workspaceId provided (for testing), create sheets using getOrCreateSheet
     workspace.id = workspaceId;
 
-    // Get or create summary sheet with minimal structure
-    // If re-running, this will use the existing sheet
+    // Step 1: Get or create summary sheet with just primary column
     const createdSummary = await getOrCreateSheet(this.client, workspaceId, {
       name: createSheetName(workspace.name, 'Summary'),
       columns: [
@@ -442,6 +459,16 @@ export class ProjectTransformer {
     if (!createdSummary?.id) {
       throw new Error('Failed to get or create summary sheet');
     }
+
+    // Step 2: Ensure ALL needed columns exist (addColumnsIfNotExist filters out existing ones)
+    // Filter out system columns that can't be created via API AND the primary column we just created
+    const allSummaryColumns = createProjectSummaryColumns();
+    const systemColumnTypes = ['CREATED_DATE', 'MODIFIED_DATE', 'CREATED_BY', 'MODIFIED_BY'];
+    const columnsToEnsure = allSummaryColumns
+      .filter((col) => !systemColumnTypes.includes(col.type || ''))
+      .filter((col) => col.title !== 'Project Name'); // Skip primary column we just created
+
+    await addColumnsIfNotExist(this.client, createdSummary.id, columnsToEnsure);
 
     // Get or create task sheet (will be populated by TaskTransformer)
     // If re-running, this will use the existing sheet

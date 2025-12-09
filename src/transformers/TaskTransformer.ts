@@ -523,55 +523,64 @@ export async function configureTaskPicklistColumns(
 ): Promise<void> {
   // Configure Status column
   const statusRef = pmoStandards.referenceSheets['Task - Status'];
-  await client.updateColumn?.(sheetId, statusColumnId, {
-    type: 'PICKLIST',
-    options: {
-      strict: true,
-      options: [
-        {
-          value: {
-            objectType: 'CELL_LINK',
-            sheetId: statusRef.sheetId,
-            columnId: statusRef.columnId,
+  await client.columns?.updateColumn?.({
+    sheetId,
+    columnId: statusColumnId,
+    body: {
+      type: 'PICKLIST',
+      options: {
+        options: [
+          {
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: statusRef.sheetId,
+              columnId: statusRef.columnId,
+            },
           },
-        },
-      ],
+        ],
+      },
     },
   });
 
   // Configure Priority column
   const priorityRef = pmoStandards.referenceSheets['Task - Priority'];
-  await client.updateColumn?.(sheetId, priorityColumnId, {
-    type: 'PICKLIST',
-    options: {
-      strict: true,
-      options: [
-        {
-          value: {
-            objectType: 'CELL_LINK',
-            sheetId: priorityRef.sheetId,
-            columnId: priorityRef.columnId,
+  await client.columns?.updateColumn?.({
+    sheetId,
+    columnId: priorityColumnId,
+    body: {
+      type: 'PICKLIST',
+      options: {
+        options: [
+          {
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: priorityRef.sheetId,
+              columnId: priorityRef.columnId,
+            },
           },
-        },
-      ],
+        ],
+      },
     },
   });
 
   // Configure Constraint Type column
   const constraintRef = pmoStandards.referenceSheets['Task - Constraint Type'];
-  await client.updateColumn?.(sheetId, constraintColumnId, {
-    type: 'PICKLIST',
-    options: {
-      strict: true,
-      options: [
-        {
-          value: {
-            objectType: 'CELL_LINK',
-            sheetId: constraintRef.sheetId,
-            columnId: constraintRef.columnId,
+  await client.columns?.updateColumn?.({
+    sheetId,
+    columnId: constraintColumnId,
+    body: {
+      type: 'PICKLIST',
+      options: {
+        options: [
+          {
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: constraintRef.sheetId,
+              columnId: constraintRef.columnId,
+            },
           },
-        },
-      ],
+        ],
+      },
     },
   });
 }
@@ -722,14 +731,9 @@ export class TaskTransformer {
       `Adding ${columnsToAdd.length} columns to task sheet ${sheetId} (skipping existing)`
     );
 
-    // Add columns with index positions, skipping any that already exist
-    const columnsWithIndex = columnsToAdd.map((col, i) => ({
-      ...col,
-      index: i + 1, // Add after primary column
-    }));
-
     // Use resiliency helper to add columns (skips existing ones)
-    const addedColumns = await addColumnsIfNotExist(this.client, sheetId, columnsWithIndex);
+    // Don't specify index - let Smartsheet append columns to end of sheet
+    const addedColumns = await addColumnsIfNotExist(this.client, sheetId, columnsToAdd);
 
     // Build column map from results
     const columnMap: Record<string, number> = {};
@@ -892,7 +896,7 @@ export class TaskTransformer {
         // Add this group's rows in a batch
         try {
           const addRowsResponse = await this.client.sheets?.addRows?.({
-            sheetId,
+            sheetId: sheetId,
             body: rowsToAdd,
           });
 

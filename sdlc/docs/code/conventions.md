@@ -1,4 +1,3 @@
----
 **📚 Implementation Guide Series**
 
 **Previous**: [← Troubleshooting Playbook](./troubleshooting-playbook.md)
@@ -16,17 +15,12 @@
 6. [Sheet References](../project/Sheet-References.md)
 7. [Authentication Setup](../project/Authentication-Setup.md)
 8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
-10. **Code Conventions** (You are here)
-11. [Code Patterns](./patterns.md)
-12. [Anti-Patterns](./anti-patterns.md)
-13. [API Services Catalog](../api-reference/api-services-catalog.md)
+9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
+10. [Code Conventions](../code/conventions.md)
+11. [Code Patterns](../code/patterns.md)
+12. [Anti-Patterns](../code/anti-patterns.md)
+13. [API Services Catalog](../code/api-services-catalog.md)
 14. [Test Suite Guide](../../test/README.md)
-
-**🔗 Related Documentation**:
-- [Code Patterns](./patterns.md) - Recurring implementation patterns
-- [Anti-Patterns](./anti-patterns.md) - Common mistakes to avoid
-- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture overview
 
 ---
 

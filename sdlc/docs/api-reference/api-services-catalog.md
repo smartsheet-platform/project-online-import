@@ -1,4 +1,3 @@
----
 **📚 Implementation Guide Series**
 
 **Previous**: [← Anti-Patterns](../code/anti-patterns.md)
@@ -20,13 +19,8 @@
 10. [Code Conventions](../code/conventions.md)
 11. [Code Patterns](../code/patterns.md)
 12. [Anti-Patterns](../code/anti-patterns.md)
-13. **API Services Catalog** (You are here)
+13. [API Services Catalog](../code/api-services-catalog.md)
 14. [Test Suite Guide](../../test/README.md)
-
-**🔗 Related Documentation**:
-- [ETL System Design](../architecture/02-etl-system-design.md) - Component architecture and integration details
-- [Authentication Setup](../project/Authentication-Setup.md) - Credential configuration and setup
-- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - API data mapping specifications
 
 ---
 

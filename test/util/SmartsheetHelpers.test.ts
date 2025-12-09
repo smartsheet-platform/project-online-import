@@ -274,6 +274,42 @@ describe('SmartsheetHelpers - Re-run Resiliency', () => {
     });
   });
 
+  describe('Performance - Batched column addition', () => {
+    it('should fetch sheet only once when adding multiple columns', async () => {
+      const columnsToAdd = [
+        { title: 'Column 1', type: 'TEXT_NUMBER' as const },
+        { title: 'Column 2', type: 'DATE' as const },
+        { title: 'Column 3', type: 'CHECKBOX' as const },
+        { title: 'Column 4', type: 'TEXT_NUMBER' as const },
+        { title: 'Column 5', type: 'DATE' as const },
+      ];
+
+      // Reset call count to measure only addColumnsIfNotExist operation
+      mockClient.reset();
+      const workspace2 = await mockClient.createWorkspace({ name: 'Test Workspace 2' });
+      const testSheet = await mockClient.createSheetInWorkspace(workspace2.id!, {
+        name: 'Test Sheet',
+        columns: [{ title: 'Primary', type: 'TEXT_NUMBER', primary: true }],
+      });
+
+      await addColumnsIfNotExist(mockClient, testSheet.id!, columnsToAdd);
+
+      // Verify sheet was fetched only ONCE (at the start of addColumnsIfNotExist) not 5 times
+      // This is the key optimization - single fetch instead of N fetches for N columns
+      expect(mockClient.getCallCount('getSheet')).toBe(1);
+
+      // Verify addColumn was called ONCE with an array (batch operation)
+      // This is the second optimization - single batch API call instead of N sequential calls
+      // Note: Smartsheet SDK's addColumn (singular) handles both single and batch operations
+      expect(mockClient.getCallCount('addColumn')).toBe(1);
+
+      // Verify the single call added all 5 columns as a batch
+      const columnAdditions = mockClient.getColumnAdditions();
+      expect(columnAdditions.length).toBe(1); // Single batch addition
+      expect(columnAdditions[0].columns.length).toBe(5); // All 5 columns in one batch
+    });
+  });
+
   describe('Integration - Full re-run scenario', () => {
     it('should handle complete re-run of sheet and column creation', async () => {
       const workspace = await mockClient.createWorkspace({ name: 'Test Workspace' });

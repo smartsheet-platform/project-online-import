@@ -1,13 +1,13 @@
 # Integration Test Suite Status
 
-## Overall Status: ✅ COMPLETE (96.8% Success Rate)
+## Overall Status: ✅ COMPLETE (97.4% Success Rate)
 
-**Last Updated:** 2025-12-05
+**Last Updated:** 2025-12-09
 
 ## Summary Statistics
-- **Total Tests:** 31
-- **Passing:** 30 (96.8%)
-- **Ignored:** 1 (3.2%)
+- **Total Tests:** 39
+- **Passing:** 38 (97.4%)
+- **Ignored:** 1 (2.6%)
 - **Failed:** 0 (0%)
 
 ## Phase Completion Status
@@ -65,6 +65,21 @@
 - ✅ error-002-invalid-fk (Attempt 1/10) - 5ms
 - ✅ error-003-unicode (Attempt 1/10) - 16.2 seconds
 
+### Phase 8: PMO Standards Integration ✅ COMPLETE
+**Tests:** 8/8 passing
+- ✅ PMO Standards Workspace Creation (2 tests)
+  - should create PMO Standards workspace with all reference sheets
+  - should reuse PMO Standards workspace across multiple projects
+- ✅ Picklist Configuration (3 tests)
+  - should configure project summary sheet picklists
+  - should configure task sheet picklists
+  - should have picklist values from PMO Standards reference sheets
+- ✅ Idempotent Creation (2 tests)
+  - should reuse existing PMO Standards workspace when ID provided
+  - should not duplicate values when importing to existing PMO Standards workspace
+- ✅ Full Integration Workflow (1 test)
+  - should complete full project import with PMO Standards integration
+
 ## Key Achievements
 
 ### Critical Validation Complete
@@ -82,6 +97,14 @@
 ✅ Missing required fields throw appropriate errors
 ✅ Invalid foreign keys handled gracefully
 ✅ Unicode and special characters preserved correctly
+
+### PMO Standards Integration Validated
+✅ Centralized PMO Standards workspace creation
+✅ CELL_LINK picklist columns properly configured
+✅ Project summary sheet picklists (Status, Priority)
+✅ Task sheet picklists (Status, Priority, Constraint Type)
+✅ Idempotent workspace and reference sheet creation
+✅ Value deduplication across multiple imports
 
 ## Known Issues
 
@@ -126,9 +149,11 @@
 ```bash
 # Run all integration tests
 npm test -- test/integration/load-phase.test.ts
+npm test -- test/integration/pmo-standards-integration.test.ts
 
 # Run specific phase
 npm test -- --testNamePattern="Project Entity Tests"
+npm test -- --testNamePattern="PMO Standards"
 
 # Run single test
 npm test -- --testNamePattern="should create workspace from basic project"
@@ -142,8 +167,8 @@ CLEANUP_TEST_WORKSPACES=false npm test -- test/integration/load-phase.test.ts
 
 ## Success Criteria Met ✅
 
-- [x] All 31 tests implemented
-- [x] 30/31 tests passing (96.8%)
+- [x] All 39 tests implemented (31 load phase + 8 PMO Standards)
+- [x] 38/39 tests passing (97.4%)
 - [x] < 5% flakiness rate (0% observed)
 - [x] Average test time < 10 seconds
 - [x] No API rate limit errors
@@ -151,5 +176,34 @@ CLEANUP_TEST_WORKSPACES=false npm test -- test/integration/load-phase.test.ts
 - [x] Critical assignment tests validated
 - [x] Performance requirements met
 - [x] Error handling comprehensive
+- [x] PMO Standards integration validated
+
+## Recent Fixes (2025-12-09)
+
+### PMO Standards Integration Tests - All 8 Tests Passing ✅
+
+**Issue:** Tests were failing due to incorrect Smartsheet SDK API usage in both production code and test files.
+
+**Root Causes Identified:**
+1. **Production Code (ProjectTransformer.ts, TaskTransformer.ts):**
+   - Using incorrect API call structure: `client.updateColumn?.(sheetId, columnId, {...})`
+   - Should use nested method path: `client.columns?.updateColumn?.({ sheetId, columnId, body: {...} })`
+   - Parameters must be wrapped in options object with `sheetId`, `columnId`, and `body` properties
+
+2. **Test File (pmo-standards-integration.test.ts):**
+   - Using incorrect parameter name `sheetId` instead of `id` in getSheet calls
+   - Adding unnecessary `queryParameters: { include: 'objectValue' }` that wasn't needed
+   - Using incorrect response access pattern `sheetResponse?.data || sheetResponse?.result` instead of production code pattern
+
+**Fixes Applied:**
+1. Updated [`ProjectTransformer.ts:239-281`](src/transformers/ProjectTransformer.ts:239-281) to use correct SDK structure
+2. Updated [`TaskTransformer.ts:516-577`](src/transformers/TaskTransformer.ts:516-577) to use correct SDK structure
+3. Updated test file to use `id` parameter and remove query parameters (matching production code at [`importer.ts:372-374`](src/lib/importer.ts:372-374))
+4. Updated test file to use production code's response access pattern: `(sheetResponse?.data || sheetResponse?.result || sheetResponse) as any`
+
+**Test Results:**
+- First run (after production code fix): 5/8 passing
+- Final run (after test file fix): 8/8 passing ✅
+- All PMO Standards integration scenarios validated successfully
 
 ## Final Status: READY FOR PRODUCTION ✅

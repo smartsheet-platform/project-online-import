@@ -40,7 +40,7 @@ describe('PMO Standards Integration Tests', () => {
   });
 
   afterEach(async () => {
-    // Cleanup test workspaces
+    // Cleanup test workspaces based on .env.test settings
     if (workspaceManager) {
       const testPassed = expect.getState().currentTestName ? true : false;
       await workspaceManager.cleanup(testPassed);
@@ -135,11 +135,11 @@ describe('PMO Standards Integration Tests', () => {
         const summarySheet = sheets.find((s: any) => s.name?.includes('Summary'));
         expect(summarySheet).toBeDefined();
 
-        // Get summary sheet details
+        // Get summary sheet details (default call returns full column metadata)
         const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
-          sheetId: summarySheet!.id!,
+          id: summarySheet!.id!,
         });
-        const sheet = sheetResponse?.data || sheetResponse?.result;
+        const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
 
         // Verify Status column exists and is configured as PICKLIST
         const statusColumn = sheet?.columns?.find((c: any) => c.title === 'Status');
@@ -178,11 +178,11 @@ describe('PMO Standards Integration Tests', () => {
         const taskSheet = sheets.find((s: any) => s.name?.includes('Tasks'));
         expect(taskSheet).toBeDefined();
 
-        // Get task sheet details
+        // Get task sheet details (default call returns full column metadata)
         const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
-          sheetId: taskSheet!.id!,
+          id: taskSheet!.id!,
         });
-        const sheet = sheetResponse?.data || sheetResponse?.result;
+        const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
 
         // Verify Status column exists and is configured as PICKLIST
         const statusColumn = sheet?.columns?.find((c: any) => c.title === 'Status');
@@ -226,9 +226,9 @@ describe('PMO Standards Integration Tests', () => {
         expect(taskSheet).toBeDefined();
 
         const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
-          sheetId: taskSheet!.id!,
+          id: taskSheet!.id!,
         });
-        const sheet = sheetResponse?.data || sheetResponse?.result;
+        const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
 
         // Verify Status column has expected values
         const statusColumn = sheet?.columns?.find((c: any) => c.title === 'Status');
@@ -357,6 +357,17 @@ describe('PMO Standards Integration Tests', () => {
         ],
         assignments: fixture.assignments,
       });
+
+      // Log error details if import failed
+      if (!result.success) {
+        console.error('[PMO Standards Test] Import failed with errors:', result.errors);
+        if (result.errors && Array.isArray(result.errors)) {
+          console.error(
+            '[PMO Standards Test] Error details:',
+            JSON.stringify(result.errors, null, 2)
+          );
+        }
+      }
 
       expect(result.success).toBe(true);
       expect(result.workspaceId).toBeDefined();

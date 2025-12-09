@@ -374,9 +374,13 @@ export class MockSmartsheetClient implements SmartsheetClient {
   }
 
   /**
-   * Add single column to sheet (SDK-style method)
+   * Add single column or multiple columns to sheet (SDK-style method)
+   * Matches real Smartsheet SDK behavior: accepts both single column and array
    */
-  async addColumn(sheetId: number, column: SmartsheetColumn): Promise<SmartsheetColumn> {
+  async addColumn(
+    sheetId: number,
+    columnOrColumns: SmartsheetColumn | SmartsheetColumn[]
+  ): Promise<SmartsheetColumn | SmartsheetColumn[]> {
     const operation = 'addColumn';
     this.checkFailure(operation);
 
@@ -385,14 +389,25 @@ export class MockSmartsheetClient implements SmartsheetClient {
       throw new Error(`Sheet not found: ${sheetId}`);
     }
 
-    const newColumn = {
-      ...column,
+    // Handle both single column and array of columns
+    const isArray = Array.isArray(columnOrColumns);
+    const columns = isArray ? columnOrColumns : [columnOrColumns];
+
+    const newColumns = columns.map((col) => ({
+      ...col,
       id: this.nextColumnId++,
-    };
+    }));
 
-    sheet.columns = [...(sheet.columns || []), newColumn];
+    sheet.columns = [...(sheet.columns || []), ...newColumns];
 
-    return newColumn;
+    // Track addition (use internal addColumns tracking)
+    this.columnAdditions.push({
+      sheetId,
+      columns: newColumns,
+      timestamp: new Date(),
+    });
+
+    return isArray ? newColumns : newColumns[0];
   }
 
   // SDK-style nested object structure
@@ -445,7 +460,11 @@ export class MockSmartsheetClient implements SmartsheetClient {
 
   sheets = {
     getSheet: async (options: SmartsheetApiOptions) => {
-      const sheet = await this.getSheet(options.id || options.sheetId!);
+      // SDK ONLY accepts 'id' parameter for GET operations, not 'sheetId'
+      if (!options.id) {
+        throw new Error('getSheet requires "id" parameter (not "sheetId")');
+      }
+      const sheet = await this.getSheet(options.id);
       return { result: sheet };
     },
     createSheetInWorkspace: async (options: SmartsheetApiOptions) => {
@@ -456,8 +475,11 @@ export class MockSmartsheetClient implements SmartsheetClient {
       return { result: sheet };
     },
     addColumn: async (options: SmartsheetApiOptions) => {
-      const column = await this.addColumn(options.sheetId!, options.body as SmartsheetColumn);
-      return { result: column };
+      const result = await this.addColumn(
+        options.sheetId!,
+        options.body as SmartsheetColumn | SmartsheetColumn[]
+      );
+      return { result };
     },
     addRows: async (options: SmartsheetApiOptions) => {
       const rows = await this.addRows(options.sheetId!, options.body as SmartsheetRow[]);
@@ -465,6 +487,17 @@ export class MockSmartsheetClient implements SmartsheetClient {
     },
     updateSheet: async (options: SmartsheetApiOptions) => {
       return this.updateSheet(options.sheetId!, options.body as Partial<SmartsheetSheet>);
+    },
+  };
+
+  columns = {
+    updateColumn: async (options: SmartsheetApiOptions) => {
+      const column = await this.updateColumn(
+        options.sheetId!,
+        options.columnId!,
+        options.body as Partial<SmartsheetColumn>
+      );
+      return { result: column };
     },
   };
 }

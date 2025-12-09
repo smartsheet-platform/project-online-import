@@ -394,6 +394,7 @@ export class ResourceTransformer {
     const uniqueDepartments = discoverResourceDepartments(resources);
 
     // Define additional columns to add (excluding primary which already exists)
+    // Don't specify index - let Smartsheet append columns to end of sheet
     const additionalColumns = [
       {
         title: 'Project Online Resource ID',
@@ -401,27 +402,26 @@ export class ResourceTransformer {
         width: 150,
         hidden: true,
         locked: true,
-        index: 1,
       },
-      { title: 'Email', type: 'TEXT_NUMBER', width: 200, index: 2 },
-      { title: 'Resource Type', type: 'PICKLIST', width: 120, index: 3 },
-      { title: 'Max Units', type: 'TEXT_NUMBER', width: 100, index: 4 },
-      { title: 'Standard Rate', type: 'TEXT_NUMBER', width: 120, index: 5 },
-      { title: 'Overtime Rate', type: 'TEXT_NUMBER', width: 120, index: 6 },
-      { title: 'Cost Per Use', type: 'TEXT_NUMBER', width: 120, index: 7 },
-      { title: 'Department', type: 'PICKLIST', width: 150, options: uniqueDepartments, index: 8 },
-      { title: 'Code', type: 'TEXT_NUMBER', width: 100, index: 9 },
-      { title: 'Is Active', type: 'CHECKBOX', width: 80, index: 10 },
-      { title: 'Is Generic', type: 'CHECKBOX', width: 80, index: 11 },
-      { title: 'Project Online Created Date', type: 'DATE', width: 120, index: 12 },
-      { title: 'Project Online Modified Date', type: 'DATE', width: 120, index: 13 },
+      { title: 'Email', type: 'TEXT_NUMBER', width: 200 },
+      { title: 'Resource Type', type: 'PICKLIST', width: 120 },
+      { title: 'Max Units', type: 'TEXT_NUMBER', width: 100 },
+      { title: 'Standard Rate', type: 'TEXT_NUMBER', width: 120 },
+      { title: 'Overtime Rate', type: 'TEXT_NUMBER', width: 120 },
+      { title: 'Cost Per Use', type: 'TEXT_NUMBER', width: 120 },
+      { title: 'Department', type: 'PICKLIST', width: 150, options: uniqueDepartments },
+      { title: 'Code', type: 'TEXT_NUMBER', width: 100 },
+      { title: 'Is Active', type: 'CHECKBOX', width: 80 },
+      { title: 'Is Generic', type: 'CHECKBOX', width: 80 },
+      { title: 'Project Online Created Date', type: 'DATE', width: 120 },
+      { title: 'Project Online Modified Date', type: 'DATE', width: 120 },
     ];
 
     // Use resiliency helper to add columns (skips existing ones)
     const addedColumns = await addColumnsIfNotExist(
       this.client,
       sheetId,
-      additionalColumns as Array<SmartsheetColumn & { index?: number }>
+      additionalColumns as SmartsheetColumn[]
     );
 
     // Add results to column map

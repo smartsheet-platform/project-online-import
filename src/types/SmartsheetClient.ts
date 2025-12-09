@@ -83,7 +83,11 @@ export interface SmartsheetClient {
       options: SmartsheetApiOptions
     ) => Promise<SmartsheetApiResponse<{ message: string }>>;
     addRows?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetRow[]>>;
-    addColumn?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetColumn>>;
+    // addColumn accepts both single column and array of columns in body
+    // When body is array, response is array; when body is single, response is single
+    addColumn?: (
+      options: SmartsheetApiOptions
+    ) => Promise<SmartsheetApiResponse<SmartsheetColumn | SmartsheetColumn[]>>;
     updateRow?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetRow>>;
     deleteRows?: (
       options: SmartsheetApiOptions

@@ -74,12 +74,9 @@ async function main() {
       console.log('Run without --dry-run to perform actual deletion');
     } else {
       // Perform actual cleanup
-      // const deletedCount = await cleanupOldTestWorkspaces(client, options.olderThanHours);
+      const deletedCount = await cleanupOldTestWorkspaces(client, options.olderThanHours);
       
-      console.log('Cleanup placeholder - actual implementation requires Smartsheet SDK');
-      console.log(`Would delete test workspaces older than ${options.olderThanHours} hours`);
-      
-      // console.log(`\n✓ Deleted ${deletedCount} old test workspace(s)`);
+      console.log(`\n✓ Deleted ${deletedCount} old test workspace(s)`);
     }
   } catch (error) {
     console.error('\nERROR during cleanup:');

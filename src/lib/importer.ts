@@ -261,7 +261,7 @@ export class ProjectOnlineImporter {
       let assignmentsImported = 0;
       if (data.assignments.length > 0 && data.resources.length > 0) {
         progress.startStage('Assignment Column Creation');
-        const assignmentTransformer = new AssignmentTransformer(this.smartsheetClient, this.logger);
+        const assignmentTransformer = new AssignmentTransformer(this.smartsheetClient);
         const assignmentResult = await assignmentTransformer.transformAssignments(
           data.assignments,
           data.resources,
@@ -289,13 +289,31 @@ export class ProjectOnlineImporter {
       };
     } catch (error) {
       this.errorHandler.handle(error, 'Project Import');
+
+      // Capture full error details for debugging
+      let errorMessage: string;
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        // Log stack trace for debugging
+        this.logger.debug('Error stack:', error.stack);
+      } else if (typeof error === 'object' && error !== null) {
+        // Try to serialize the error object
+        try {
+          errorMessage = JSON.stringify(error, null, 2);
+        } catch {
+          errorMessage = String(error);
+        }
+      } else {
+        errorMessage = String(error);
+      }
+
       return {
         success: false,
         projectsImported: 0,
         tasksImported: 0,
         resourcesImported: 0,
         assignmentsImported: 0,
-        errors: [error instanceof Error ? error.message : String(error)],
+        errors: [errorMessage],
       };
     }
   }
@@ -350,10 +368,17 @@ export class ProjectOnlineImporter {
     }
 
     // Get sheet to find Status and Priority column IDs
+    console.log(`[DEBUG] Querying sheet ID ${summarySheetId} for Status and Priority columns`);
     const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({
-      sheetId: summarySheetId,
+      id: summarySheetId,
     });
-    const sheet = sheetResponse?.data || sheetResponse?.result;
+    console.log(`[DEBUG] Raw API response keys:`, Object.keys(sheetResponse || {}));
+    console.log(
+      `[DEBUG] Response structure:`,
+      JSON.stringify(sheetResponse, null, 2).substring(0, 500)
+    );
+
+    const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get summary sheet ${summarySheetId}`,
@@ -361,8 +386,23 @@ export class ProjectOnlineImporter {
       );
     }
 
+    console.log(`[DEBUG] Sheet object keys:`, Object.keys(sheet || {}));
+    console.log(
+      `[DEBUG] Sheet has ${sheet.columns?.length || 0} columns:`,
+      sheet.columns?.map((c: any) => c.title).join(', ')
+    );
+
     const statusColumn = sheet.columns?.find((c: any) => c.title === 'Status');
     const priorityColumn = sheet.columns?.find((c: any) => c.title === 'Priority');
+
+    console.log(
+      `[DEBUG] Status column found:`,
+      statusColumn ? `Yes (ID: ${statusColumn.id})` : 'No'
+    );
+    console.log(
+      `[DEBUG] Priority column found:`,
+      priorityColumn ? `Yes (ID: ${priorityColumn.id})` : 'No'
+    );
 
     if (!statusColumn?.id || !priorityColumn?.id) {
       throw ErrorHandler.dataError(
@@ -371,6 +411,7 @@ export class ProjectOnlineImporter {
       );
     }
 
+    // Configure the picklists
     await configureProjectPicklistColumns(
       this.smartsheetClient,
       summarySheetId,
@@ -392,8 +433,8 @@ export class ProjectOnlineImporter {
     }
 
     // Get sheet to find column IDs
-    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({ sheetId: taskSheetId });
-    const sheet = sheetResponse?.data || sheetResponse?.result;
+    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({ id: taskSheetId });
+    const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get task sheet ${taskSheetId}`,

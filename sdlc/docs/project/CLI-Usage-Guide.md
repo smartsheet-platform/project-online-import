@@ -1,4 +1,3 @@
----
 **📚 Implementation Guide Series**
 
 **Previous**: [← Authentication Setup](./Authentication-Setup.md)
@@ -11,21 +10,18 @@
 1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
 2. [ETL System Design](../architecture/02-etl-system-design.md)
 3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](./Re-run-Resiliency.md)
-6. [Sheet References](./Sheet-References.md)
-7. [Authentication Setup](./Authentication-Setup.md)
-8. **CLI Usage Guide** (You are here)
+4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
+5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
+6. [Sheet References](../project/Sheet-References.md)
+7. [Authentication Setup](../project/Authentication-Setup.md)
+8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
 9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
 10. [Code Conventions](../code/conventions.md)
 11. [Code Patterns](../code/patterns.md)
 12. [Anti-Patterns](../code/anti-patterns.md)
+13. [API Services Catalog](../code/api-services-catalog.md)
+14. [Test Suite Guide](../../test/README.md)
 
-**🔗 Related Documentation**:
-- [Authentication Setup](./Authentication-Setup.md) - Azure AD and credential configuration
-- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
-
----
 
 # CLI Usage Guide
 
@@ -873,8 +869,6 @@ Planned CLI improvements:
 **🔗 Related Documentation**:
 - [Authentication Setup](./Authentication-Setup.md) - Azure AD and credential configuration
 - [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
-
----
 
 **Document Version**: 1.1
 **Last Updated**: 2024-12-08

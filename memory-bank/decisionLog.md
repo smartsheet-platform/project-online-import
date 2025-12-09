@@ -605,3 +605,89 @@ CUSTOM_FIELDS_INCLUDE_PATTERN=""        # Regex to include only specific fields
 **References**:
 - Transformation Mapping Section 5 (Custom Field Mapping)
 - Architecture Plan Phase Updates (10-week timeline)
+
+---
+
+## 2025-12-09: PMO Standards Integration - Smartsheet SDK API Usage Fixes
+
+### Decision: Correct Smartsheet SDK Method Structure for Column Updates
+**Context**: PMO Standards integration tests were failing because production code used incorrect Smartsheet SDK API call patterns.
+
+**Problem Identified**:
+1. **Incorrect API Call Structure**: Code was calling `client.updateColumn?.(sheetId, columnId, {...})` which doesn't match the Smartsheet SDK's actual structure
+2. **Missing SDK Namespace**: Should use `client.columns?.updateColumn?.(...)` with nested method path
+3. **Incorrect Parameter Pattern**: SDK requires options object with `{ sheetId, columnId, body }` structure, not flat parameters
+
+**Root Cause**:
+- Smartsheet SDK uses nested namespace structure (`client.columns.*`, `client.sheets.*`)
+- Methods accept options object as single parameter, not flat parameter list
+- Column definition must be in `body` property, not at top level
+
+**Rationale for Fix**:
+- Matches Smartsheet SDK's documented API structure
+- Follows pattern used elsewhere in codebase (e.g., `sheets.getSheet`)
+- Enables TypeScript type checking to work correctly
+- Provides clearer separation between request metadata and payload
+
+**Implementation Changes**:
+
+1. **ProjectTransformer.ts** (`configureProjectPicklistColumns` function):
+```typescript
+// Before (INCORRECT):
+await client.updateColumn?.(sheetId, statusColumn.id, {
+  type: 'PICKLIST',
+  options: [...]
+});
+
+// After (CORRECT):
+await client.columns?.updateColumn?.({
+  sheetId: sheetId,
+  columnId: statusColumn.id,
+  body: {
+    type: 'PICKLIST',
+    options: [...]
+  }
+});
+```
+
+2. **TaskTransformer.ts** (`configureTaskPicklistColumns` function):
+```typescript
+// Same fix pattern applied to Status, Priority, and Constraint Type columns
+```
+
+**Test File Fixes**:
+The test file also had incorrect patterns when retrieving sheet data:
+
+1. **Parameter Name Fix**: Changed `sheetId` to `id` parameter
+2. **Removed Query Parameters**: Removed unnecessary `queryParameters: { include: 'objectValue' }`
+3. **Response Access Pattern**: Applied production code pattern:
+```typescript
+const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
+```
+
+**Benefits**:
+- All 8 PMO Standards integration tests now passing
+- Code follows Smartsheet SDK's actual API structure
+- TypeScript type checking validates correctly
+- Pattern is consistent across all SDK operations
+- Future SDK usage will follow correct patterns
+
+**Lessons Learned**:
+1. Always reference SDK documentation for exact API structure
+2. Check existing production code patterns before implementing new features
+3. SDK type definitions should guide implementation, not assumptions
+4. Integration tests catch SDK usage errors that unit tests might miss
+
+**Files Modified**:
+- `src/transformers/ProjectTransformer.ts` (lines 239-281)
+- `src/transformers/TaskTransformer.ts` (lines 516-577)
+- `test/integration/pmo-standards-integration.test.ts` (lines 139-236)
+
+**Test Results**:
+- Before fixes: 0/8 tests passing (Smartsheet API 500 errors)
+- After production code fix: 5/8 tests passing
+- After test file fix: 8/8 tests passing ✅
+
+**Status**: Approved - All Tests Passing (2025-12-09)
+
+**Reference**: [`memory-bank/integration-test-status.md`](integration-test-status.md) (PMO Standards Integration section)

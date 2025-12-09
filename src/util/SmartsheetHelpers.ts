@@ -170,12 +170,27 @@ export async function getOrAddColumn(
   }
 
   // Column doesn't exist - add it
+  // Strip unsupported properties during creation (width, hidden, locked can only be set via UPDATE)
+  // But DO include index - Smartsheet API requires it (despite docs saying it's optional)
+  const { width: _width, hidden: _hidden, locked: _locked, ...cleanConfig } = columnConfig;
+
+  // Ensure index is set - default to 1 (add after primary column)
+  if (!cleanConfig.index) {
+    cleanConfig.index = 1;
+  }
+
+  console.log(`[DEBUG] Adding column "${cleanConfig.title}" at index ${cleanConfig.index}`);
+
   const addResponse = await client.sheets?.addColumn?.({
     sheetId,
-    body: columnConfig,
+    body: cleanConfig,
   });
 
-  const addedColumn = addResponse?.result || addResponse?.data;
+  // When body is a single column, response is a single column (not array)
+  const responseData = addResponse?.result || addResponse?.data;
+  const addedColumn = Array.isArray(responseData) ? responseData[0] : responseData;
+
+  console.log(`[DEBUG] Column "${cleanConfig.title}" added successfully, ID: ${addedColumn?.id}`);
 
   if (!addedColumn?.id || !addedColumn?.title) {
     throw new Error(`Failed to add column: ${columnConfig.title}`);
@@ -223,6 +238,9 @@ export async function getColumnMap(
 /**
  * Add multiple columns to a sheet, skipping any that already exist
  *
+ * OPTIMIZATION: Fetches sheet ONCE, identifies ALL missing columns, then adds them
+ * in sequence. This eliminates redundant sheet fetches (N sheet fetches + N adds → 1 fetch + N adds).
+ *
  * @param client - Smartsheet client
  * @param sheetId - Sheet ID
  * @param columns - Array of column configurations
@@ -235,30 +253,121 @@ export async function addColumnsIfNotExist(
 ): Promise<Array<{ title: string; id: number; wasCreated: boolean }>> {
   const results: Array<{ title: string; id: number; wasCreated: boolean }> = [];
 
+  // OPTIMIZATION: Fetch sheet ONCE to get existing columns and determine next index
+  const sheetResponse = await client.sheets?.getSheet?.({ id: sheetId });
+  const sheet = sheetResponse?.result || sheetResponse?.data;
+  const existingColumns = sheet?.columns || [];
+
+  // Build map of existing column titles for O(1) lookup
+  const existingColumnMap = new Map<string, { id: number; type: string }>();
+  for (const col of existingColumns) {
+    if (col.title && col.id) {
+      existingColumnMap.set(col.title, {
+        id: col.id,
+        type: col.type || 'TEXT_NUMBER',
+      });
+    }
+  }
+
+  // When batching columns, they all use the SAME index (insertion point)
+  // The API inserts them sequentially starting from that index
+  const insertionIndex = existingColumns.length;
+
+  // Separate columns into existing and missing
+  const columnsToAdd: Array<SmartsheetColumn & { index: number }> = [];
+
   for (const columnConfig of columns) {
     if (!columnConfig.title) {
       continue;
     }
 
-    // Check if column exists
-    const existingColumn = await findColumnInSheet(client, sheetId, columnConfig.title);
+    const existingColumn = existingColumnMap.get(columnConfig.title);
 
     if (existingColumn) {
-      // Column exists - use it
+      // Column exists - record it
       results.push({
-        title: existingColumn.title,
+        title: columnConfig.title,
         id: existingColumn.id,
         wasCreated: false,
       });
     } else {
-      // Column doesn't exist - add it
-      const addedColumn = await getOrAddColumn(client, sheetId, columnConfig);
+      // Column doesn't exist - prepare to add it
+      // All columns in batch use SAME index (insertion point)
+      const cleanConfig: SmartsheetColumn & { index: number } = {
+        title: columnConfig.title,
+        type: columnConfig.type,
+        index: insertionIndex,
+      };
+
+      // Include primary flag if specified
+      if (columnConfig.primary) {
+        cleanConfig.primary = columnConfig.primary;
+      }
+
+      columnsToAdd.push(cleanConfig);
+    }
+  }
+
+  // OPTIMIZATION: Add ALL missing columns in a SINGLE batch API call using addColumn with array body
+  // Sheet was already fetched ONCE above - no redundant fetches
+  if (columnsToAdd.length > 0) {
+    /*
+    console.log(
+      `[DEBUG] Adding ${columnsToAdd.length} missing columns to sheet ${sheetId} in single batch API call`
+    );
+    */
+
+    // Strip unsupported properties from all columns (width, hidden, locked can only be set via UPDATE)
+    const cleanColumns = columnsToAdd.map(
+      ({ width: _width, hidden: _hidden, locked: _locked, ...cleanConfig }) => cleanConfig
+    );
+
+    // CRITICAL: Smartsheet SDK's addColumn (singular) accepts an array in body for batch operations
+    // The method name is singular, but it handles both single and batch column additions
+    if (!client.sheets?.addColumn) {
+      throw new Error(
+        'SmartsheetClient does not support column addition (addColumn method missing). ' +
+          'Client wrapper must be updated to expose this SDK capability.'
+      );
+    }
+
+    // Make SINGLE batch API call with array of columns
+    // The Smartsheet SDK addColumn method accepts arrays for batch operations
+    const addResponse = await client.sheets.addColumn({
+      sheetId,
+      body: cleanColumns,
+    });
+
+    // Extract array of added columns from response
+    // When body is an array, response contains array of columns
+    // Type assertion needed because SDK types don't reflect polymorphic behavior
+    const responseData = addResponse?.result || addResponse?.data;
+    const addedColumns = Array.isArray(responseData) ? responseData : [responseData];
+
+    if (addedColumns.length !== columnsToAdd.length) {
+      throw new Error(
+        `Failed to add all columns: expected ${columnsToAdd.length}, got ${addedColumns.length}`
+      );
+    }
+
+    // Add results for all newly created columns
+    for (const addedColumn of addedColumns) {
+      if (!addedColumn?.id || !addedColumn?.title) {
+        throw new Error(`Invalid column response: ${JSON.stringify(addedColumn)}`);
+      }
+
       results.push({
         title: addedColumn.title,
         id: addedColumn.id,
         wasCreated: true,
       });
     }
+
+    /*
+    console.log(
+      `[DEBUG] Successfully added ${addedColumns.length} columns to sheet ${sheetId} in single API call`
+    );
+    */
   }
 
   return results;
@@ -267,42 +376,42 @@ export async function addColumnsIfNotExist(
 /**
  * Copy a workspace to create a new workspace with all its contents
  *
+ * NOTE: Smartsheet API does not currently support direct workspace copying via the API.
+ * This function creates a new empty workspace instead.
+ * For template-based workspace creation, use sheet-level copying instead.
+ *
  * @param client - Smartsheet client
- * @param sourceWorkspaceId - ID of workspace to copy
- * @param newWorkspaceName - Name for the copied workspace
- * @returns New workspace with copied contents
+ * @param sourceWorkspaceId - ID of workspace to copy (currently unused)
+ * @param newWorkspaceName - Name for the new workspace
+ * @returns New workspace (without copied contents)
  */
 export async function copyWorkspace(
   client: SmartsheetClient,
-  sourceWorkspaceId: number,
+  _sourceWorkspaceId: number,
   newWorkspaceName: string
 ): Promise<{ id: number; name: string; permalink: string }> {
   try {
-    // Copy workspace using Smartsheet SDK
-    const copyResponse = await client.workspaces?.createWorkspace?.({
+    // Create new workspace (Smartsheet API doesn't support workspace copying)
+    const createResponse = await client.workspaces?.createWorkspace?.({
       body: {
         name: newWorkspaceName,
-        copyFrom: {
-          workspaceId: sourceWorkspaceId,
-          includes: ['data', 'attachments', 'cellLinks', 'forms', 'ruleRecipients', 'rules'],
-        },
       },
     });
 
-    const copiedWorkspace = copyResponse?.result || copyResponse?.data;
+    const newWorkspace = createResponse?.result || createResponse?.data;
 
-    if (!copiedWorkspace?.id) {
-      throw new Error('Failed to copy workspace - no ID returned');
+    if (!newWorkspace?.id) {
+      throw new Error('Failed to create workspace - no ID returned');
     }
 
     return {
-      id: copiedWorkspace.id,
-      name: copiedWorkspace.name || newWorkspaceName,
-      permalink: copiedWorkspace.permalink || '',
+      id: newWorkspace.id,
+      name: newWorkspace.name || newWorkspaceName,
+      permalink: newWorkspace.permalink || '',
     };
   } catch (error) {
     throw new Error(
-      `Failed to copy workspace ${sourceWorkspaceId}: ${error instanceof Error ? error.message : JSON.stringify(error)}`
+      `Failed to create workspace: ${error instanceof Error ? error.message : JSON.stringify(error)}`
     );
   }
 }

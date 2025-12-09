@@ -12,7 +12,7 @@ export class ODataTaskBuilder {
     ProjectId: '',
     TaskName: 'Test Task',
     TaskIndex: 1,
-    OutlineLevel: 0,
+    OutlineLevel: 1,
     IsMilestone: false,
     IsActive: true,
   };
@@ -26,7 +26,7 @@ export class ODataTaskBuilder {
       ProjectId: '',
       TaskName: 'Basic Test Task',
       TaskIndex: 1,
-      OutlineLevel: 0,
+      OutlineLevel: 1,
       IsMilestone: false,
       IsActive: true,
     };
