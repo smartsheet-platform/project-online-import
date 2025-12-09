@@ -480,15 +480,26 @@ return existingColumn;
 **Implementation**:
 ```typescript
 // src/transformers/ProjectTransformer.ts
-const TEMPLATE_WORKSPACE_ID = 9002412817049476;
+// Template workspace ID is configured via TEMPLATE_WORKSPACE_ID environment variable
+// If not set, creates blank workspace from scratch
+constructor(private client: SmartsheetClient, configManager?: ConfigManager) {
+  this.templateWorkspaceId = configManager?.get().templateWorkspaceId;
+}
 
 async transformProject(project: ProjectOnlineProject): Promise<Workspace> {
-  // Copy from template instead of creating from scratch
-  const workspace = await copyWorkspace(
-    this.client,
-    TEMPLATE_WORKSPACE_ID,
-    project.Name
-  );
+  if (this.templateWorkspaceId) {
+    // Copy from template if configured
+    const workspace = await copyWorkspace(
+      this.client,
+      this.templateWorkspaceId,
+      project.Name
+    );
+  } else {
+    // Create blank workspace from scratch
+    const workspace = await this.client.workspaces.createWorkspace({
+      name: project.Name,
+    });
+  }
   
   // Find and rename pre-existing sheets
   const summarySheet = await findSheetByPartialName(

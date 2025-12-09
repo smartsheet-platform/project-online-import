@@ -93,7 +93,8 @@ const maxRetries = 3;
 
 **Constants**: UPPER_SNAKE_CASE
 ```typescript
-const TEMPLATE_WORKSPACE_ID = 9002412817049476;
+// Configuration from environment (loaded via ConfigManager)
+const TEMPLATE_WORKSPACE_ID = configManager.get().templateWorkspaceId; // From .env
 const MAX_RETRIES = 3;
 const DEFAULT_TIMEOUT = 30000;
 ```

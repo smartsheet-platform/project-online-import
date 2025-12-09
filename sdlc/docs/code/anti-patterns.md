@@ -304,9 +304,10 @@ function mapPriority(priority: number): string {
   // Clear intent
 }
 
-// Configuration constant
-const TEMPLATE_WORKSPACE_ID = 9002412817049476;  // Standard project template
-const workspace = await copyWorkspace(TEMPLATE_WORKSPACE_ID, name);
+// Configuration from environment variable (via ConfigManager)
+// Set in .env: TEMPLATE_WORKSPACE_ID=9002412817049476
+const templateId = configManager.get().templateWorkspaceId ?? 9002412817049476;
+const workspace = await copyWorkspace(templateId, name);
 ```
 
 ## Error Handling Anti-Patterns

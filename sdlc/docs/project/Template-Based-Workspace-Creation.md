@@ -38,9 +38,13 @@ The Project Online to Smartsheet ETL system uses a **template workspace** approa
 
 ## Template Workspace
 
-**Template Workspace ID**: `9002412817049476`
+**Template Workspace ID**: Configurable via `TEMPLATE_WORKSPACE_ID` environment variable in `.env`
 
-**Location**: https://app.smartsheet.com/folders/9002412817049476
+**Example Template**: `9002412817049476` (https://app.smartsheet.com/folders/9002412817049476)
+
+**Behavior**:
+- If `TEMPLATE_WORKSPACE_ID` is set: Copies the specified template workspace
+- If `TEMPLATE_WORKSPACE_ID` is not set: Creates a blank workspace from scratch
 
 **Contents**:
 - **Summary Sheet**: Contains all 15 project summary columns with proper types and configurations
@@ -49,18 +53,25 @@ The Project Online to Smartsheet ETL system uses a **template workspace** approa
 
 ## How It Works
 
-### 1. Template Copy
+### 1. Template Copy (if configured)
 
 When `transformProject()` is called without a `workspaceId` parameter:
 
 ```typescript
-const transformer = new ProjectTransformer(smartsheetClient);
+const transformer = new ProjectTransformer(smartsheetClient, configManager);
 const result = await transformer.transformProject(project); // No workspaceId
 ```
 
-The system:
-1. Copies the template workspace (ID: 9002412817049476)
+The system behavior depends on `TEMPLATE_WORKSPACE_ID` configuration:
+
+**With Template ID set** (e.g., in `.env`: `TEMPLATE_WORKSPACE_ID=9002412817049476`):
+1. Copies the specified template workspace
 2. Names the new workspace using the project name
+3. Returns the new workspace ID
+
+**Without Template ID** (variable not set or empty):
+1. Creates a blank workspace
+2. Creates sheets from scratch with columns
 3. Returns the new workspace ID
 
 ### 2. Sheet Renaming
@@ -133,7 +144,9 @@ When a `workspaceId` is provided, the system falls back to the old behavior of c
 
 **Helper Functions**: [`src/util/SmartsheetHelpers.ts`](../../../src/util/SmartsheetHelpers.ts)
 
-**Template Workspace ID**: Constant at top of ProjectTransformer.ts
+**Configuration**: [`src/util/ConfigManager.ts`](../../../src/util/ConfigManager.ts)
+
+**Template Workspace ID**: Configured via `TEMPLATE_WORKSPACE_ID` environment variable (no default - creates blank workspace if not set)
 
 ## Maintaining the Template
 
@@ -147,9 +160,10 @@ Update the template workspace when:
 
 ### How to Update Template
 
-1. Make changes to the template workspace (ID: 9002412817049476)
+1. Make changes to your template workspace
 2. Test the changes with a copy operation
-3. No code changes needed - the system automatically uses the updated template
+3. Update `TEMPLATE_WORKSPACE_ID` in `.env` if using a different template
+4. No code changes needed - the system automatically uses the configured template
 
 ### Creating a New Template
 
@@ -158,7 +172,12 @@ If you need to replace the template:
 1. Create a new workspace with desired structure
 2. Add all sheets with proper column configurations
 3. Add sample data (will be deleted on copy)
-4. Update `TEMPLATE_WORKSPACE_ID` constant in ProjectTransformer.ts
+4. Set `TEMPLATE_WORKSPACE_ID` environment variable in `.env`:
+   ```bash
+   # Template Workspace ID (optional)
+   # Leave empty to create blank workspaces from scratch
+   TEMPLATE_WORKSPACE_ID=your_new_template_id_here
+   ```
 5. Run tests to verify
 
 ## Testing
@@ -234,10 +253,14 @@ This is intentional - each import should create a fresh workspace from the templ
 ### Template Not Found Error
 
 ```
-Error: Failed to copy workspace 9002412817049476
+Error: Failed to copy workspace [TEMPLATE_WORKSPACE_ID]
 ```
 
-**Solution**: Verify the template workspace exists and is accessible with your API token.
+**Solution**:
+1. Verify the template workspace exists and is accessible with your API token
+2. Check that `TEMPLATE_WORKSPACE_ID` in `.env` is set to a valid workspace ID
+3. Ensure your API token has access to the specified template workspace
+4. Or leave `TEMPLATE_WORKSPACE_ID` empty to create blank workspaces from scratch
 
 ### Sheets Not Found After Copy
 

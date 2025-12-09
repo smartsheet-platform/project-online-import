@@ -122,8 +122,10 @@ The API supports standard OData v4 query parameters:
 #### Special Features Used
 
 **Template Workspace:**
-- Template ID: `9002412817049476`
-- Contains pre-configured sheets: Summary, Tasks, Resources
+- Template ID: Configurable via `TEMPLATE_WORKSPACE_ID` environment variable (no default)
+- If set: Contains pre-configured sheets (Summary, Tasks, Resources) for faster creation
+- If not set: Creates blank workspace from scratch
+- Set in `.env` file or leave empty to create blank workspaces
 - Copied at workspace creation for consistency
 
 **Picklist Configuration:**
@@ -381,7 +383,7 @@ When documenting API integrations in component specifications, use this format:
 |------|------------------|-------|
 | Projects | Project Online OData `/Projects` | [API Docs](https://docs.microsoft.com/en-us/previous-versions/office/project-odata/)<br/>Fetches all project metadata |
 | Tasks | Project Online OData `/Tasks` | [API Docs](https://docs.microsoft.com/en-us/previous-versions/office/project-odata/)<br/>Filtered by ProjectId |
-| Workspace | Smartsheet `workspaces.copyWorkspace()` | [API Docs](https://smartsheet.redoc.ly/#operation/copy-workspace)<br/>Copies from template ID 9002412817049476 |
+| Workspace | Smartsheet `workspaces.copyWorkspace()` | [API Docs](https://smartsheet.redoc.ly/#operation/copy-workspace)<br/>Copies from template ID configured via TEMPLATE_WORKSPACE_ID env var |
 ```
 
 ---

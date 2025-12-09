@@ -13,6 +13,7 @@ export interface ETLConfig {
   // Smartsheet Configuration
   smartsheetApiToken: string;
   pmoStandardsWorkspaceId?: number;
+  templateWorkspaceId?: number;
 
   // Project Online Configuration (future)
   projectOnlineUrl?: string;
@@ -63,6 +64,9 @@ export class ConfigManager {
 
       // Optional: PMO Standards Workspace ID
       pmoStandardsWorkspaceId: this.getOptionalNumber('PMO_STANDARDS_WORKSPACE_ID'),
+
+      // Optional: Template Workspace ID (no default - creates blank workspace if not specified)
+      templateWorkspaceId: this.getOptionalNumber('TEMPLATE_WORKSPACE_ID'),
 
       // Optional: Project Online Configuration (future use)
       projectOnlineUrl: this.getOptional('PROJECT_ONLINE_URL'),
@@ -121,6 +125,14 @@ export class ConfigManager {
       this.config.pmoStandardsWorkspaceId <= 0
     ) {
       throw ErrorHandler.configError('PMO_STANDARDS_WORKSPACE_ID', 'must be a positive number');
+    }
+
+    // Validate Template Workspace ID if provided
+    if (
+      this.config.templateWorkspaceId !== undefined &&
+      this.config.templateWorkspaceId <= 0
+    ) {
+      throw ErrorHandler.configError('TEMPLATE_WORKSPACE_ID', 'must be a positive number');
     }
 
     // Validate batch size
@@ -206,6 +218,10 @@ export class ConfigManager {
 
     if (this.config.pmoStandardsWorkspaceId) {
       this.logger.info(`  PMO Standards Workspace ID: ${this.config.pmoStandardsWorkspaceId}`);
+    }
+
+    if (this.config.templateWorkspaceId) {
+      this.logger.info(`  Template Workspace ID: ${this.config.templateWorkspaceId}`);
     }
 
     if (this.config.projectOnlineUrl) {

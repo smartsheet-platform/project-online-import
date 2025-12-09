@@ -118,11 +118,16 @@ All operations check for existing resources before creating:
 - `copyWorkspace()`: Template-based workspace creation
 - `deleteAllRows()`: Clears data for fresh import while preserving structure
 
-### 4. Template-Based Creation
-Uses pre-configured template workspace (ID: 9002412817049476):
+### 4. Template-Based Creation (Optional)
+If `TEMPLATE_WORKSPACE_ID` environment variable is set:
+- Copies pre-configured template workspace
 - Template contains sheets with full column definitions
 - Copy template, rename sheets, clear rows
 - Faster and more reliable than creating from scratch
+
+If `TEMPLATE_WORKSPACE_ID` is not set:
+- Creates blank workspace from scratch
+- Adds sheets and columns programmatically
 
 ### 5. Centralized PMO Standards
 Single workspace contains reference sheets for all picklists:
@@ -321,8 +326,10 @@ npm run test:integration  # Integration tests (requires .env.test)
 - Check sheet name uniqueness
 
 **Template workspace not found**
-- Verify TEMPLATE_WORKSPACE_ID (9002412817049476)
+- Verify TEMPLATE_WORKSPACE_ID in .env is set to a valid workspace ID
 - Ensure template has Summary, Tasks, Resources sheets
+- Check API token has access to template workspace
+- Or leave TEMPLATE_WORKSPACE_ID empty to create blank workspaces
 - Check API token can access template
 
 ## Next Steps for New Developers

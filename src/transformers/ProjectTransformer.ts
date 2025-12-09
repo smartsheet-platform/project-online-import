@@ -21,12 +21,7 @@ import {
   createSheetName,
 } from './utils';
 import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
-
-/**
- * Template workspace ID for copying
- * This workspace contains pre-configured sheets with all columns defined
- */
-const TEMPLATE_WORKSPACE_ID = 9002412817049476;
+import { ConfigManager } from '../util/ConfigManager';
 
 /**
  * Transform Project Online project to Smartsheet workspace
@@ -343,7 +338,12 @@ export function validateProject(project: ProjectOnlineProject): ProjectValidatio
  * Provides the expected API while using the functional implementation
  */
 export class ProjectTransformer {
-  constructor(private client: SmartsheetClient) {}
+  private templateWorkspaceId?: number;
+
+  constructor(private client: SmartsheetClient, configManager?: ConfigManager) {
+    // Get template workspace ID from config (no default - creates blank workspace if not set)
+    this.templateWorkspaceId = configManager?.get().templateWorkspaceId;
+  }
 
   async transformProject(
     project: ProjectOnlineProject,
@@ -366,10 +366,19 @@ export class ProjectTransformer {
     const workspace = transformProjectToWorkspace(project);
 
     // NEW BEHAVIOR: If no workspaceId provided, create new workspace with sheets
-    // Note: Smartsheet API doesn't support workspace copying, so we create empty workspace
-    // and sheets from scratch
     if (!workspaceId) {
-      const newWorkspace = await copyWorkspace(this.client, TEMPLATE_WORKSPACE_ID, workspace.name);
+      let newWorkspace: { id: number; permalink?: string };
+      
+      if (this.templateWorkspaceId) {
+        // Use template workspace if configured
+        newWorkspace = await copyWorkspace(this.client, this.templateWorkspaceId, workspace.name);
+      } else {
+        // Create blank workspace if no template configured
+        const created = await this.client.workspaces.createWorkspace({
+          name: workspace.name,
+        });
+        newWorkspace = { id: created.data.id!, permalink: created.data.permalink };
+      }
       workspace.id = newWorkspace.id;
       workspace.permalink = newWorkspace.permalink;
 

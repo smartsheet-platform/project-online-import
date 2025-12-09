@@ -417,35 +417,42 @@ if (columnMap['End Date']) {
 
 ### Template Workspace Errors
 
-#### Error: "Template workspace not found: 9002412817049476"
+#### Error: "Template workspace not found: [WORKSPACE_ID]"
 
 **Symptoms**:
 ```
-❌ Failed to copy workspace: Workspace 9002412817049476 not found
+❌ Failed to copy workspace: Workspace [ID] not found
 💡 What to do: Verify template workspace exists and API token has access
 ```
 
 **Diagnosis**:
 ```bash
-# Check if token can access workspace
-node -e "
-const client = require('smartsheet');
-const smartsheet = client.createClient({ accessToken: process.env.SMARTSHEET_API_TOKEN });
-smartsheet.workspaces.getWorkspace({ workspaceId: 9002412817049476 })
-  .then(ws => console.log('Found:', ws.name))
-  .catch(err => console.log('Error:', err.message));
-"
+# Check environment configuration
+echo "TEMPLATE_WORKSPACE_ID: $TEMPLATE_WORKSPACE_ID"
+
+# If TEMPLATE_WORKSPACE_ID is set, check if token can access workspace
+if [ -n "$TEMPLATE_WORKSPACE_ID" ]; then
+  node -e "
+  const client = require('smartsheet');
+  const smartsheet = client.createClient({ accessToken: process.env.SMARTSHEET_API_TOKEN });
+  smartsheet.workspaces.getWorkspace({ workspaceId: process.env.TEMPLATE_WORKSPACE_ID })
+    .then(ws => console.log('Found:', ws.name))
+    .catch(err => console.log('Error:', err.message));
+  "
+else
+  echo "TEMPLATE_WORKSPACE_ID not set - will create blank workspaces"
+fi
 ```
 
 **Resolution**:
-1. **Verify template workspace exists**
+1. **Verify template workspace exists** (if using template)
 2. **Share workspace with API token user**:
    - Open template workspace in Smartsheet
    - Share with user who owns API token
    - Grant Editor or Admin access
-3. **Alternative**: Create new template workspace
+3. **Alternative**: Leave `TEMPLATE_WORKSPACE_ID` empty to create blank workspaces
 
-**Creating Template Workspace**:
+**Creating Template Workspace** (Optional):
 1. Create new workspace: "Project Template"
 2. Add three sheets:
    - "Summary" (15 columns)
@@ -453,7 +460,12 @@ smartsheet.workspaces.getWorkspace({ workspaceId: 9002412817049476 })
    - "Resources" (18 columns)
 3. Configure column structures per specification
 4. Share with API token user
-5. Update `TEMPLATE_WORKSPACE_ID` constant
+5. Set `TEMPLATE_WORKSPACE_ID` in .env file:
+   ```bash
+   # Template Workspace ID (optional)
+   # Leave empty to create blank workspaces from scratch
+   TEMPLATE_WORKSPACE_ID=your_template_workspace_id
+   ```
 
 ---
 
@@ -746,6 +758,7 @@ TENANT_ID: 550e8400...
 ✓ PMO_STANDARDS_WORKSPACE_ID
 
 # Optional
+○ TEMPLATE_WORKSPACE_ID (blank = create from scratch)
 ○ LOG_LEVEL (DEBUG/INFO/WARN/ERROR)
 ○ BATCH_SIZE (default: 100)
 ○ MAX_RETRIES (default: 3)
