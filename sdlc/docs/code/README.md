@@ -8,7 +8,7 @@ The following files were generated through systematic codebase analysis and prov
 
 ### Core Documentation
 
-#### [`BOOTSTRAP-project-online-import.md`](./BOOTSTRAP-project-online-import.md)
+#### [`BOOTSTRAP.md`](./BOOTSTRAP.md)
 **Comprehensive Project Overview**
 - Technology stack and dependencies
 - Architecture layers (CLI → Orchestration → Transformation → API Client)
@@ -115,7 +115,7 @@ Each error includes:
 ### For New Developers
 
 **Week 1: Understanding the System**
-1. Read [`BOOTSTRAP-project-online-import.md`](./BOOTSTRAP-project-online-import.md) cover-to-cover
+1. Read [`BOOTSTRAP.md`](./BOOTSTRAP.md) cover-to-cover
 2. Set up environment following onboarding section
 3. Review [`conventions.md`](./conventions.md) coding standards
 4. Run example workflow from bootstrap guide
@@ -130,7 +130,7 @@ Each error includes:
 
 **Planning Phase**:
 1. Review relevant patterns in [`patterns.md`](./patterns.md)
-2. Check [`BOOTSTRAP-project-online-import.md`](./BOOTSTRAP-project-online-import.md) for architecture context
+2. Check [`BOOTSTRAP.md`](./BOOTSTRAP.md) for architecture context
 3. Plan implementation following established patterns
 
 **Implementation Phase**:
@@ -188,7 +188,7 @@ LOG_LEVEL=DEBUG npm run import -- --source <id>
 These bootstrap artifacts reflect the codebase at the time of generation. Update them when:
 
 **Architecture Changes**:
-- New layers or components added → Update [`BOOTSTRAP-project-online-import.md`](./BOOTSTRAP-project-online-import.md)
+- New layers or components added → Update [`BOOTSTRAP.md`](./BOOTSTRAP.md)
 - New patterns established → Add to [`patterns.md`](./patterns.md)
 - Breaking changes to conventions → Update [`conventions.md`](./conventions.md)
 
@@ -220,7 +220,7 @@ To regenerate these artifacts with current codebase state:
 
 | Document | Last Generated | Lines | Coverage |
 |----------|---------------|-------|----------|
-| BOOTSTRAP-project-online-import.md | 2025-12-08 | 500+ | Complete project overview |
+| BOOTSTRAP.md | 2025-12-08 | 500+ | Complete project overview |
 | patterns.md | 2025-12-08 | 600+ | 18 patterns documented |
 | conventions.md | 2025-12-08 | 600+ | Complete standards |
 | anti-patterns.md | 2025-12-08 | 500+ | 20 anti-patterns |
@@ -232,11 +232,11 @@ To regenerate these artifacts with current codebase state:
 
 | Scenario | Primary Reference | Supporting Docs |
 |----------|------------------|-----------------|
-| New developer onboarding | BOOTSTRAP-project-online-import.md | conventions.md |
+| New developer onboarding | BOOTSTRAP.md | conventions.md |
 | Implementing new feature | patterns.md | conventions.md, anti-patterns.md |
 | Debugging production issue | troubleshooting-playbook.md | BOOTSTRAP guide (error handling) |
 | Code review | conventions.md, anti-patterns.md | patterns.md |
-| Architecture decision | BOOTSTRAP-project-online-import.md | patterns.md |
+| Architecture decision | BOOTSTRAP.md | patterns.md |
 | Performance optimization | troubleshooting-playbook.md | patterns.md (performance), anti-patterns.md |
 | Test writing | conventions.md (testing) | patterns.md (testing patterns) |
 
@@ -257,7 +257,7 @@ To regenerate these artifacts with current codebase state:
 **Architecture Style**: Layered ETL Pipeline with Dependency Injection  
 **Key Patterns**: Template-based workspace creation, Re-run resiliency, Typed errors
 
-For complete project context, see [`BOOTSTRAP-project-online-import.md`](./BOOTSTRAP-project-online-import.md).
+For complete project context, see [`BOOTSTRAP.md`](./BOOTSTRAP.md).
 
 ---
 
