@@ -35,7 +35,7 @@ Without resiliency checks, re-running the import would cause:
 
 Before creating a sheet, the system checks if a sheet with the same name already exists in the workspace. If it does, the existing sheet is reused instead of creating a new one.
 
-**Helper Function**: [`getOrCreateSheet()`](../src/util/SmartsheetHelpers.ts)
+**Helper Function**: [`getOrCreateSheet()`](../../../src/util/SmartsheetHelpers.ts)
 
 ```typescript
 // Usage example
@@ -56,8 +56,8 @@ const sheet = await getOrCreateSheet(client, workspaceId, {
 Before adding a column to a sheet, the system checks if a column with the same title already exists. If it does, the existing column is reused instead of adding a duplicate.
 
 **Helper Functions**:
-- [`getOrAddColumn()`](../src/util/SmartsheetHelpers.ts) - Add single column with existence check
-- [`addColumnsIfNotExist()`](../src/util/SmartsheetHelpers.ts) - Add multiple columns, skipping existing ones
+- [`getOrAddColumn()`](../../../src/util/SmartsheetHelpers.ts) - Add single column with existence check
+- [`addColumnsIfNotExist()`](../../../src/util/SmartsheetHelpers.ts) - Add multiple columns, skipping existing ones
 
 ```typescript
 // Single column example
@@ -88,7 +88,7 @@ const results = await addColumnsIfNotExist(client, sheetId, [
 
 ### Helper Utilities
 
-All resiliency helpers are located in [`src/util/SmartsheetHelpers.ts`](../src/util/SmartsheetHelpers.ts):
+All resiliency helpers are located in [`src/util/SmartsheetHelpers.ts`](../../../src/util/SmartsheetHelpers.ts):
 
 | Function | Purpose | Returns |
 |----------|---------|---------|
@@ -98,6 +98,10 @@ All resiliency helpers are located in [`src/util/SmartsheetHelpers.ts`](../src/u
 | `getOrAddColumn()` | Get existing or add new column | Column object |
 | `getColumnMap()` | Get all columns as a map | Map of title → column info |
 | `addColumnsIfNotExist()` | Add multiple columns, skip existing | Array of results |
+| `copyWorkspace()` | Copy workspace with all contents | New workspace info |
+| `renameSheet()` | Rename a sheet | Updated sheet info |
+| `deleteAllRows()` | Delete all rows from a sheet | Number of rows deleted |
+| `findSheetByPartialName()` | Find sheet by partial name match | Sheet info or null |
 
 ### Transformer Integration
 
@@ -105,7 +109,7 @@ The resiliency helpers are integrated into all transformers:
 
 #### ProjectTransformer
 
-[`src/transformers/ProjectTransformer.ts`](../src/transformers/ProjectTransformer.ts)
+[`src/transformers/ProjectTransformer.ts`](../../../src/transformers/ProjectTransformer.ts)
 
 Uses `getOrCreateSheet()` for:
 - Summary sheet creation
@@ -122,7 +126,7 @@ const summarySheet = await getOrCreateSheet(client, workspaceId, { ... });
 
 #### TaskTransformer
 
-[`src/transformers/TaskTransformer.ts`](../src/transformers/TaskTransformer.ts)
+[`src/transformers/TaskTransformer.ts`](../../../src/transformers/TaskTransformer.ts)
 
 Uses `addColumnsIfNotExist()` for adding task columns:
 - Start Date, End Date, Duration
@@ -142,7 +146,7 @@ const results = await addColumnsIfNotExist(client, sheetId, columnsToAdd);
 
 #### ResourceTransformer
 
-[`src/transformers/ResourceTransformer.ts`](../src/transformers/ResourceTransformer.ts)
+[`src/transformers/ResourceTransformer.ts`](../../../src/transformers/ResourceTransformer.ts)
 
 Uses `addColumnsIfNotExist()` for adding resource columns:
 - Email, Resource Type, Max Units
@@ -152,7 +156,7 @@ Uses `addColumnsIfNotExist()` for adding resource columns:
 
 #### AssignmentTransformer
 
-[`src/transformers/AssignmentTransformer.ts`](../src/transformers/AssignmentTransformer.ts)
+[`src/transformers/AssignmentTransformer.ts`](../../../src/transformers/AssignmentTransformer.ts)
 
 Uses `getOrAddColumn()` for adding assignment columns:
 - MULTI_CONTACT_LIST columns for Work resources
@@ -162,7 +166,7 @@ Uses `getOrAddColumn()` for adding assignment columns:
 
 ## Testing
 
-Comprehensive tests verify resiliency behavior in [`test/util/SmartsheetHelpers.test.ts`](../test/util/SmartsheetHelpers.test.ts).
+Comprehensive tests verify resiliency behavior in [`test/util/SmartsheetHelpers.test.ts`](../../../test/util/SmartsheetHelpers.test.ts).
 
 ### Test Coverage
 
@@ -284,10 +288,10 @@ If updating existing code to use resiliency helpers:
 4. Add logging to track which resources were reused vs. created
 
 See the implementation in:
-- [`src/transformers/ProjectTransformer.ts`](../src/transformers/ProjectTransformer.ts) (lines 1-434)
-- [`src/transformers/TaskTransformer.ts`](../src/transformers/TaskTransformer.ts) (lines 698-762)
-- [`src/transformers/ResourceTransformer.ts`](../src/transformers/ResourceTransformer.ts) (lines 382-420)
-- [`src/transformers/AssignmentTransformer.ts`](../src/transformers/AssignmentTransformer.ts) (lines 56-101)
+- [`src/transformers/ProjectTransformer.ts`](../../../src/transformers/ProjectTransformer.ts)
+- [`src/transformers/TaskTransformer.ts`](../../../src/transformers/TaskTransformer.ts)
+- [`src/transformers/ResourceTransformer.ts`](../../../src/transformers/ResourceTransformer.ts)
+- [`src/transformers/AssignmentTransformer.ts`](../../../src/transformers/AssignmentTransformer.ts)
 
 ---
 

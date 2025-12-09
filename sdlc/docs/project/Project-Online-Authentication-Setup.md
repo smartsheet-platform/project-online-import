@@ -295,21 +295,15 @@ Load specific configuration:
 npm run dev import -- --config .env.prod --source [project-id]
 ```
 
-### Custom Timeout and Retry Configuration
+### Default Client Configuration
 
-The client supports custom timeout and retry configuration (set in code):
+The Project Online client uses these default configuration values:
 
-```typescript
-const config: ProjectOnlineClientConfig = {
-  tenantId: process.env.TENANT_ID!,
-  clientId: process.env.CLIENT_ID!,
-  clientSecret: process.env.CLIENT_SECRET!,
-  projectOnlineUrl: process.env.PROJECT_ONLINE_URL!,
-  timeout: 60000, // 60 seconds (default: 30 seconds)
-  maxRetries: 5, // Maximum retry attempts (default: 3)
-  rateLimitPerMinute: 300, // API calls per minute (default: 300)
-};
-```
+- **Timeout**: 30 seconds per request
+- **Max Retries**: 3 attempts for failed requests
+- **Rate Limit**: 300 API calls per minute
+
+These values are built into the client and provide reliable operation for most scenarios. Custom values can only be configured programmatically (e.g., for testing), not through environment variables or CLI options.
 
 ## Support and Additional Resources
 

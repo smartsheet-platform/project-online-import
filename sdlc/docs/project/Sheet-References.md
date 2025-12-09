@@ -65,8 +65,8 @@ PMO Standards Reference Sheet Column
 | Priority | PMO Standards/Project - Priority | Value |
 
 **Values**:
-- **Status**: Active, Planning, On Hold, Complete, Cancelled
-- **Priority**: Highest, Very High, Higher, Medium, Lower, Very Low, Lowest
+- **Status**: Active, Planning, Completed, On Hold, Cancelled
+- **Priority**: Lowest, Very Low, Lower, Medium, Higher, Very High, Highest
 
 #### Task Sheet References
 
@@ -77,20 +77,20 @@ PMO Standards Reference Sheet Column
 | Constraint Type | PMO Standards/Task - Constraint Type | Value |
 
 **Values**:
-- **Status**: Not Started, In Progress, Complete, On Hold, Blocked
-- **Priority**: Highest, Very High, Higher, Medium, Lower, Very Low, Lowest
-- **Constraint Type**: As Soon As Possible, As Late As Possible, Must Start On, Must Finish On, Start No Earlier Than, Start No Later Than, Finish No Earlier Than, Finish No Later Than
+- **Status**: Not Started, In Progress, Complete
+- **Priority**: Lowest, Very Low, Lower, Medium, Higher, Very High, Highest
+- **Constraint Type**: ASAP, ALAP, SNET, SNLT, FNET, FNLT, MSO, MFO
 
 #### Resource Sheet References
 
 | Column | References Sheet | Reference Column |
 |--------|-----------------|------------------|
 | Resource Type | PMO Standards/Resource - Type | Value |
-| Department | PMO Standards/Resource - Department | Value |
 
 **Values**:
 - **Resource Type**: Work, Material, Cost
-- **Department**: Dynamically discovered from Project Online data (e.g., Engineering, Marketing, Operations)
+
+**Note**: Department picklist is not currently implemented as a cross-sheet reference. Department values are stored as standard TEXT_NUMBER columns in the resource sheet.
 
 ---
 
@@ -259,43 +259,75 @@ Workspace: PMO Standards
 │   └── Column: Description (TEXT_NUMBER)
 │   └── Rows: ASAP, ALAP, MSO, MFO, SNET, SNLT, FNET, FNLT
 │
-├── Sheet: Resource - Type
-│   ├── Column: Value (Primary, TEXT_NUMBER)
-│   └── Column: Description (TEXT_NUMBER)
-│   └── Rows: Work, Material, Cost
-│
-└── Sheet: Resource - Department
+└── Sheet: Resource - Type
     ├── Column: Value (Primary, TEXT_NUMBER)
-    └── Column: Description (TEXT_NUMBER)
-    └── Rows: Engineering, Marketing, Operations, etc. (discovered)
+    └── Rows: Work, Material, Cost
 ```
 
 ### Reference Sheet Data
+
+#### Project - Status Reference
+
+| Value | Description |
+|-------|-------------|
+| Active | Project is currently active |
+| Planning | Project is in planning phase |
+| Completed | Project has been completed |
+| On Hold | Project is temporarily on hold |
+| Cancelled | Project has been cancelled |
 
 #### Project - Priority Reference
 
 | Value | Description |
 |-------|-------------|
-| Highest | Critical - Immediate attention required (PO: 1000-858) |
-| Very High | High urgency (PO: 857-715) |
-| Higher | Above normal priority (PO: 714-572) |
-| Medium | Normal priority (PO: 571-429) |
-| Lower | Below normal priority (PO: 428-286) |
-| Very Low | Low urgency (PO: 285-143) |
-| Lowest | Minimal priority (PO: 142-0) |
+| Lowest | Minimal priority |
+| Very Low | Low urgency |
+| Lower | Below normal priority |
+| Medium | Normal priority |
+| Higher | Above normal priority |
+| Very High | High urgency |
+| Highest | Critical - Immediate attention required |
+
+#### Task - Status Reference
+
+| Value | Description |
+|-------|-------------|
+| Not Started | Task has not been started |
+| In Progress | Task is currently in progress |
+| Complete | Task has been completed |
+
+#### Task - Priority Reference
+
+| Value | Description |
+|-------|-------------|
+| Lowest | Minimal priority |
+| Very Low | Low urgency |
+| Lower | Below normal priority |
+| Medium | Normal priority |
+| Higher | Above normal priority |
+| Very High | High urgency |
+| Highest | Critical - Immediate attention required |
 
 #### Task - Constraint Type Reference
 
 | Value | Description |
 |-------|-------------|
-| As Soon As Possible | Start as early as schedule allows |
-| As Late As Possible | Start as late as schedule allows |
-| Must Start On | Task must start on specific date |
-| Must Finish On | Task must finish on specific date |
-| Start No Earlier Than | Task cannot start before date |
-| Start No Later Than | Task must start by date |
-| Finish No Earlier Than | Task cannot finish before date |
-| Finish No Later Than | Task must finish by date |
+| ASAP | As Soon As Possible - Start as early as schedule allows |
+| ALAP | As Late As Possible - Start as late as schedule allows |
+| SNET | Start No Earlier Than - Task cannot start before date |
+| SNLT | Start No Later Than - Task must start by date |
+| FNET | Finish No Earlier Than - Task cannot finish before date |
+| FNLT | Finish No Later Than - Task must finish by date |
+| MSO | Must Start On - Task must start on specific date |
+| MFO | Must Finish On - Task must finish on specific date |
+
+#### Resource - Type Reference
+
+| Value | Description |
+|-------|-------------|
+| Work | Human resource (people) |
+| Material | Material resource (equipment, supplies) |
+| Cost | Cost resource (budget categories) |
 
 ---
 
@@ -310,10 +342,10 @@ To add a new value to a picklist:
 3. **Add row with new value**
 4. **Value immediately available** in all referencing columns
 
-Example - Adding new department:
+Example - Adding new project status:
 ```
-PMO Standards/Resource - Department
-Add row: "Product Management" → Available in all Resource sheets
+PMO Standards/Project - Status
+Add row: "Archived" → Available in all Project Summary sheets
 ```
 
 ### Modifying Existing Values
@@ -447,8 +479,8 @@ Setup:
 
 References:
 - Summary: 2 picklist references (Status, Priority)
-- Tasks: 3 picklist references (Status, Priority, Constraint)
-- Resources: 2 picklist references (Type, Department)
+- Tasks: 3 picklist references (Status, Priority, Constraint Type)
+- Resources: 1 picklist reference (Type)
 - Assignments: N contact references (N = number of Work resources)
 ```
 

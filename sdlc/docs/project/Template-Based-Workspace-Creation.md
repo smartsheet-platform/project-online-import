@@ -20,7 +20,7 @@ The Project Online to Smartsheet ETL system uses a **template workspace** approa
 **Contents**:
 - **Summary Sheet**: Contains all 15 project summary columns with proper types and configurations
 - **Tasks Sheet**: Contains all 18 task columns including DURATION, PREDECESSOR, system columns
-- **Resources Sheet**: Contains all resource columns including picklists, contact lists, checkboxes
+- **Resources Sheet**: Contains all 18 resource columns including picklists, contact lists, checkboxes
 
 ## How It Works
 
@@ -104,9 +104,9 @@ When a `workspaceId` is provided, the system falls back to the old behavior of c
 
 ### Code Location
 
-**Implementation**: [`src/transformers/ProjectTransformer.ts`](../src/transformers/ProjectTransformer.ts)
+**Implementation**: [`src/transformers/ProjectTransformer.ts`](../../../src/transformers/ProjectTransformer.ts)
 
-**Helper Functions**: [`src/util/SmartsheetHelpers.ts`](../src/util/SmartsheetHelpers.ts)
+**Helper Functions**: [`src/util/SmartsheetHelpers.ts`](../../../src/util/SmartsheetHelpers.ts)
 
 **Template Workspace ID**: Constant at top of ProjectTransformer.ts
 

@@ -57,8 +57,7 @@ Workspace: PMO Standards
 ├── Sheet: Task - Status
 ├── Sheet: Task - Priority
 ├── Sheet: Task - Constraint Type
-├── Sheet: Resource - Type
-└── Sheet: Resource - Department
+└── Sheet: Resource - Type
 ```
 
 ### Purpose
@@ -77,13 +76,13 @@ Each reference sheet has a simple two-column structure:
 **Example - Task Priority Reference**:
 | Priority | Description |
 |----------|-------------|
-| Highest  | Critical priority (1000-858) |
-| Very High| High priority (857-715) |
-| Higher   | Above medium (714-572) |
-| Medium   | Normal priority (571-429) |
-| Lower    | Below medium (428-286) |
-| Very Low | Low priority (285-143) |
-| Lowest   | Minimal priority (142-0) |
+| Highest  | Critical priority (1000+) |
+| Very High| High priority (800-999) |
+| Higher   | Above medium (600-799) |
+| Medium   | Normal priority (500-599) |
+| Lower    | Below medium (400-499) |
+| Very Low | Low priority (200-399) |
+| Lowest   | Minimal priority (0-199) |
 
 ---
 
@@ -200,15 +199,15 @@ Assignment columns are **dynamically created** based on resources found in assig
 
 | # | Column Name | Type | Width | Properties | Source |
 |---|-------------|------|-------|------------|--------|
-| 1 | Resource Name | TEXT_NUMBER | 200 | Primary | PO: Name |
+| 1 | Resource ID | AUTO_NUMBER | 80 | - | Auto-generated |
 | 2 | Project Online Resource ID | TEXT_NUMBER | 150 | Hidden, Locked | PO: Id (GUID) |
-| 3 | Email | TEXT_NUMBER | 200 | - | PO: Email |
+| 3 | Contact | CONTACT_LIST | 200 | Primary | PO: Name + Email |
 | 4 | Resource Type | PICKLIST | 120 | Strict, Cross-sheet | PO: ResourceType |
 | 5 | Max Units | TEXT_NUMBER | 100 | - | PO: MaxUnits (as %) |
 | 6 | Standard Rate | TEXT_NUMBER | 120 | - | PO: StandardRate |
 | 7 | Overtime Rate | TEXT_NUMBER | 120 | - | PO: OvertimeRate |
 | 8 | Cost Per Use | TEXT_NUMBER | 120 | - | PO: CostPerUse |
-| 9 | Department | PICKLIST | 150 | Strict, Cross-sheet | PO: Department |
+| 9 | Department | PICKLIST | 150 | Dynamic | PO: Department |
 | 10 | Code | TEXT_NUMBER | 100 | - | PO: Code |
 | 11 | Is Active | CHECKBOX | 80 | - | PO: IsActive |
 | 12 | Is Generic | CHECKBOX | 80 | - | PO: IsGeneric |
@@ -226,7 +225,7 @@ Assignment columns are **dynamically created** based on resources found in assig
 
 **Picklist References**:
 - Resource Type → `PMO Standards/Resource - Type`
-- Department → `PMO Standards/Resource - Department` (dynamic, discovered from data)
+- Department → Dynamic picklist (values discovered from data, not cross-sheet reference)
 
 ---
 
@@ -272,13 +271,13 @@ PT480M (480 minutes)
 **Project Online**: Integer scale (0-1000)
 
 **Smartsheet**: 7-level picklist
-- 1000-858 → Highest
-- 857-715 → Very High
-- 714-572 → Higher
-- 571-429 → Medium
-- 428-286 → Lower
-- 285-143 → Very Low
-- 142-0 → Lowest
+- 1000+ → Highest
+- 800-999 → Very High
+- 600-799 → Higher
+- 500-599 → Medium
+- 400-499 → Lower
+- 200-399 → Very Low
+- 0-199 → Lowest
 
 ### Percentage Handling
 
@@ -457,13 +456,12 @@ Workspace: Marketing Campaign Q1
     └── 8 rows (5 Work, 2 Material, 1 Cost)
 
 PMO Standards Workspace
-├── Project - Status (Active, On Hold, Complete)
-├── Project - Priority (7 levels)
+├── Project - Status (Active, Planning, Completed, On Hold, Cancelled)
+├── Project - Priority (7 levels: Lowest to Highest)
 ├── Task - Status (Not Started, In Progress, Complete)
-├── Task - Priority (7 levels)
-├── Task - Constraint Type (8 types)
-├── Resource - Type (Work, Material, Cost)
-└── Resource - Department (Discovered from data)
+├── Task - Priority (7 levels: Lowest to Highest)
+├── Task - Constraint Type (ASAP, ALAP, SNET, SNLT, FNET, FNLT, MSO, MFO)
+└── Resource - Type (Work, Material, Cost)
 ```
 
 ### Large Project Example

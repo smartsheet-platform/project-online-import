@@ -4,7 +4,7 @@
 
 The Project Online to Smartsheet ETL tool provides a command-line interface with enhanced logging, progress reporting, error handling, and configuration management. This guide covers all CLI features and usage patterns.
 
-**Last Updated**: 2024-12-05
+**Last Updated**: 2024-12-08
 
 ---
 
@@ -34,8 +34,17 @@ cp .env.sample .env
 Edit `.env` and add your credentials:
 
 ```env
+# Project Online Connection
+TENANT_ID=your-azure-tenant-id
+CLIENT_ID=your-azure-app-client-id
+CLIENT_SECRET=your-azure-app-client-secret
+PROJECT_ONLINE_URL=https://your-tenant.sharepoint.com/sites/pwa
+
+# Smartsheet Connection
 SMARTSHEET_API_TOKEN=your_smartsheet_token_here
-PMO_STANDARDS_WORKSPACE_ID=12345678901234  # Optional: reuse existing workspace
+
+# Optional: Reuse existing PMO Standards workspace
+PMO_STANDARDS_WORKSPACE_ID=12345678901234
 ```
 
 ### 2. Verify Configuration
@@ -46,12 +55,12 @@ npm run cli config
 
 This validates your configuration and shows you what's configured (with sensitive values masked).
 
-### 3. Run Import (when extraction layer is available)
+### 3. Run Import
 
 ```bash
 npm run cli import \
-  --source "https://your-tenant.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "workspace-name"
+  --source "project-guid-here" \
+  --destination "workspace-id-here"
 ```
 
 ---
@@ -62,15 +71,13 @@ npm run cli import \
 
 Import data from Project Online to Smartsheet.
 
-**⚠️ Note**: Currently requires the extraction layer (Project Online oData client) to be implemented. Use the `importProject()` method directly with `ProjectImportData` for now.
-
 ```bash
-npm run cli import --source <url> --destination <name> [options]
+npm run cli import --source <project-id> --destination <workspace-id> [options]
 ```
 
 **Arguments:**
-- `--source <url>` - Project Online oData endpoint URL
-- `--destination <name>` - Smartsheet workspace name or ID
+- `--source <project-id>` - Project Online project ID (GUID format)
+- `--destination <workspace-id>` - Smartsheet workspace ID (used for validation)
 
 **Options:**
 - `-v, --verbose` - Enable detailed debug logging
@@ -82,25 +89,25 @@ npm run cli import --source <url> --destination <name> [options]
 ```bash
 # Standard import
 npm run cli import \
-  --source "https://contoso.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Customer Project"
+  --source "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --destination "1234567890123456"
 
-# Dry run to test configuration
+# Dry run to test configuration and extract data
 npm run cli import \
-  --source "https://contoso.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Test Project" \
+  --source "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --destination "1234567890123456" \
   --dry-run
 
 # Verbose logging for debugging
 npm run cli import \
-  --source "https://contoso.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Debug Project" \
+  --source "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --destination "1234567890123456" \
   --verbose
 
 # Custom configuration file
 npm run cli import \
-  --source "https://contoso.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Custom Project" \
+  --source "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --destination "1234567890123456" \
   --config .env.production
 ```
 
@@ -108,14 +115,14 @@ npm run cli import \
 
 ### `validate` - Validate Source Data
 
-Validate Project Online source without performing import.
+Validate Project Online configuration and connectivity without performing import.
 
 ```bash
-npm run cli validate --source <url> [options]
+npm run cli validate --source <project-id> [options]
 ```
 
 **Arguments:**
-- `--source <url>` - Project Online oData endpoint URL
+- `--source <project-id>` - Project Online project ID (GUID format)
 
 **Options:**
 - `-v, --verbose` - Enable detailed debug logging
@@ -169,11 +176,19 @@ npm run cli config --verbose
 **Output:**
 
 ```
+⚙️  Configuration Validator
+
 ✓ Configuration loaded successfully
 
 Configuration Summary:
+  • TENANT_ID: ********
+  • CLIENT_ID: ********
+  • CLIENT_SECRET: ********
+  • PROJECT_ONLINE_URL: https://your-tenant.sharepoint.com/sites/pwa
   • SMARTSHEET_API_TOKEN: ********token (80 characters)
   • PMO_STANDARDS_WORKSPACE_ID: Not set (will create new workspace)
+
+✅ Configuration is valid
 ```
 
 ---
@@ -188,6 +203,10 @@ The tool uses environment variables for configuration. Store these in a `.env` f
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `TENANT_ID` | Azure AD tenant ID | `12345678-1234-1234-1234-123456789012` |
+| `CLIENT_ID` | Azure AD app registration client ID | `87654321-4321-4321-4321-210987654321` |
+| `CLIENT_SECRET` | Azure AD app registration client secret | `abc123...xyz789` |
+| `PROJECT_ONLINE_URL` | Project Online site URL | `https://contoso.sharepoint.com/sites/pwa` |
 | `SMARTSHEET_API_TOKEN` | Your Smartsheet API access token | `abc123...xyz789` |
 
 #### Optional Variables
@@ -203,6 +222,12 @@ The tool uses environment variables for configuration. Store these in a `.env` f
 Primary configuration file. Git-ignored for security.
 
 ```env
+# Project Online Connection
+TENANT_ID=your-azure-tenant-id
+CLIENT_ID=your-azure-app-client-id
+CLIENT_SECRET=your-azure-app-client-secret
+PROJECT_ONLINE_URL=https://your-tenant.sharepoint.com/sites/pwa
+
 # Smartsheet Configuration
 SMARTSHEET_API_TOKEN=your_token_here
 
@@ -215,6 +240,13 @@ PMO_STANDARDS_WORKSPACE_ID=1234567890123456
 Template file showing required variables. Committed to git.
 
 ```env
+# Project Online Connection
+# Azure AD app registration credentials
+TENANT_ID=
+CLIENT_ID=
+CLIENT_SECRET=
+PROJECT_ONLINE_URL=
+
 # Smartsheet API Token
 # Get yours from: https://app.smartsheet.com/b/home?lx=<your_account_id>#/accountsettings/apiAccess
 SMARTSHEET_API_TOKEN=
@@ -296,8 +328,9 @@ npm run cli import ... --dry-run
 
 **What it does:**
 - ✓ Validates configuration
-- ✓ Connects to Project Online (when implemented)
-- ✓ Processes data transformations
+- ✓ Tests Project Online authentication
+- ✓ Extracts project data from Project Online
+- ✓ Reports data statistics (tasks, resources, assignments)
 - ✗ Skips all Smartsheet write operations
 
 **When to use:**
@@ -503,37 +536,62 @@ npm run cli config
 # Configuration Summary:
 #   • SMARTSHEET_API_TOKEN: ********token (80 characters)
 
-# 3. Validate source (when extraction implemented)
+# 3. Validate source and test connectivity
 npm run cli validate \
-  --source "https://contoso.sharepoint.com/sites/PWA/_api/ProjectData"
+  --source "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
 # Output:
-# Validating source: https://contoso.sharepoint.com/sites/PWA/_api/ProjectData
-# ✓ Source URL format is valid
-# ℹ️  Full connectivity validation pending extraction layer implementation
+# 🔍 Validating Project Online data
+#
+# Validating source: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+#
+# ✓ Project ID format is valid
+# ✓ Azure AD Tenant ID is configured
+# ✓ Azure AD Client ID is configured
+# ✓ Azure AD Client Secret is configured
+# ✓ Project Online URL is configured
 # ✓ Smartsheet API token is configured
+#
+# 🔌 Testing Project Online connection...
+# ✓ Connection to Project Online successful
+#
+# ✅ Validation passed
 
-# 4. Dry run first
+# 4. Dry run first to test extraction
 npm run cli import \
-  --source "https://contoso.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Test Project" \
+  --source "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --destination "1234567890123456" \
   --dry-run
 
 # Output:
-# 📥 Source: https://contoso.sharepoint.com/sites/PWA/_api/ProjectData
-# 📤 Destination: Test Project
-# 🚨 Dry run mode - no changes will be made
-# 
+# 🚀 Project Online to Smartsheet ETL
+#
+# 📥 Source: Project Online project a1b2c3d4-e5f6-7890-abcd-ef1234567890
+# 📤 Destination: Smartsheet workspace 1234567890123456
+#
+# 🚨 DRY RUN MODE: No changes will be made
+#
 # In dry-run mode, the tool will:
 #   • Validate configuration
-#   • Connect to Project Online (when implemented)
+#   • Connect to Project Online
+#   • Extract project data
 #   • Process data transformations
 #   • Skip all Smartsheet write operations
+#
+# Testing Project Online connection...
+#
+# Extracting data for project a1b2c3d4-e5f6-7890-abcd-ef1234567890...
+#
+# ✅ Dry run completed successfully!
+#    Project: Customer Implementation Project
+#    Tasks: 342
+#    Resources: 28
+#    Assignments: 567
 
-# 5. Perform actual import (when extraction implemented)
+# 5. Perform actual import
 npm run cli import \
-  --source "https://contoso.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Customer Project"
+  --source "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --destination "1234567890123456"
 ```
 
 ### Development/Testing Examples
@@ -548,10 +606,10 @@ npm run cli import \
 # Test with custom configuration
 npm run cli config --config .env.test
 
-# Validate different sources
-npm run cli validate --source "https://dev.sharepoint.com/..."
-npm run cli validate --source "https://staging.sharepoint.com/..."
-npm run cli validate --source "https://prod.sharepoint.com/..."
+# Validate different project IDs
+npm run cli validate --source "dev-project-guid"
+npm run cli validate --source "staging-project-guid"
+npm run cli validate --source "prod-project-guid"
 ```
 
 ### Production Examples
@@ -559,18 +617,18 @@ npm run cli validate --source "https://prod.sharepoint.com/..."
 ```bash
 # Use production configuration
 npm run cli import \
-  --source "https://customer.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Customer Production Project" \
+  --source "prod-project-guid" \
+  --destination "9876543210987654" \
   --config .env.production
 
 # Validate before import
 npm run cli validate \
-  --source "https://customer.sharepoint.com/sites/PWA/_api/ProjectData" \
+  --source "prod-project-guid" \
   --config .env.production
 
 npm run cli import \
-  --source "https://customer.sharepoint.com/sites/PWA/_api/ProjectData" \
-  --destination "Customer Production Project" \
+  --source "prod-project-guid" \
+  --destination "9876543210987654" \
   --config .env.production
 ```
 
@@ -598,12 +656,18 @@ npm run cli config
 
 #### "Authentication Error: Invalid token"
 
-**Cause**: Token is invalid, expired, or has wrong permissions
+**Cause**: Smartsheet token is invalid, expired, or has wrong permissions, OR Azure AD credentials are incorrect
 
-**Solution**:
+**Solution for Smartsheet**:
 1. Generate new token: https://app.smartsheet.com/b/home#/accountsettings/apiAccess
 2. Update `.env` file with new token
 3. Ensure token has required scopes (Create Sheets, Read Sheets, Write Sheets)
+
+**Solution for Project Online**:
+1. Verify TENANT_ID, CLIENT_ID, and CLIENT_SECRET in `.env`
+2. Ensure Azure AD app has Sites.ReadWrite.All permission with admin consent
+3. Check PROJECT_ONLINE_URL is correct
+4. Test connection with `npm run cli validate --source <project-id>`
 
 #### "Network Error: ENOTFOUND"
 
@@ -707,18 +771,30 @@ Create separate configuration files for each environment:
 
 **`.env.development`**:
 ```env
+TENANT_ID=dev-tenant-id
+CLIENT_ID=dev-client-id
+CLIENT_SECRET=dev-client-secret
+PROJECT_ONLINE_URL=https://dev-tenant.sharepoint.com/sites/pwa
 SMARTSHEET_API_TOKEN=dev_token_here
 PMO_STANDARDS_WORKSPACE_ID=1234567890123456
 ```
 
 **`.env.staging`**:
 ```env
+TENANT_ID=staging-tenant-id
+CLIENT_ID=staging-client-id
+CLIENT_SECRET=staging-client-secret
+PROJECT_ONLINE_URL=https://staging-tenant.sharepoint.com/sites/pwa
 SMARTSHEET_API_TOKEN=staging_token_here
 PMO_STANDARDS_WORKSPACE_ID=2345678901234567
 ```
 
 **`.env.production`**:
 ```env
+TENANT_ID=prod-tenant-id
+CLIENT_ID=prod-client-id
+CLIENT_SECRET=prod-client-secret
+PROJECT_ONLINE_URL=https://prod-tenant.sharepoint.com/sites/pwa
 SMARTSHEET_API_TOKEN=prod_token_here
 PMO_STANDARDS_WORKSPACE_ID=3456789012345678
 ```
@@ -732,17 +808,17 @@ npm run cli import ... --config .env.production
 
 ## Future Enhancements
 
-Planned CLI improvements (pending extraction layer implementation):
+Planned CLI improvements:
 
-- [ ] **Project listing**: List available projects from Project Online
-- [ ] **Incremental import**: Import only changed data
+- [ ] **Project listing**: List available projects from Project Online (`list-projects` command)
+- [ ] **Incremental import**: Import only changed data since last run
 - [ ] **Batch import**: Import multiple projects in one operation
 - [ ] **Export configuration**: Generate configuration from existing workspace
-- [ ] **Status checking**: Check import progress/status
+- [ ] **Resume capability**: Resume interrupted imports from checkpoint
 - [ ] **Rollback capability**: Undo failed imports
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024-12-05  
-**Next Review**: After extraction layer implementation
+**Document Version**: 1.1
+**Last Updated**: 2024-12-08
+**Status**: Reflects actual implementation with full Project Online client and authentication

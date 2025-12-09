@@ -8,7 +8,7 @@ This document describes the architecture of the Project Online to Smartsheet ETL
 
 **Primary Users**: Smartsheet Professional Services team
 
-**Last Updated**: 2024-12-05
+**Last Updated**: 2024-12-08
 
 ---
 
@@ -64,12 +64,19 @@ This document describes the architecture of the Project Online to Smartsheet ETL
 
 **Commands**:
 - `import` - Import data from Project Online to Smartsheet
-  - `--source <url>` - Project Online source URL
-  - `--destination <id>` - Smartsheet destination ID
+  - `--source <url>` - Project Online project ID (GUID)
+  - `--destination <id>` - Smartsheet workspace ID
   - `--dry-run` - Preview mode without making changes
+  - `-v, --verbose` - Enable verbose logging
+  - `--config <path>` - Path to .env configuration file
   
 - `validate` - Validate Project Online data before import
-  - `--source <url>` - Project Online source URL
+  - `--source <url>` - Project Online project ID (GUID)
+  - `-v, --verbose` - Enable verbose logging
+  - `--config <path>` - Path to .env configuration file
+
+- `config` - Validate and display current configuration
+  - `--config <path>` - Path to .env configuration file
 
 **Technology**: Commander.js for argument parsing
 
@@ -88,21 +95,31 @@ This document describes the architecture of the Project Online to Smartsheet ETL
 - `validate(source)` - Validate source data
 - `performImport(options)` - Internal import execution
 
-### 3. Data Extractors (Future Implementation)
+### 3. Project Online Client (`src/lib/ProjectOnlineClient.ts`)
 
 **Purpose**: Extract data from Project Online oData API
 
-**Planned Components**:
-- `ODataClient` - HTTP client for Project Online API
-- `OAuthHandler` - Microsoft authentication
-- `PaginationHandler` - Handle paginated API responses
-- `EntityExtractor` - Extract specific entity types
+**Implemented Components**:
+- `ProjectOnlineClient` - HTTP client using Axios for Project Online API
+- `MSALAuthHandler` - Microsoft MSAL authentication (`src/lib/auth/MSALAuthHandler.ts`)
+- Automatic pagination handling with `@odata.nextLink`
+- Rate limiting (300 requests/minute default)
+- Exponential backoff retry logic
 
-**Entity Types to Extract**:
-- Projects
-- Tasks
-- Resources
-- Assignments
+**Key Methods**:
+- `getProjects(options)` - Fetch all projects with OData query options
+- `getProject(projectId)` - Fetch single project by GUID
+- `getTasks(projectId, options)` - Fetch tasks for a project
+- `getResources(options)` - Fetch all resources
+- `getAssignments(projectId, options)` - Fetch assignments for a project
+- `extractProjectData(projectId)` - Extract complete project data (project + tasks + resources + assignments)
+- `testConnection()` - Test API connectivity and authentication
+
+**Entity Types Extracted**:
+- Projects (single project by GUID)
+- Tasks (all tasks for the project)
+- Resources (all resources in organization)
+- Assignments (all assignments for the project)
 
 ### 4. Transformers (`src/transformers/`)
 
@@ -112,51 +129,76 @@ This document describes the architecture of the Project Online to Smartsheet ETL
 
 Converts Project Online projects to Smartsheet workspaces and summary sheets.
 
+**Template-Based Workspace Creation**:
+- Uses template workspace (ID: 9002412817049476) for efficient workspace creation
+- Template contains pre-configured sheets with all columns defined
+- Sheets are renamed and cleared of data after copying
+- Falls back to manual sheet creation for testing scenarios
+
 **Key Functions**:
 - `transformProjectToWorkspace()` - Create workspace structure
-- `createProjectSummarySheet()` - Generate project summary sheet
+- `createProjectSummarySheet()` - Generate project summary sheet (legacy)
 - `validateProject()` - Validate project data
+- `configureProjectPicklistColumns()` - Configure picklist references to PMO Standards
+
+**Class-Based API**:
+- `ProjectTransformer` class for integration with importer
+- `transformProject(project, workspaceId?)` - Main transformation method
 
 **Output**:
 - Smartsheet workspace (one per project)
 - Three sheets per workspace:
-  - Summary sheet (project metadata)
-  - Task sheet (task hierarchy)
-  - Resource sheet (resource allocations)
+  - Summary sheet (project metadata, 15 columns)
+  - Task sheet (task hierarchy with Gantt)
+  - Resource sheet (resource list)
 
 #### TaskTransformer (`TaskTransformer.ts`)
 
 Converts Project Online tasks to Smartsheet task sheet rows with hierarchy.
 
 **Key Functions**:
-- `createTasksSheet()` - Create task sheet with columns
+- `createTasksSheetColumns()` - Define 18 task sheet columns
 - `createTaskRow()` - Build individual task row
 - `deriveTaskStatus()` - Map % complete to status
 - `mapTaskPriority()` - Map priority (0-1000 → 7 levels)
 - `parseTaskPredecessors()` - Parse predecessor strings
+- `configureTaskPicklistColumns()` - Configure picklist references to PMO Standards
+
+**Class-Based API**:
+- `TaskTransformer` class for integration with importer
+- `transformTasks(tasks, sheetId)` - Main transformation method
+- Re-run resiliency: skips existing columns, supports multiple runs
 
 **Features**:
-- Hierarchical task structure via `OutlineLevel`
-- Gantt chart enablement
-- Duration conversion (ISO 8601 → decimal days)
+- Hierarchical task structure via `OutlineLevel` and `ParentTaskId`
+- Automatic dependencies enablement
+- Duration auto-calculated by Smartsheet (not set directly)
 - Predecessor relationship mapping
-- Constraint type handling (8 types)
+- Constraint type handling (8 types: ASAP, ALAP, SNET, SNLT, FNET, FNLT, MSO, MFO)
+- Parent-child relationships using `parentId` in row structure
 
 #### ResourceTransformer (`ResourceTransformer.ts`)
 
 Converts Project Online resources to Smartsheet resource sheet rows.
 
 **Key Functions**:
-- `createResourcesSheet()` - Create resource sheet with columns
-- `createResourceRow()` - Build individual resource row
+- `createResourcesSheetColumns()` - Define 18 resource sheet columns
+- `createResourceRow()` - Build individual resource row (legacy)
 - `discoverResourceDepartments()` - Extract unique department values
 - `validateResource()` - Validate resource data
+- `configureResourcePicklistColumns()` - Configure picklist references to PMO Standards
+
+**Class-Based API**:
+- `ResourceTransformer` class for integration with importer
+- `transformResources(resources, sheetId)` - Main transformation method
+- Re-run resiliency: skips existing columns, supports multiple runs
 
 **Features**:
-- Contact column integration (name + email)
+- Email column (separate from name)
 - Resource type handling (Work, Material, Cost)
 - Rate management (Standard, Overtime, Cost Per Use)
-- Department picklist population
+- Department picklist population (discovered values)
+- MaxUnits conversion (decimal → percentage string)
 
 #### AssignmentTransformer (`AssignmentTransformer.ts`)
 
@@ -166,10 +208,15 @@ Creates assignment columns on task sheets based on resource types.
 - **Work resources** → `MULTI_CONTACT_LIST` columns (enables Smartsheet collaboration)
 - **Material/Cost resources** → `MULTI_PICKLIST` columns (text-based selection)
 
+**Class-Based API**:
+- `AssignmentTransformer` class for integration with importer
+- `transformAssignments(assignments, resources, taskSheetId)` - Create assignment columns
+- Re-run resiliency: skips existing columns using `getOrAddColumn` helper
+
 **Key Functions**:
-- `transformAssignments()` - Create assignment columns on task sheet
-- Auto-discovery of resource types
-- Dynamic column creation based on assignment data
+- Groups resources by type (Work vs Material/Cost)
+- Creates one column per unique resource in assignments
+- Dynamic column creation based on actual assignment data
 
 #### PMOStandardsTransformer (`PMOStandardsTransformer.ts`)
 
@@ -300,20 +347,31 @@ Simplified SDK types for transformation:
 Configuration via `.env` file (git-ignored):
 
 ```bash
-# Project Online Connection (Future)
-PROJECT_ONLINE_TENANT_ID=your-tenant-id
-PROJECT_ONLINE_CLIENT_ID=your-client-id
-PROJECT_ONLINE_CLIENT_SECRET=your-client-secret
-PROJECT_ONLINE_SITE_URL=https://your-tenant.sharepoint.com/sites/pwa
+# Project Online Connection
+TENANT_ID=your-azure-tenant-id
+CLIENT_ID=your-azure-app-client-id
+CLIENT_SECRET=your-azure-app-client-secret
+PROJECT_ONLINE_URL=https://your-tenant.sharepoint.com/sites/pwa
 
 # Smartsheet Connection
 SMARTSHEET_API_TOKEN=your-access-token
 
-# Development Controls
-EXTRACT_LIMIT=all  # 'all', '1', '10', '100'
-DEV_MODE=false
+# Optional: Use existing PMO Standards workspace instead of creating new
+PMO_STANDARDS_WORKSPACE_ID=1234567890123456
+
+# Development Controls (optional)
 LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
 ```
+
+**Required Variables**:
+- `TENANT_ID` - Azure AD tenant ID
+- `CLIENT_ID` - Azure AD app registration client ID
+- `CLIENT_SECRET` - Azure AD app registration client secret
+- `PROJECT_ONLINE_URL` - Project Online site URL
+- `SMARTSHEET_API_TOKEN` - Smartsheet API access token
+
+**Optional Variables**:
+- `PMO_STANDARDS_WORKSPACE_ID` - Reuse existing PMO Standards workspace
 
 ### Testing Configuration
 
@@ -353,10 +411,11 @@ Test environment uses separate configuration:
 ### Retry Logic
 
 Uses `ExponentialBackoff` utility (`src/util/ExponentialBackoff.ts`):
-- Initial delay: 1 second
-- Max delay: 64 seconds
-- Max attempts: 5
+- Initial delay: 1 second (configurable)
+- Max delay: 30 seconds (configurable in ProjectOnlineClient)
+- Max attempts: 3-5 (configurable)
 - Exponential increase: 2x per attempt
+- Applied to all HTTP requests in ProjectOnlineClient
 
 ---
 
@@ -410,11 +469,20 @@ Test against real Smartsheet API:
 - Batch operations preferred for row creation
 - Column operations must be sequential
 
+### Re-run Resiliency
+
+The tool supports running multiple times against the same workspace:
+- `getOrCreateSheet()` - Reuses existing sheets by name
+- `addColumnsIfNotExist()` - Skips columns that already exist
+- `getOrAddColumn()` - Single column addition with existence check
+- Idempotent PMO Standards workspace creation
+- Template workspace copying only on first run
+
 ### Memory Management
 
-- Stream processing for large datasets (future)
-- Batch size configuration
-- Checkpoint/resume capability (future)
+- Batch processing for row creation (all at once per sheet)
+- Level-by-level task hierarchy processing to establish parent-child relationships
+- In-memory processing (suitable for typical project sizes)
 
 ### Network Resilience
 
@@ -475,29 +543,23 @@ npm start -- validate --source <url>
 
 ### Planned Features
 
-1. **Project Online Extraction**
-   - oData client implementation
-   - OAuth authentication
-   - Pagination handling
-   - Custom field discovery
+1. **Enhanced Template Management**
+   - Template workspace configuration
+   - Custom column templates
+   - Template versioning
 
-2. **Resume Capability**
-   - Checkpoint/resume on interruption
-   - State persistence
-   - Progress tracking
-
-3. **Advanced Transformations**
+2. **Advanced Transformations**
    - Custom field mapping
    - Formula preservation
    - Attachment handling
    - Baseline data migration
 
-4. **Performance Optimization**
-   - Parallel processing
-   - Streaming for large datasets
-   - Connection pooling
+3. **Performance Optimization**
+   - Parallel sheet processing
+   - Streaming for very large datasets (>10,000 tasks)
+   - Connection pooling for API requests
 
-5. **Monitoring & Logging**
+4. **Monitoring & Logging**
    - Detailed progress reporting
    - Performance metrics
    - Migration summary reports
@@ -521,6 +583,6 @@ npm start -- validate --source <url>
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024-12-05  
-**Status**: Current Implementation
+**Document Version**: 1.1
+**Last Updated**: 2024-12-08
+**Status**: Current Implementation - Reflects actual codebase state including template-based workspace creation, full Project Online client implementation, and re-run resiliency features
