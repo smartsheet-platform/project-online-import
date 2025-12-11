@@ -67,11 +67,12 @@ export async function createTestWorkspace(
       },
     });
 
-    // Smartsheet SDK returns: { message, resultCode, result: { id, name, permalink, ... } }
-    const workspaceData = response?.result;
+    // Smartsheet SDK can return data in either .result or .data depending on the operation
+    // Workspace creation typically returns in .data
+    const workspaceData = response?.result || response?.data;
 
     if (!workspaceData || !workspaceData.id) {
-      throw new Error('Failed to create workspace: Invalid response structure');
+      throw new Error('Failed to create workspace - no ID returned');
     }
 
     return {
@@ -118,29 +119,30 @@ export async function cleanupOldTestWorkspaces(
     // Get ALL workspaces with token-based pagination
     let allWorkspaces: any[] = [];
     let lastKey: string | undefined = undefined;
-    
+
     do {
       const queryParams: any = {
-        paginationType: 'token'
+        paginationType: 'token',
       };
       if (lastKey) {
         queryParams.lastKey = lastKey;
       }
-      
+
       const response = await client.workspaces?.listWorkspaces?.({
         queryParameters: queryParams,
       });
 
       const workspacesInPage = response?.data || [];
       allWorkspaces = allWorkspaces.concat(workspacesInPage);
-      
+
       // Check for next page using lastKey
       lastKey = response?.lastKey;
     } while (lastKey);
 
     // Filter to only owned workspaces with matching prefix
     const ownedWorkspaces = allWorkspaces.filter(
-      (ws: any) => ws.accessLevel === 'OWNER' && (!config.prefix || ws.name?.startsWith(config.prefix))
+      (ws: any) =>
+        ws.accessLevel === 'OWNER' && (!config.prefix || ws.name?.startsWith(config.prefix))
     );
 
     const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
@@ -189,9 +191,13 @@ export async function getSheetFromWorkspace(
       queryParameters: { includeAll: true },
     });
 
-    // getWorkspaceChildren returns { data: [...] } where each item has resourceType
-    // Filter for items with resourceType === 'sheet'
-    const items: WorkspaceChildrenData[] = response?.data || [];
+    // Smartsheet SDK can return data in either .result or .data depending on the operation
+    // Unwrap response first, then access the children list
+    const responseData = response?.result || response?.data || response;
+    // responseData could be the array directly, or an object containing .data
+    const items: WorkspaceChildrenData[] = Array.isArray(responseData)
+      ? responseData
+      : (responseData?.data || []);
     const sheets = items.filter((item) => item.resourceType === 'sheet');
     const sheet = sheets.find((s) => s.name === sheetName);
 
@@ -225,9 +231,13 @@ export async function getAllSheetsFromWorkspace(
       queryParameters: { includeAll: true },
     });
 
-    // getWorkspaceChildren returns { data: [...] } where each item has resourceType
-    // Filter for items with resourceType === 'sheet'
-    const items: WorkspaceChildrenData[] = response?.data || [];
+    // Smartsheet SDK can return data in either .result or .data depending on the operation
+    // Unwrap response first, then access the children list
+    const responseData = response?.result || response?.data || response;
+    // responseData could be the array directly, or an object containing .data
+    const items: WorkspaceChildrenData[] = Array.isArray(responseData)
+      ? responseData
+      : (responseData?.data || []);
     const sheets = items.filter((item) => item.resourceType === 'sheet');
 
     return sheets.map((sheet) => ({

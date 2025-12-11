@@ -10,6 +10,8 @@
 
 import { SmartsheetClient, WorkspaceChildrenData } from '../types/SmartsheetClient';
 import { SmartsheetSheet, SmartsheetColumn, SmartsheetRow } from '../types/Smartsheet';
+import { tryWith as withBackoff } from './ExponentialBackoff';
+import { Logger } from './Logger';
 
 /**
  * Check if a sheet exists in a workspace by name
@@ -22,14 +24,21 @@ import { SmartsheetSheet, SmartsheetColumn, SmartsheetRow } from '../types/Smart
 export async function findSheetInWorkspace(
   client: SmartsheetClient,
   workspaceId: number,
-  sheetName: string
+  sheetName: string,
+  logger?: Logger
 ): Promise<{ id: number; name: string } | null> {
   try {
     // Use getWorkspaceChildren to list sheets in workspace
-    const response = await client.workspaces?.getWorkspaceChildren?.({
-      workspaceId,
-      queryParameters: { includeAll: true },
-    });
+    const response = await withBackoff(
+      () =>
+        client.workspaces!.getWorkspaceChildren!({
+          workspaceId,
+          queryParameters: { includeAll: true },
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     // Filter for sheets with matching name
     const items: WorkspaceChildrenData[] = response?.data || [];
@@ -65,16 +74,23 @@ export async function findSheetInWorkspace(
 export async function getOrCreateSheet(
   client: SmartsheetClient,
   workspaceId: number,
-  sheetConfig: { name: string; columns: SmartsheetColumn[] }
+  sheetConfig: { name: string; columns: SmartsheetColumn[] },
+  logger?: Logger
 ): Promise<SmartsheetSheet> {
   // Check if sheet already exists
-  const existingSheet = await findSheetInWorkspace(client, workspaceId, sheetConfig.name);
+  const existingSheet = await findSheetInWorkspace(client, workspaceId, sheetConfig.name, logger);
 
   if (existingSheet) {
     // Sheet exists - fetch full details
-    const sheetResponse = await client.sheets?.getSheet?.({
-      id: existingSheet.id,
-    });
+    const sheetResponse = await withBackoff(
+      () =>
+        client.sheets!.getSheet!({
+          id: existingSheet.id,
+        }),
+      undefined,
+      undefined,
+      logger
+    );
     const fullSheet = sheetResponse?.result || sheetResponse?.data;
 
     return {
@@ -86,10 +102,16 @@ export async function getOrCreateSheet(
   }
 
   // Sheet doesn't exist - create it
-  const createResponse = await client.sheets?.createSheetInWorkspace?.({
-    workspaceId,
-    body: sheetConfig,
-  });
+  const createResponse = await withBackoff(
+    () =>
+      client.sheets!.createSheetInWorkspace!({
+        workspaceId,
+        body: sheetConfig,
+      }),
+    undefined,
+    undefined,
+    logger
+  );
 
   const createdSheet = createResponse?.result || createResponse?.data;
 
@@ -111,13 +133,20 @@ export async function getOrCreateSheet(
 export async function findColumnInSheet(
   client: SmartsheetClient,
   sheetId: number,
-  columnTitle: string
+  columnTitle: string,
+  logger?: Logger
 ): Promise<{ id: number; title: string; type: string } | null> {
   try {
     // Get sheet with columns
-    const sheetResponse = await client.sheets?.getSheet?.({
-      id: sheetId,
-    });
+    const sheetResponse = await withBackoff(
+      () =>
+        client.sheets!.getSheet!({
+          id: sheetId,
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     const sheet = sheetResponse?.result || sheetResponse?.data;
     const columns = sheet?.columns || [];
@@ -155,14 +184,15 @@ export async function findColumnInSheet(
 export async function getOrAddColumn(
   client: SmartsheetClient,
   sheetId: number,
-  columnConfig: SmartsheetColumn & { index?: number }
+  columnConfig: SmartsheetColumn & { index?: number },
+  logger?: Logger
 ): Promise<{ id: number; title: string; type: string }> {
   if (!columnConfig.title) {
     throw new Error('Column title is required');
   }
 
   // Check if column already exists
-  const existingColumn = await findColumnInSheet(client, sheetId, columnConfig.title);
+  const existingColumn = await findColumnInSheet(client, sheetId, columnConfig.title, logger);
 
   if (existingColumn) {
     // Column exists - return it
@@ -181,10 +211,16 @@ export async function getOrAddColumn(
 
   console.log(`[DEBUG] Adding column "${cleanConfig.title}" at index ${cleanConfig.index}`);
 
-  const addResponse = await client.sheets?.addColumn?.({
-    sheetId,
-    body: cleanConfig,
-  });
+  const addResponse = await withBackoff(
+    () =>
+      client.sheets!.addColumn!({
+        sheetId,
+        body: cleanConfig,
+      }),
+    undefined,
+    undefined,
+    logger
+  );
 
   // When body is a single column, response is a single column (not array)
   const responseData = addResponse?.result || addResponse?.data;
@@ -212,11 +248,18 @@ export async function getOrAddColumn(
  */
 export async function getColumnMap(
   client: SmartsheetClient,
-  sheetId: number
+  sheetId: number,
+  logger?: Logger
 ): Promise<Record<string, { id: number; type: string }>> {
-  const sheetResponse = await client.sheets?.getSheet?.({
-    id: sheetId,
-  });
+  const sheetResponse = await withBackoff(
+    () =>
+      client.sheets!.getSheet!({
+        id: sheetId,
+      }),
+    undefined,
+    undefined,
+    logger
+  );
 
   const sheet = sheetResponse?.result || sheetResponse?.data;
   const columns = sheet?.columns || [];
@@ -249,12 +292,18 @@ export async function getColumnMap(
 export async function addColumnsIfNotExist(
   client: SmartsheetClient,
   sheetId: number,
-  columns: Array<SmartsheetColumn & { index?: number }>
+  columns: Array<SmartsheetColumn & { index?: number }>,
+  logger?: Logger
 ): Promise<Array<{ title: string; id: number; wasCreated: boolean }>> {
   const results: Array<{ title: string; id: number; wasCreated: boolean }> = [];
 
   // OPTIMIZATION: Fetch sheet ONCE to get existing columns and determine next index
-  const sheetResponse = await client.sheets?.getSheet?.({ id: sheetId });
+  const sheetResponse = await withBackoff(
+    () => client.sheets!.getSheet!({ id: sheetId }),
+    undefined,
+    undefined,
+    logger
+  );
   const sheet = sheetResponse?.result || sheetResponse?.data;
   const existingColumns = sheet?.columns || [];
 
@@ -333,10 +382,16 @@ export async function addColumnsIfNotExist(
 
     // Make SINGLE batch API call with array of columns
     // The Smartsheet SDK addColumn method accepts arrays for batch operations
-    const addResponse = await client.sheets.addColumn({
-      sheetId,
-      body: cleanColumns,
-    });
+    const addResponse = await withBackoff(
+      () =>
+        client.sheets!.addColumn!({
+          sheetId,
+          body: cleanColumns,
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     // Extract array of added columns from response
     // When body is an array, response contains array of columns
@@ -388,15 +443,22 @@ export async function addColumnsIfNotExist(
 export async function copyWorkspace(
   client: SmartsheetClient,
   _sourceWorkspaceId: number,
-  newWorkspaceName: string
+  newWorkspaceName: string,
+  logger?: Logger
 ): Promise<{ id: number; name: string; permalink: string }> {
   try {
     // Create new workspace (Smartsheet API doesn't support workspace copying)
-    const createResponse = await client.workspaces?.createWorkspace?.({
-      body: {
-        name: newWorkspaceName,
-      },
-    });
+    const createResponse = await withBackoff(
+      () =>
+        client.workspaces!.createWorkspace!({
+          body: {
+            name: newWorkspaceName,
+          },
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     const newWorkspace = createResponse?.result || createResponse?.data;
 
@@ -427,15 +489,22 @@ export async function copyWorkspace(
 export async function renameSheet(
   client: SmartsheetClient,
   sheetId: number,
-  newName: string
+  newName: string,
+  logger?: Logger
 ): Promise<{ id: number; name: string }> {
   try {
-    const updateResponse = await client.sheets?.updateSheet?.({
-      sheetId,
-      body: {
-        name: newName,
-      },
-    });
+    const updateResponse = await withBackoff(
+      () =>
+        client.sheets!.updateSheet!({
+          sheetId,
+          body: {
+            name: newName,
+          },
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     const updatedSheet = updateResponse?.result || updateResponse?.data;
 
@@ -457,12 +526,22 @@ export async function renameSheet(
  * @param sheetId - Sheet ID
  * @returns Number of rows deleted
  */
-export async function deleteAllRows(client: SmartsheetClient, sheetId: number): Promise<number> {
+export async function deleteAllRows(
+  client: SmartsheetClient,
+  sheetId: number,
+  logger?: Logger
+): Promise<number> {
   try {
     // Get sheet to find all row IDs
-    const sheetResponse = await client.sheets?.getSheet?.({
-      id: sheetId,
-    });
+    const sheetResponse = await withBackoff(
+      () =>
+        client.sheets!.getSheet!({
+          id: sheetId,
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     const sheet = sheetResponse?.result || sheetResponse?.data;
     const rows = sheet?.rows || [];
@@ -481,13 +560,19 @@ export async function deleteAllRows(client: SmartsheetClient, sheetId: number): 
     }
 
     // Delete rows
-    await client.sheets?.deleteRows?.({
-      sheetId,
-      queryParameters: {
-        ids: rowIds.join(','),
-        ignoreRowsNotFound: true,
-      },
-    });
+    await withBackoff(
+      () =>
+        client.sheets!.deleteRows!({
+          sheetId,
+          queryParameters: {
+            ids: rowIds.join(','),
+            ignoreRowsNotFound: true,
+          },
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     return rowIds.length;
   } catch (error) {
@@ -508,13 +593,20 @@ export async function deleteAllRows(client: SmartsheetClient, sheetId: number): 
 export async function findSheetByPartialName(
   client: SmartsheetClient,
   workspaceId: number,
-  partialName: string
+  partialName: string,
+  logger?: Logger
 ): Promise<{ id: number; name: string } | null> {
   try {
-    const response = await client.workspaces?.getWorkspaceChildren?.({
-      workspaceId,
-      queryParameters: { includeAll: true },
-    });
+    const response = await withBackoff(
+      () =>
+        client.workspaces!.getWorkspaceChildren!({
+          workspaceId,
+          queryParameters: { includeAll: true },
+        }),
+      undefined,
+      undefined,
+      logger
+    );
 
     const items: WorkspaceChildrenData[] = response?.data || [];
     const sheets = items.filter((item) => item.resourceType === 'sheet');

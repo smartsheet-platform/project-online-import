@@ -691,3 +691,91 @@ const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as
 **Status**: Approved - All Tests Passing (2025-12-09)
 
 **Reference**: [`memory-bank/integration-test-status.md`](integration-test-status.md) (PMO Standards Integration section)
+
+---
+
+## 2025-12-09: Test Workspace Cleanup Script - Pagination and API Fixes
+
+### Decision: Token-Based Pagination for Complete Workspace Listing
+**Context**: The workspace cleanup script was only detecting 12 workspaces instead of all 29, and had API deprecation warnings.
+
+**Problem Identified**:
+1. **Incomplete Pagination**: Script only fetched first page (12 workspaces) instead of all pages
+2. **API Deprecation Warnings**: Used deprecated `includeAll` and `page` parameters
+3. **Missing Workspace Detection**: Test workspaces created by integration tests were not being found
+4. **Incorrect Response Structure**: Used wrong property paths (`result` instead of `data`)
+
+**Root Cause**:
+- Smartsheet SDK pagination requires iterating with `lastKey` token until no more pages
+- Response structure uses `data` array and `lastKey` for pagination, not `result` or `nextPageToken`
+- Single API call only returns first page of results
+
+**Rationale for Fix**:
+- Complete workspace enumeration required for reliable test cleanup
+- Token-based pagination is the modern, non-deprecated approach
+- Proper pagination prevents orphaned test workspaces
+- Eliminates API deprecation warnings
+
+**Implementation Changes**:
+
+1. **scripts/cleanup-test-workspaces.ts**:
+```typescript
+// Before (INCORRECT - Only first page):
+const response = await client.workspaces?.listWorkspaces?.({
+  queryParameters: { includeAll: true }
+});
+const allWorkspaces = response?.result || response?.data || [];
+
+// After (CORRECT - All pages with token pagination):
+let allWorkspaces: any[] = [];
+let lastKey: string | undefined = undefined;
+
+do {
+  const queryParams: any = { paginationType: 'token' };
+  if (lastKey) {
+    queryParams.lastKey = lastKey;
+  }
+  
+  const response = await client.workspaces?.listWorkspaces?.({
+    queryParameters: queryParams,
+  });
+
+  const workspacesInPage = response?.data || [];
+  allWorkspaces = allWorkspaces.concat(workspacesInPage);
+  lastKey = response?.lastKey;
+} while (lastKey);
+```
+
+2. **Workspace Metadata Fetching**:
+```typescript
+// Use getWorkspaceMetadata to get createdAt timestamp
+const workspaceInfo = await client.workspaces?.getWorkspaceMetadata?.({
+  workspaceId: ws.id,
+});
+const createdAt = workspaceInfo?.createdAt;
+```
+
+3. **test/integration/helpers/smartsheet-setup.ts**:
+- Applied same pagination fixes to `cleanupOldTestWorkspaces` helper function
+- Ensures test cleanup uses identical patterns
+
+**Test Results**:
+- Before fixes: Only 12 of 29 workspaces detected
+- After fixes: All 29 workspaces detected correctly
+- 16 recent test workspaces properly identified for cleanup
+- No API deprecation warnings
+
+**Benefits**:
+- Complete workspace enumeration (29 vs 12)
+- Reliable test workspace cleanup
+- No deprecated API usage
+- Consistent pagination pattern across codebase
+- Proper detection of all test workspaces created by integration tests
+
+**Files Modified**:
+- `scripts/cleanup-test-workspaces.ts` (lines 67-97, 99-115)
+- `test/integration/helpers/smartsheet-setup.ts` (lines 116-162)
+
+**Status**: Approved - All Workspaces Now Detected (2025-12-09)
+
+**Git Commit**: `b8de3de` - "Fix workspace cleanup script pagination and API deprecation issues"

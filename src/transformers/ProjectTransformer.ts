@@ -340,7 +340,10 @@ export function validateProject(project: ProjectOnlineProject): ProjectValidatio
 export class ProjectTransformer {
   private templateWorkspaceId?: number;
 
-  constructor(private client: SmartsheetClient, configManager?: ConfigManager) {
+  constructor(
+    private client: SmartsheetClient,
+    configManager?: ConfigManager
+  ) {
     // Get template workspace ID from config (no default - creates blank workspace if not set)
     this.templateWorkspaceId = configManager?.get().templateWorkspaceId;
   }
@@ -368,16 +371,26 @@ export class ProjectTransformer {
     // NEW BEHAVIOR: If no workspaceId provided, create new workspace with sheets
     if (!workspaceId) {
       let newWorkspace: { id: number; permalink?: string };
-      
+
       if (this.templateWorkspaceId) {
         // Use template workspace if configured
         newWorkspace = await copyWorkspace(this.client, this.templateWorkspaceId, workspace.name);
       } else {
         // Create blank workspace if no template configured
+        if (!this.client.workspaces?.createWorkspace) {
+          throw new Error('Smartsheet client does not support workspace creation');
+        }
         const created = await this.client.workspaces.createWorkspace({
-          name: workspace.name,
+          body: {
+            name: workspace.name,
+          },
         });
-        newWorkspace = { id: created.data.id!, permalink: created.data.permalink };
+        // Smartsheet SDK can return data in either .result or .data depending on the operation
+        const createdData = created?.result || created?.data;
+        if (!createdData?.id) {
+          throw new Error('Failed to create workspace - no ID returned');
+        }
+        newWorkspace = { id: createdData.id, permalink: createdData.permalink };
       }
       workspace.id = newWorkspace.id;
       workspace.permalink = newWorkspace.permalink;

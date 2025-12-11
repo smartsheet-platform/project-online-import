@@ -128,10 +128,7 @@ export class ConfigManager {
     }
 
     // Validate Template Workspace ID if provided
-    if (
-      this.config.templateWorkspaceId !== undefined &&
-      this.config.templateWorkspaceId <= 0
-    ) {
+    if (this.config.templateWorkspaceId !== undefined && this.config.templateWorkspaceId <= 0) {
       throw ErrorHandler.configError('TEMPLATE_WORKSPACE_ID', 'must be a positive number');
     }
 

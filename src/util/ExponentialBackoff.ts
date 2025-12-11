@@ -113,14 +113,81 @@ export class ExponentialBackoff {
 }
 
 /**
+ * Determine if an error is retryable based on error classification
+ *
+ * Retryable errors:
+ * - Network timeouts (ETIMEDOUT, ECONNABORTED, ECONNREFUSED, ENOTFOUND, ENETUNREACH)
+ * - Server errors (500, 502, 503, 504)
+ * - Rate limits (429)
+ * - Not Found errors (404) - for eventual consistency in read-after-write sequences
+ *
+ * Non-retryable errors:
+ * - Authentication errors (401)
+ * - Authorization errors (403)
+ * - Client errors (400, 422, other 4xx except 404 and 429)
+ *
+ * @param error - The error to classify
+ * @returns true if error should be retried, false otherwise
+ */
+function isRetryableError(error: any): boolean {
+  // Check for Smartsheet API errors with statusCode property
+  if (error.statusCode) {
+    const status = error.statusCode;
+
+    // Retryable: 404 (eventual consistency), 429 (rate limit), or 5xx (server errors)
+    if (status === 404 || status === 429 || (status >= 500 && status < 600)) {
+      return true;
+    }
+
+    // Non-retryable: everything else (2xx, 3xx, 4xx except 404 and 429, 600+)
+    return false;
+  }
+
+  // Check for Axios errors with response status
+  if (error.response?.status) {
+    const status = error.response.status;
+
+    // Retryable: 404 (eventual consistency), 429 (rate limit), or 5xx (server errors)
+    if (status === 404 || status === 429 || (status >= 500 && status < 600)) {
+      return true;
+    }
+
+    // Non-retryable: everything else (2xx, 3xx, 4xx except 404 and 429, 600+)
+    return false;
+  }
+
+  // Check for Node.js network errors (transient errors)
+  if (error.code) {
+    const retryableCodes = [
+      'ETIMEDOUT',
+      'ECONNABORTED',
+      'ECONNREFUSED',
+      'ENOTFOUND',
+      'ENETUNREACH',
+    ];
+    if (retryableCodes.includes(error.code)) {
+      return true;
+    }
+  }
+
+  // Default: retry unknown errors (could be transient)
+  return true;
+}
+
+/**
  * Convenience function to wrap an async operation with exponential backoff retry logic
  *
+ * Implements error classification:
+ * - Rate limit errors (429) trigger retries with exponential backoff
+ * - Transient errors (network timeouts, 5xx) trigger retries
+ * - Non-retryable errors (401, 403, 4xx) are thrown immediately without retry
+ *
  * @param operationFunction - Async function to execute with retry logic
- * @param maximumNumberOfTries - Maximum retry attempts (default: 5)
- * @param initialBackoffMilliseconds - Initial delay in milliseconds (default: 1000)
+ * @param maximumNumberOfTries - Maximum retry attempts (default: from RETRY_MAX_RETRIES env or 5)
+ * @param initialBackoffMilliseconds - Initial delay in milliseconds (default: from RETRY_INITIAL_DELAY_MS env or 1000)
  * @param logger - Optional logger for retry messages
  * @returns Promise resolving to the operation result
- * @throws Error if all retries are exhausted
+ * @throws Error immediately for non-retryable errors, or after exhausting retries for retryable errors
  *
  * @example
  * ```typescript
@@ -134,8 +201,8 @@ export class ExponentialBackoff {
  */
 export async function tryWith<T>(
   operationFunction: () => Promise<T>,
-  maximumNumberOfTries: number = 5,
-  initialBackoffMilliseconds: number = 1000,
+  maximumNumberOfTries: number = parseInt(process.env.RETRY_MAX_RETRIES || '5', 10),
+  initialBackoffMilliseconds: number = parseInt(process.env.RETRY_INITIAL_DELAY_MS || '1000', 10),
   logger?: Logger
 ): Promise<T> {
   const backoff = new ExponentialBackoff(maximumNumberOfTries, initialBackoffMilliseconds, logger);
@@ -145,6 +212,19 @@ export async function tryWith<T>(
       const result = await operationFunction();
       return result;
     } catch (error) {
+      // Check if error is retryable
+      if (!isRetryableError(error)) {
+        // Non-retryable error - throw immediately without retry
+        if (logger) {
+          logger.error(
+            'Non-retryable error encountered (401, 403, or 4xx), skipping retry',
+            error as Error
+          );
+        }
+        throw error;
+      }
+
+      // Retryable error - continue with retry logic
       // On last attempt, raise the error
       backoff.evalStop(error as Error, true);
     }

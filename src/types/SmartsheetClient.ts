@@ -23,6 +23,12 @@ export interface SmartsheetApiOptions {
 export interface SmartsheetApiResponse<T = unknown> {
   result?: T;
   data?: T;
+  // Pagination properties
+  lastKey?: string;
+  // Metadata properties (returned by some endpoints like getWorkspaceMetadata)
+  createdAt?: string;
+  modifiedAt?: string;
+  [key: string]: unknown; // Allow additional properties from API
 }
 
 export interface WorkspaceChildrenData {

@@ -133,4 +133,277 @@ describe('ExponentialBackoff', () => {
       expect(operation).toHaveBeenCalledTimes(3);
     });
   });
+
+  describe('Error Classification', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    describe('Retryable HTTP errors', () => {
+      it('should retry on 429 rate limit errors', async () => {
+        const error = {
+          response: { status: 429 },
+          message: 'Rate limit exceeded',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on 500 internal server errors', async () => {
+        const error = {
+          response: { status: 500 },
+          message: 'Internal server error',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on 502 bad gateway errors', async () => {
+        const error = {
+          response: { status: 502 },
+          message: 'Bad gateway',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on 503 service unavailable errors', async () => {
+        const error = {
+          response: { status: 503 },
+          message: 'Service unavailable',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on 504 gateway timeout errors', async () => {
+        const error = {
+          response: { status: 504 },
+          message: 'Gateway timeout',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe('Non-retryable HTTP errors', () => {
+      it('should NOT retry on 400 bad request errors', async () => {
+        const error = {
+          response: { status: 400 },
+          message: 'Bad request',
+        };
+        const operation = jest.fn().mockRejectedValue(error);
+
+        // Non-retryable errors are thrown immediately, no need for timer advancement
+        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
+        expect(operation).toHaveBeenCalledTimes(1); // No retry
+      });
+
+      it('should NOT retry on 401 unauthorized errors', async () => {
+        const error = {
+          response: { status: 401 },
+          message: 'Unauthorized',
+        };
+        const operation = jest.fn().mockRejectedValue(error);
+
+        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
+        expect(operation).toHaveBeenCalledTimes(1); // No retry
+      });
+
+      it('should NOT retry on 403 forbidden errors', async () => {
+        const error = {
+          response: { status: 403 },
+          message: 'Forbidden',
+        };
+        const operation = jest.fn().mockRejectedValue(error);
+
+        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
+        expect(operation).toHaveBeenCalledTimes(1); // No retry
+      });
+
+      it('should NOT retry on 404 not found errors', async () => {
+        const error = {
+          response: { status: 404 },
+          message: 'Not found',
+        };
+        const operation = jest.fn().mockRejectedValue(error);
+
+        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
+        expect(operation).toHaveBeenCalledTimes(1); // No retry
+      });
+
+      it('should NOT retry on 422 unprocessable entity errors', async () => {
+        const error = {
+          response: { status: 422 },
+          message: 'Unprocessable entity',
+        };
+        const operation = jest.fn().mockRejectedValue(error);
+
+        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
+        expect(operation).toHaveBeenCalledTimes(1); // No retry
+      });
+
+      it('should NOT retry on 2xx success codes (edge case)', async () => {
+        const error = {
+          response: { status: 200 },
+          message: 'Success treated as error',
+        };
+        const operation = jest.fn().mockRejectedValue(error);
+
+        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
+        expect(operation).toHaveBeenCalledTimes(1); // No retry
+      });
+
+      it('should NOT retry on 3xx redirect codes (edge case)', async () => {
+        const error = {
+          response: { status: 301 },
+          message: 'Redirect treated as error',
+        };
+        const operation = jest.fn().mockRejectedValue(error);
+
+        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
+        expect(operation).toHaveBeenCalledTimes(1); // No retry
+      });
+    });
+
+    describe('Network errors', () => {
+      it('should retry on ETIMEDOUT network errors', async () => {
+        const error = {
+          code: 'ETIMEDOUT',
+          message: 'Connection timed out',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on ECONNABORTED network errors', async () => {
+        const error = {
+          code: 'ECONNABORTED',
+          message: 'Connection aborted',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on ECONNREFUSED network errors', async () => {
+        const error = {
+          code: 'ECONNREFUSED',
+          message: 'Connection refused',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on ENOTFOUND network errors', async () => {
+        const error = {
+          code: 'ENOTFOUND',
+          message: 'Host not found',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry on ENETUNREACH network errors', async () => {
+        const error = {
+          code: 'ENETUNREACH',
+          message: 'Network unreachable',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe('Unknown errors (conservative approach)', () => {
+      it('should retry unknown errors without status or code', async () => {
+        const error = new Error('Unknown error');
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+
+      it('should retry errors with unrecognized network codes', async () => {
+        const error = {
+          code: 'UNKNOWN_CODE',
+          message: 'Unknown network error',
+        };
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
+
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2);
+      });
+    });
+  });
 });

@@ -16,7 +16,7 @@ import {
 import { MSALAuthHandler, AuthConfig } from './auth/MSALAuthHandler';
 import { Logger } from '../util/Logger';
 import { ErrorHandler } from '../util/ErrorHandler';
-import { ExponentialBackoff } from '../util/ExponentialBackoff';
+import { tryWith as withBackoff } from '../util/ExponentialBackoff';
 
 export interface ProjectOnlineClientConfig extends AuthConfig {
   timeout?: number; // Request timeout in milliseconds
@@ -29,7 +29,6 @@ export class ProjectOnlineClient {
   private authHandler: MSALAuthHandler;
   private logger: Logger;
   private config: ProjectOnlineClientConfig;
-  private backoff: ExponentialBackoff;
   private requestCount: number = 0;
   private requestWindowStart: number = Date.now();
 
@@ -43,11 +42,6 @@ export class ProjectOnlineClient {
 
     this.logger = logger ?? new Logger();
     this.authHandler = new MSALAuthHandler(config, this.logger);
-    this.backoff = new ExponentialBackoff({
-      maxRetries: this.config.maxRetries!,
-      initialDelayMs: 1000,
-      maxDelayMs: 30000,
-    });
 
     // Initialize Axios client
     this.httpClient = axios.create({
@@ -203,12 +197,17 @@ export class ProjectOnlineClient {
    * Execute HTTP GET request with retry logic
    */
   private async executeGet<T>(url: string): Promise<T> {
-    return this.backoff.execute(async () => {
-      await this.checkRateLimit();
-      this.logger.debug(`GET ${url}`);
-      const response = await this.httpClient.get<T>(url);
-      return response.data;
-    });
+    return withBackoff(
+      async () => {
+        await this.checkRateLimit();
+        this.logger.debug(`GET ${url}`);
+        const response = await this.httpClient.get<T>(url);
+        return response.data;
+      },
+      undefined,
+      undefined,
+      this.logger
+    );
   }
 
   /**
