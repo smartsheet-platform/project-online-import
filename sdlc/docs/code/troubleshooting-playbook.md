@@ -2,435 +2,279 @@
 
 <div align="center">
 
-| [← Previous: CLI Usage Guide](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
+| [← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
 |:---|:---:|---:|
 
 </div>
 
 ---
 
-# Project Online Import - Troubleshooting Playbook
-
-This document provides systematic approaches to diagnose and resolve common issues encountered during Project Online to Smartsheet migration.
-
-## Overview
-
-This playbook contains real-world troubleshooting scenarios based on production experience. Each entry includes:
-
-- **Symptoms**: What you're seeing
-- **Root Cause**: Why it's happening
-- **Diagnosis Steps**: How to confirm the issue
-- **Solutions**: How to fix it
-- **Prevention**: How to avoid in future runs
+# Troubleshooting Common Issues
 
 **Last Updated**: 2024-12-08
 
+This guide helps you diagnose and resolve common issues you might encounter when migrating from Project Online to Smartsheet.
+
+## How to Use This Guide
+
+Each issue includes:
+
+- **What you're seeing**: The symptoms or error messages
+- **Why it's happening**: The underlying cause
+- **How to diagnose**: Steps to confirm the issue
+- **How to fix it**: Solutions that work
+- **How to prevent it**: Avoiding the issue in future migrations
+
 ---
 
-## Common Error Categories
+## Authentication and Connection Issues
 
-### 1. Authentication & Connection Issues
+### "Authentication failed" Error
 
-#### Error: "Authentication failed (401 Unauthorized)"
+**What you're seeing**:
+- Migration stops immediately with an authentication error
+- Validation shows "Authentication failed"
+- Error messages about tokens or credentials
 
-**Symptoms**:
-- Import fails immediately with authentication error
-- Validation command shows "Authentication failed"
-- Token-related errors in logs
+**Why it's happening**:
+- Your Azure Active Directory credentials are invalid or expired
+- The client secret is incorrect
+- Missing permissions
+- Your Project Online web address is formatted incorrectly
 
-**Root Cause**:
-- Invalid or expired Azure AD credentials
-- Incorrect client secret
-- Missing API permissions
-- Project Online URL format incorrect
-
-**Diagnosis Steps**:
-1. Run validation command: `npm run dev validate -- --source [project-id]`
-2. Check `.env` file for correct values:
+**How to diagnose**:
+1. Run the validation command: `npm run dev validate -- --source [your-project-id]`
+2. Check your `.env` file has all these values:
    ```bash
    TENANT_ID=your-tenant-id
    CLIENT_ID=your-client-id
    CLIENT_SECRET=your-client-secret
-   PROJECT_ONLINE_URL=https://your-tenant.sharepoint.com/sites/pwa
+   PROJECT_ONLINE_URL=https://your-organization.sharepoint.com/sites/pwa
    ```
-3. Verify client secret hasn't expired in Azure portal
-4. Test Project Online URL in browser
+3. Verify your client secret hasn't expired (check in Azure Portal)
+4. Test your Project Online web address in a browser
 
-**Solutions**:
-1. **Rotate client secret**:
-   - Azure portal → App registration → Certificates & secrets
-   - Create new client secret
-   - Update `.env` with new secret value
-2. **Fix URL format**:
-   - Must be: `https://[tenant].sharepoint.com/sites/[site-name]`
+**How to fix it**:
+1. **Refresh your client secret**:
+   - Go to Azure Portal → App registration → Certificates & secrets
+   - Create a new client secret
+   - Update your `.env` file with the new secret
+2. **Check web address format**:
+   - Should be: `https://[your-organization].sharepoint.com/sites/[site-name]`
    - Example: `https://contoso.sharepoint.com/sites/pwa`
-3. **Grant admin consent**:
-   - Azure portal → App registration → API permissions
-   - Click "Grant admin consent for [Organization]"
+3. **Ensure permissions are approved**:
+   - Azure Portal → App registration → Permissions
+   - Click "Grant admin consent for [Your Organization]"
 
-**Prevention**:
-- Set client secret expiration for 12-24 months
-- Keep separate development/production credentials
-- Validate configuration before each major migration
+**How to prevent it**:
+- Set client secrets to expire after 12-24 months
+- Keep separate credentials for testing and production
+- Validate your configuration before important migrations
 
-#### Error: "Access forbidden (403 Forbidden)"
+### "Access forbidden" Error
 
-**Symptoms**:
-- Authentication succeeds but API calls fail
-- "Insufficient permissions" errors
-- Can see Project Online data but can't create workspace
+**What you're seeing**:
+- Authentication works but operations fail
+- "Insufficient permissions" messages
+- Can see Project Online but can't create in Smartsheet
 
-**Root Cause**:
-- Missing SharePoint API permissions
-- Incorrect Smartsheet API token scope
-- License restrictions on Smartsheet account
+**Why it's happening**:
+- Missing SharePoint permissions in Azure
+- Your Smartsheet token doesn't have the right permissions
+- Account restrictions in Smartsheet
 
-**Diagnosis Steps**:
-1. Verify Azure AD permissions:
-   - Azure portal → App registration → API permissions
-   - Must have **Sites.ReadWrite.All** with green checkmark
-2. Check Smartsheet API token:
-   - Must be owner/admin of destination workspace location
-   - Token must have create workspace permissions
-3. Test Smartsheet API directly:
+**How to diagnose**:
+1. Check Azure Active Directory permissions:
+   - Azure Portal → App registration → Permissions
+   - You need **Sites.ReadWrite.All** with a green checkmark
+2. Test your Smartsheet token:
+   - Must have workspace creation permissions
+   - Must be an owner or administrator
+3. Test Smartsheet access directly:
    ```bash
    curl -H "Authorization: Bearer $SMARTSHEET_API_TOKEN" \
         "https://api.smartsheet.com/2.0/users/me"
    ```
 
-**Solutions**:
+**How to fix it**:
 1. **Add missing permissions**:
-   - Azure portal → API permissions → Add permission
+   - Azure Portal → Permissions → Add permission
    - Select **SharePoint** → **Application permissions**
    - Check **Sites.ReadWrite.All** → Grant admin consent
-2. **Use correct Smartsheet token**:
-   - Account → Personal Settings → API Access
-   - Generate new token with proper scope
-3. **Check Smartsheet account limits**:
-   - Verify workspace creation limits not exceeded
-   - Ensure proper licensing (Professional or higher)
+2. **Get the right Smartsheet token**:
+   - Go to Account → Personal Settings → Access Tokens
+   - Generate a new token
+   - Ensure you have workspace creation permissions
+3. **Check Smartsheet account**:
+   - Verify you're not at your workspace limit
+   - Ensure you have Professional or higher license level
 
-**Prevention**:
-- Document required permissions in setup guide
-- Use validation command before each migration
-- Maintain separate test/production environments
+**How to prevent it**:
+- Document required permissions clearly
+- Test with validation command before migrating
+- Use separate test environments
 
-### 2. Data Transformation Issues
+---
 
-#### Error: "Invalid data format" or "Transformation failed"
+## Data Issues
 
-**Symptoms**:
-- Import fails during transformation phase
-- Errors about invalid dates, numbers, or strings
-- Specific field mentioned in error message
+### "Invalid data format" or "Transformation failed"
 
-**Root Cause**:
-- Unexpected data formats in Project Online
+**What you're seeing**:
+- Migration stops during the conversion phase
+- Errors about invalid dates, numbers, or text
+- Specific field mentioned in the error
+
+**Why it's happening**:
+- Unexpected data formats in your Project Online project
 - Missing required fields
-- Invalid characters in names/descriptions
-- Data quality issues in source system
+- Invalid characters in names or descriptions
+- Data quality issues in the source
 
-**Diagnosis Steps**:
-1. Identify failing field from error message
-2. Run validation command to check data quality:
+**How to diagnose**:
+1. Note which field is mentioned in the error
+2. Run validation to check data quality:
    ```bash
    npm run dev validate -- --source [project-id] --verbose
    ```
-3. Export problematic Project Online data:
-   ```typescript
-   // Quick debug script
-   const client = new ProjectOnlineClient(config);
-   const project = await client.getProject(projectId);
-   console.log(JSON.stringify(project, null, 2));
-   ```
-4. Compare with expected format in [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+3. Check that field in Project Online to see what data is there
 
-**Solutions**:
-1. **Handle null/undefined values**:
-   ```typescript
-   // Before
-   const name = project.Name;
-   
-   // After
-   const name = project.Name || 'Unnamed Project';
-   ```
-2. **Add data validation**:
-   ```typescript
-   function validateProject(project: Project): void {
-     if (!project.Name || project.Name.trim() === '') {
-       throw ErrorHandler.validationError('Project Name', 'non-empty string');
-     }
-     if (project.StartDate && isNaN(new Date(project.StartDate).getTime())) {
-       throw ErrorHandler.validationError('Start Date', 'valid ISO date string');
-     }
-   }
-   ```
-3. **Add character sanitization**:
-   ```typescript
-   function sanitizeName(name: string): string {
-     return name
-       .replace(/[/\\:*?"<>|]/g, '-')
-       .replace(/-+/g, '-')
-       .trim()
-       .substring(0, 100);
-   }
-   ```
+**How to fix it**:
+1. **Fix the data in Project Online** (preferred):
+   - Add missing required fields
+   - Fix invalid values
+   - Remove problematic characters
+2. **Adjust expected formats** (if needed):
+   - Contact support if you have valid data that's not being accepted
 
-**Prevention**:
-- Add comprehensive input validation
-- Create unit tests for edge cases
-- Document expected data formats
-- Implement data quality checks in validation command
+**How to prevent it**:
+- Review data quality in Project Online before migrating
+- Run validation first to catch issues early
+- Document any data requirements upfront
 
-#### Error: "Duplicate sheets" or "Column already exists"
+### "Reference sheet not found" or Dropdown List Issues
 
-**Symptoms**:
-- Warning about existing sheets during import
-- "Column already exists" messages
-- Multiple identical sheets created
+**What you're seeing**:
+- Errors about missing Standards workspace
+- Dropdown lists show empty or incorrect values
+- Cannot select from dropdown lists
 
-**Root Cause**:
-- Running import multiple times without cleanup
-- Resiliency helpers not working correctly
-- Template workspace already contains project sheets
+**Why it's happening**:
+- Standards workspace hasn't been created
+- Reference sheets aren't set up correctly
+- Permission issues accessing the workspace
+- Template workspace is missing reference sheets
 
-**Diagnosis Steps**:
-1. Check workspace before import:
+**How to diagnose**:
+1. Check if Standards workspace exists in Smartsheet
+2. Verify reference sheets are populated
+3. Confirm you have access to the workspace
+4. Check workspace permissions
+
+**How to fix it**:
+1. **Let the tool create the Standards workspace**:
+   - Leave `STANDARDS_WORKSPACE_ID` empty in your configuration
+   - The tool creates it automatically on first run
+2. **Or provide an existing one**:
+   - Add the workspace ID to your `.env` file:
    ```bash
-   npm run dev validate -- --destination [workspace-id]
+   STANDARDS_WORKSPACE_ID=your_existing_workspace_id
    ```
-2. Look for existing sheets with similar names
-3. Verify resiliency helpers are called:
-   ```typescript
-   // Should be using these:
-   await getOrCreateSheet(client, workspaceId, sheetConfig);
-   await addColumnsIfNotExist(client, sheetId, columns);
-   ```
+3. **Verify permissions**:
+   - Ensure you have owner or administrator access to the workspace
 
-**Solutions**:
-1. **Use proper resiliency helpers**:
-   ```typescript
-   // ✅ Correct
-   const sheet = await getOrCreateSheet(client, workspaceId, {
-     name: `${projectName} - Tasks`,
-     columns: baseTaskColumns
-   });
-   
-   const results = await addColumnsIfNotExist(client, sheet.id, customColumns);
-   ```
-2. **Manual cleanup** (if needed):
-   - Delete duplicate sheets manually
-   - Or use cleanup script: `scripts/cleanup-test-workspaces.ts`
-3. **Update template workspace**:
-   - Ensure template doesn't contain project-specific sheets
-   - Only contain PMO Standards reference sheets
+**How to prevent it**:
+- Let the tool handle Standards workspace creation
+- Verify setup before migrating multiple projects
+- Document the Standards workspace location for your team
 
-**Prevention**:
-- Always use resiliency helpers for sheet/column creation
-- Never run import on production workspace without verification
-- Use separate test workspaces for development
-- Implement proper re-run resiliency from start
+---
 
-### 3. Performance & Scaling Issues
+## Performance Issues
 
-#### Error: "API rate limit exceeded" or Slow Performance
+### "Rate limit exceeded" or Slow Performance
 
-**Symptoms**:
-- Import takes significantly longer than expected
+**What you're seeing**:
+- Migration takes much longer than expected
 - Errors about rate limiting
-- Logs show many retry attempts
-- System appears unresponsive
+- Many retry attempts in the logs
+- Tool appears to hang or freeze
 
-**Root Cause**:
-- Too many API calls without batching
-- Rate limiting not properly implemented
-- Large datasets processing sequentially
-- Network latency issues
+**Why it's happening**:
+- Temporary network issues
+- Smartsheet rate limits being reached (300 requests per minute)
+- Large project with many tasks
+- Network latency
 
-**Diagnosis Steps**:
-1. Check logs for rate limit messages:
-   ```bash
-   # Look for these patterns:
-   # "Rate limit exceeded, waiting X seconds"
-   # "Retry attempt Y of Z"
-   ```
-2. Measure API call count:
-   ```typescript
-   // Add debug logging
-   let apiCallCount = 0;
-   
-   async function wrappedApiCall(fn: () => Promise<any>) {
-     apiCallCount++;
-     if (apiCallCount % 100 === 0) {
-       logger.debug(`API calls so far: ${apiCallCount}`);
-     }
-     return await fn();
-   }
-   ```
-3. Compare with expected call count from architecture docs
-4. Test with smaller dataset to isolate issue
+**How to diagnose**:
+1. Check if error messages mention "rate limit"
+2. Note how many tasks and resources your project has
+3. Test with a smaller project to see if it's size-related
 
-**Solutions**:
-1. **Enable batch operations**:
-   ```typescript
-   // Before - individual calls
-   for (const task of tasks) {
-     await client.addRow(sheetId, task);
-   }
-   
-   // After - batch operation
-   await client.addRows(sheetId, tasks);
-   ```
-2. **Optimize rate limiting**:
-   ```typescript
-   // Check built-in rate limiting in ProjectOnlineClient
-   // Should already be implemented with proper backoff
-   
-   // For custom operations:
-   const rateLimiter = new RateLimiter(250); // 250 calls/minute
-   await rateLimiter.checkLimit();
-   await client.createRow(sheetId, task);
-   ```
-3. **Parallelize independent operations**:
-   ```typescript
-   // Before - sequential
-   for (const project of projects) {
-     await importProject(project);
-   }
-   
-   // After - parallel with concurrency control
-   const concurrency = 3; // Match rate limit capabilities
-   for (let i = 0; i < projects.length; i += concurrency) {
-     const batch = projects.slice(i, i + concurrency);
-     await Promise.all(batch.map(p => importProject(p)));
-   }
-   ```
+**How to fix it**:
+1. **Wait and retry**:
+   - The tool automatically handles rate limits
+   - It waits and retries automatically
+   - Rate limits reset after 60 seconds
+2. **For very large projects**:
+   - Migration may take longer (this is normal)
+   - The tool shows progress so you know it's working
+3. **For network issues**:
+   - Check your internet connection
+   - Retry the migration
 
-**Prevention**:
-- Design with batch operations from start
-- Implement comprehensive rate limiting early
-- Test with large datasets during development
-- Monitor API usage patterns in production
-
-### 4. Integration Issues
-
-#### Error: "Reference sheet not found" or Picklist Issues
-
-**Symptoms**:
-- Errors about missing PMO Standards sheets
-- Picklist columns show empty or wrong values
-- Cross-sheet reference failures
-
-**Root Cause**:
-- PMO Standards workspace not created/setup
-- Reference sheet IDs incorrect
-- Workspace permissions issues
-- Template workspace missing reference sheets
-
-**Diagnosis Steps**:
-1. Verify PMO Standards workspace exists:
-   ```bash
-   npm run dev validate -- --pmo-standards
-   ```
-2. Check reference sheet configuration:
-   ```typescript
-   // Debug output
-   logger.debug('PMO Standards Info:', configManager.get().pmoStandards);
-   ```
-3. Manually verify sheets in Smartsheet UI
-4. Check workspace sharing permissions
-
-**Solutions**:
-1. **Create missing reference sheets**:
-   ```typescript
-   // Auto-create PMO Standards if missing
-   const pmoWorkspace = await getOrCreatePMOStandards(client);
-   const statusSheet = await getOrCreateSheet(client, pmoWorkspace.id, {
-     name: 'Project - Status',
-     columns: [{ title: 'Value', type: 'TEXT_NUMBER', primary: true }]
-   });
-   ```
-2. **Update configuration**:
-   ```bash
-   # In .env
-   PMO_STANDARDS_WORKSPACE_ID=existing_workspace_id
-   ```
-3. **Fix template workspace**:
-   - Ensure template contains all reference sheets
-   - Verify sheet names match expected values
-
-**Prevention**:
-- Include PMO Standards setup in installation process
-- Add validation for reference sheets
-- Document required workspace structure
-- Create automated setup script
+**How to prevent it**:
+- Be patient with large projects - the tool is working even if it seems slow
+- Run migrations during off-peak hours if possible
+- Test with smaller projects first
 
 ---
 
-## Diagnostic Commands
+## Quick Health Checks
 
-### Quick Health Check
-
-```bash
-# Check authentication
-npm run dev validate -- --source [project-id]
-
-# Check destination workspace
-npm run dev validate -- --destination [workspace-id]
-
-# Check PMO Standards
-npm run dev validate -- --pmo-standards
-```
-
-### Detailed Debugging
+### Test Your Configuration
 
 ```bash
-# Verbose logging
-npm run dev import -- --source [project-id] --destination [workspace-id] --verbose
+# Check if authentication works
+npm run dev validate -- --source [your-project-id]
 
-# Dry-run mode (no changes)
+# View your configuration (passwords hidden)
+npm run dev config
+
+# Test without making changes
 npm run dev import -- --source [project-id] --destination [workspace-id] --dry-run
-
-# Specific phase debugging
-npm run dev validate -- --source [project-id] --only transformation
 ```
 
-### Log Analysis
+### Get More Information
 
-**Common patterns to search for**:
 ```bash
-# Authentication issues
-grep -i "auth\|401\|403" import.log
-
-# Rate limiting
-grep -i "rate\|limit\|429" import.log
-
-# Data validation
-grep -i "validation\|invalid" import.log
-
-# API errors
-grep -i "error\|fail" import.log
+# See detailed information as the migration runs
+npm run dev import --source [project-id] --destination [workspace-id] --verbose
 ```
 
 ---
 
-## Escalation Path
+## Getting Additional Help
 
-If you cannot resolve an issue with this playbook:
+If you can't resolve an issue using this guide:
 
-1. **Check GitHub issues** - Search for similar problems
-2. **Review recent commits** - Look for related fixes
-3. **Contact team lead** - Provide:
-   - Complete error messages
-   - Relevant log excerpts
-   - Steps to reproduce
-   - Configuration details (without secrets)
+1. **Review the error message carefully** - it often explains what's wrong
+2. **Check this troubleshooting section** - look for similar symptoms
+3. **Verify your configuration** - double-check all settings
+4. **Test your connection** - use the validation command
+5. **Contact your administrator** - for permission-related issues with Azure Active Directory or Smartsheet
+
+When reporting an issue, please provide:
+- The complete error message
+- What you were trying to do
+- Your configuration (without passwords)
+- Steps to reproduce the problem
 
 ---
 
 <div align="center">
 
-| [← Previous: CLI Usage Guide](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
+| [← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
 |:---|:---:|---:|
 
 </div>

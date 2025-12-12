@@ -9,7 +9,11 @@
 
 ---
 
-# Project Online Import - Anti-Patterns
+> **📘 Developer Documentation**
+>
+> This document is intended for developers working on the migration tool code. If you're a Project Online user evaluating migration options, you can skip this section.
+
+# Anti-Patterns
 
 This document identifies common mistakes, code smells, and anti-patterns to avoid. Learning what NOT to do is as important as learning best practices.
 

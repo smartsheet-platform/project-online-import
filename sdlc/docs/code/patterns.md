@@ -9,7 +9,11 @@
 
 ---
 
-# Project Online Import - Code Patterns
+> **📘 Developer Documentation**
+>
+> This document is intended for developers working on the migration tool code. If you're a Project Online user evaluating migration options, you can skip this section.
+
+# Code Patterns
 
 This document catalogs recurring code patterns used throughout the project. Understanding these patterns will help you write code that's consistent with the existing codebase.
 

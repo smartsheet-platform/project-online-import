@@ -2,7 +2,7 @@
 
 <div align="center">
 
-| [← Previous: Re-run Resiliency](./Re-run-Resiliency.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Authentication Setup →](./Authentication-Setup.md) |
+| [← Previous: Safe Re-runs](./Re-run-Resiliency.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Authentication Setup →](./Authentication-Setup.md) |
 |:---|:---:|---:|
 
 </div>
@@ -10,638 +10,358 @@
 ---
 
 
-# Smartsheet Cross-Sheet References
-
-## Overview
-
-This document describes how sheets within the Project Online to Smartsheet ETL structure reference each other through Smartsheet's cross-sheet capabilities.
+# How Sheets Connect to Each Other
 
 **Last Updated**: 2024-12-05
 
----
+## What This Means
 
-## Reference Architecture
-
-### Reference Types
-
-The ETL tool creates three types of cross-sheet references:
-
-1. **Strict Picklist References** - Column definitions that source values from reference sheets
-2. **Contact Column References** - Multi-contact list columns that source from resource sheets
-3. **Cell Link References** - Individual cell links (future enhancement)
+In your migrated Smartsheet workspaces, sheets can reference each other to maintain consistent data and enable dropdown lists. This ensures your project data stays organized and validated.
 
 ---
 
-## Strict Picklist References
+## Types of Connections
 
-### Overview
+The migration creates two main types of connections between sheets:
 
-Picklist columns in project sheets reference centralized value lists in the PMO Standards workspace. This ensures data consistency and centralized management.
-
-### Reference Pattern
-
-```
-Project Workspace Sheet Column
-    ↓ (references via Cell Link)
-PMO Standards Reference Sheet Column
-```
-
-### Implementation Details
-
-**Column Configuration**:
-```typescript
-{
-  type: 'PICKLIST',
-  options: {
-    strict: true,  // Enforce values from reference only
-    options: [
-      {
-        value: {
-          objectType: 'CELL_LINK',
-          sheetId: referenceSheetId,      // PMO Standards sheet ID
-          columnId: referenceColumnId      // Reference column ID
-        }
-      }
-    ]
-  }
-}
-```
-
-### Picklist References by Sheet
-
-#### Summary Sheet References
-
-| Column | References Sheet | Reference Column |
-|--------|-----------------|------------------|
-| Status | PMO Standards/Project - Status | Value |
-| Priority | PMO Standards/Project - Priority | Value |
-
-**Values**:
-- **Status**: Active, Planning, Completed, On Hold, Cancelled
-- **Priority**: Lowest, Very Low, Lower, Medium, Higher, Very High, Highest
-
-#### Task Sheet References
-
-| Column | References Sheet | Reference Column |
-|--------|-----------------|------------------|
-| Status | PMO Standards/Task - Status | Value |
-| Priority | PMO Standards/Task - Priority | Value |
-| Constraint Type | PMO Standards/Task - Constraint Type | Value |
-
-**Values**:
-- **Status**: Not Started, In Progress, Complete
-- **Priority**: Lowest, Very Low, Lower, Medium, Higher, Very High, Highest
-- **Constraint Type**: ASAP, ALAP, SNET, SNLT, FNET, FNLT, MSO, MFO
-
-#### Resource Sheet References
-
-| Column | References Sheet | Reference Column |
-|--------|-----------------|------------------|
-| Resource Type | PMO Standards/Resource - Type | Value |
-
-**Values**:
-- **Resource Type**: Work, Material, Cost
-
-**Note**: Department picklist is not currently implemented as a cross-sheet reference. Department values are stored as standard TEXT_NUMBER columns in the resource sheet.
+1. **Dropdown List References**: Columns that get their valid options from centralized reference sheets
+2. **Contact List References**: Team member assignment columns that source from your resources sheet
 
 ---
 
-## Contact Column References
+## Dropdown List References
 
-### Overview
+### How It Works
 
-Multi-contact list columns in Task sheets can reference the Resource sheet's Contact column, enabling:
-- Type-ahead selection from resource list
-- Automatic email population
-- Contact-based features (@mentions, notifications)
+Dropdown list columns in your project sheets get their values from a centralized "Standards" workspace. This keeps your data consistent across all projects.
 
-### Reference Pattern
-
+**The Flow**:
 ```
-Task Sheet: Assignment Column (MULTI_CONTACT_LIST)
-    ↓ (sources contacts from)
-Resource Sheet: Contact Column (CONTACT_LIST)
+Your Project Sheet Column (Status, Priority, etc.)
+    ↓ Gets valid values from
+Standards Workspace Reference Sheet
 ```
 
-### Implementation Details
+### Which Columns Use References
 
-**Column Configuration**:
-```typescript
-{
-  type: 'MULTI_CONTACT_LIST',
-  contactOptions: [
-    {
-      sheetId: resourcesSheetId,     // Resource sheet ID
-      columnId: resourcesContactColumnId  // Contact column ID
-    }
-  ]
-}
-```
+#### In Your Project Summary Sheet
 
-### Contact Column References by Resource Type
+| Column | Gets Values From | Example Values |
+|--------|------------------|----------------|
+| Status | Standards/Project - Status | Active, Planning, Completed, On Hold, Cancelled |
+| Priority | Standards/Project - Priority | Highest, Very High, Higher, Medium, Lower, Very Low, Lowest |
 
-#### Work Resources (People)
+#### In Your Tasks Sheet
 
-**Task Sheet Column**: Named after resource (e.g., "John Doe")
-- **Type**: `MULTI_CONTACT_LIST`
-- **References**: Resource Sheet → Contact column
-- **Purpose**: Enable collaboration features
-- **Data Format**: 
-  ```json
-  {
-    "objectType": "MULTI_CONTACT",
-    "values": [
-      { "name": "John Doe", "email": "john@example.com" }
-    ]
-  }
-  ```
+| Column | Gets Values From | Example Values |
+|--------|------------------|----------------|
+| Status | Standards/Task - Status | Not Started, In Progress, Complete |
+| Priority | Standards/Task - Priority | Highest, Very High, Higher, Medium, Lower, Very Low, Lowest |
+| Constraint Type | Standards/Task - Constraint Type | As Soon As Possible, Must Start On, etc. |
 
-**Benefits**:
-- Type-ahead from resource list
-- @mention capability in comments
-- Notification integration
-- Resource availability tracking (future)
+#### In Your Resources Sheet
 
-#### Material Resources (Equipment)
-
-**Task Sheet Column**: Named after resource (e.g., "Equipment")
-- **Type**: `MULTI_PICKLIST`
-- **References**: None (standalone column)
-- **Purpose**: Track equipment usage
-- **Data Format**:
-  ```json
-  {
-    "objectType": "MULTI_PICKLIST",
-    "values": ["Crane A", "Forklift B"]
-  }
-  ```
-
-**Note**: Material resources do NOT use contact column references because equipment doesn't have email addresses.
-
-#### Cost Resources (Cost Centers)
-
-**Task Sheet Column**: Named after resource (e.g., "Cost Centers")
-- **Type**: `MULTI_PICKLIST`
-- **References**: None (standalone column)
-- **Purpose**: Track cost allocations
-- **Data Format**:
-  ```json
-  {
-    "objectType": "MULTI_PICKLIST",
-    "values": ["Engineering Dept", "Marketing Budget"]
-  }
-  ```
-
-**Note**: Cost resources do NOT use contact column references as they represent budget categories, not people.
+| Column | Gets Values From | Example Values |
+|--------|------------------|----------------|
+| Resource Type | Standards/Resource - Type | Work (people), Material (equipment), Cost (budget) |
 
 ---
 
-## Reference Configuration Workflow
+## Team Member Assignments
 
-### Phase 1: Initial Sheet Creation
+### How It Works
 
-1. Create PMO Standards workspace and reference sheets
-2. Populate reference sheets with standard values
-3. Create project workspaces and sheets with basic columns
+When you assign team members to tasks in Smartsheet, the assignment columns can show a list of your available resources. This makes it easy to select the right people using type-ahead search.
 
-### Phase 2: Column Configuration
+**The Flow**:
+```
+Task Sheet: Assignment Column (shows team members)
+    ↓ Gets team member list from
+Resource Sheet: Contact Column (your full team)
+```
 
-1. **Configure Picklist Columns**:
-   ```typescript
-   // After sheet creation, update picklist columns
-   await configureProjectPicklistColumns(
-     client,
-     sheetId,
-     statusColumnId,
-     priorityColumnId,
-     pmoStandardsInfo
-   );
-   ```
+### Assignment Column Types
 
-2. **Configure Assignment Columns**:
-   ```typescript
-   // After resource sheet creation, configure task sheet
-   await configureAssignmentColumns(
-     client,
-     taskSheetId,
-     assignmentColumnIds,
-     resourceSheetId,
-     resourceContactColumnId,
-     assignmentColumnDefinitions
-   );
-   ```
+#### For People (Team Members)
 
-### Phase 3: Data Population
+**What You Get**: Collaboration-enabled columns where you can @mention team members
 
-1. Populate reference sheets (if not pre-populated)
-2. Populate resource sheets
-3. Populate task sheets with references
+- **Type-ahead search** from your resource list
+- **Automatic email population** when you select someone
+- **@mention capability** in comments
+- **Notification integration** for updates
+
+**Data Stored**:
+- Person's name
+- Email address
+- Enables all Smartsheet collaboration features
+
+#### For Equipment and Materials
+
+**What You Get**: Simple selection lists for non-people resources
+
+- **Type-ahead search** from equipment/material names
+- **No email integration** (equipment doesn't need it)
+- **Text-based tracking** of what equipment is used
+
+#### For Cost Centers
+
+**What You Get**: Selection lists for budget tracking
+
+- **Type-ahead search** from cost center names
+- **Text-based allocation** tracking
+- **No contact features** (these are budget categories, not people)
 
 ---
 
-## Reference Sheet Structure
+## Standards Workspace Structure
 
-### PMO Standards Workspace Layout
+### Centralized Reference Sheets
+
+A single "Standards" workspace contains all the reference sheets with valid dropdown values:
 
 ```
-Workspace: PMO Standards
+Standards Workspace
 │
-├── Sheet: Project - Status
-│   ├── Column: Value (Primary, TEXT_NUMBER)
-│   └── Column: Description (TEXT_NUMBER)
-│   └── Rows: Active, Planning, On Hold, Complete, Cancelled
+├── Project - Status
+│   ├── Value: Active
+│   ├── Value: Planning
+│   ├── Value: Completed
+│   ├── Value: On Hold
+│   └── Value: Cancelled
 │
-├── Sheet: Project - Priority
-│   ├── Column: Value (Primary, TEXT_NUMBER)
-│   └── Column: Description (TEXT_NUMBER)
-│   └── Rows: Highest, Very High, Higher, Medium, Lower, Very Low, Lowest
+├── Project - Priority
+│   ├── Value: Highest
+│   ├── Value: Very High
+│   ├── Value: Higher
+│   ├── Value: Medium
+│   ├── Value: Lower
+│   ├── Value: Very Low
+│   └── Value: Lowest
 │
-├── Sheet: Task - Status
-│   ├── Column: Value (Primary, TEXT_NUMBER)
-│   └── Column: Description (TEXT_NUMBER)
-│   └── Rows: Not Started, In Progress, Complete, On Hold, Blocked
+├── Task - Status
+│   ├── Value: Not Started
+│   ├── Value: In Progress
+│   └── Value: Complete
 │
-├── Sheet: Task - Priority
-│   ├── Column: Value (Primary, TEXT_NUMBER)
-│   └── Column: Description (TEXT_NUMBER)
-│   └── Rows: Highest, Very High, Higher, Medium, Lower, Very Low, Lowest
+├── Task - Priority
+│   └── (Same levels as Project Priority)
 │
-├── Sheet: Task - Constraint Type
-│   ├── Column: Value (Primary, TEXT_NUMBER)
-│   └── Column: Description (TEXT_NUMBER)
-│   └── Rows: ASAP, ALAP, MSO, MFO, SNET, SNLT, FNET, FNLT
+├── Task - Constraint Type
+│   ├── Value: As Soon As Possible
+│   ├── Value: As Late As Possible
+│   ├── Value: Start No Earlier Than
+│   ├── Value: Start No Later Than
+│   ├── Value: Finish No Earlier Than
+│   ├── Value: Finish No Later Than
+│   ├── Value: Must Start On
+│   └── Value: Must Finish On
 │
-└── Sheet: Resource - Type
-    ├── Column: Value (Primary, TEXT_NUMBER)
-    └── Rows: Work, Material, Cost
+└── Resource - Type
+    ├── Value: Work (people)
+    ├── Value: Material (equipment)
+    └── Value: Cost (budget items)
 ```
 
-### Reference Sheet Data
+### Standard Values
 
-#### Project - Status Reference
+#### Project Status Options
 
-| Value | Description |
-|-------|-------------|
-| Active | Project is currently active |
+| Value | What It Means |
+|-------|---------------|
+| Active | Project is currently being worked on |
 | Planning | Project is in planning phase |
-| Completed | Project has been completed |
-| On Hold | Project is temporarily on hold |
+| Completed | Project has been finished |
+| On Hold | Project is temporarily paused |
 | Cancelled | Project has been cancelled |
 
-#### Project - Priority Reference
+#### Priority Levels (Same for Projects and Tasks)
 
-| Value | Description |
-|-------|-------------|
-| Lowest | Minimal priority |
-| Very Low | Low urgency |
-| Lower | Below normal priority |
-| Medium | Normal priority |
-| Higher | Above normal priority |
+| Value | What It Means |
+|-------|---------------|
+| Highest | Critical - needs immediate attention |
 | Very High | High urgency |
-| Highest | Critical - Immediate attention required |
-
-#### Task - Status Reference
-
-| Value | Description |
-|-------|-------------|
-| Not Started | Task has not been started |
-| In Progress | Task is currently in progress |
-| Complete | Task has been completed |
-
-#### Task - Priority Reference
-
-| Value | Description |
-|-------|-------------|
-| Lowest | Minimal priority |
-| Very Low | Low urgency |
-| Lower | Below normal priority |
-| Medium | Normal priority |
 | Higher | Above normal priority |
-| Very High | High urgency |
-| Highest | Critical - Immediate attention required |
+| Medium | Standard priority |
+| Lower | Below normal priority |
+| Very Low | Low urgency |
+| Lowest | Minimal priority |
 
-#### Task - Constraint Type Reference
+#### Task Constraint Types
 
-| Value | Description |
-|-------|-------------|
-| ASAP | As Soon As Possible - Start as early as schedule allows |
-| ALAP | As Late As Possible - Start as late as schedule allows |
-| SNET | Start No Earlier Than - Task cannot start before date |
-| SNLT | Start No Later Than - Task must start by date |
-| FNET | Finish No Earlier Than - Task cannot finish before date |
-| FNLT | Finish No Later Than - Task must finish by date |
-| MSO | Must Start On - Task must start on specific date |
-| MFO | Must Finish On - Task must finish on specific date |
+| Value | What It Means |
+|-------|---------------|
+| As Soon As Possible | Start when schedule allows (earliest possible) |
+| As Late As Possible | Start as late as possible (just in time) |
+| Start No Earlier Than | Cannot start before specific date |
+| Start No Later Than | Must start by specific date |
+| Finish No Earlier Than | Cannot finish before specific date |
+| Finish No Later Than | Must finish by specific date |
+| Must Start On | Must start on exact date |
+| Must Finish On | Must finish on exact date |
 
-#### Resource - Type Reference
+#### Resource Types
 
-| Value | Description |
-|-------|-------------|
-| Work | Human resource (people) |
-| Material | Material resource (equipment, supplies) |
-| Cost | Cost resource (budget categories) |
+| Value | What It Means |
+|-------|---------------|
+| Work | People resources (team members) |
+| Material | Equipment, supplies, materials |
+| Cost | Budget categories, cost centers |
 
 ---
 
-## Reference Maintenance
+## Maintaining Reference Values
 
-### Adding New Picklist Values
+### Adding New Values
 
-To add a new value to a picklist:
+If you need to add new options to a dropdown list:
 
-1. **Navigate to PMO Standards workspace**
-2. **Open relevant reference sheet**
-3. **Add row with new value**
-4. **Value immediately available** in all referencing columns
+1. Open the Standards workspace in Smartsheet
+2. Find the relevant reference sheet
+3. Add a new row with your new value
+4. The value immediately becomes available in all project dropdowns
 
-Example - Adding new project status:
+**Example**: Adding a new project status
 ```
-PMO Standards/Project - Status
-Add row: "Archived" → Available in all Project Summary sheets
+In Standards workspace:
+Open "Project - Status" sheet
+Add row: "Archived"
+Result: "Archived" now appears in all project summary sheets
 ```
 
-### Modifying Existing Values
+### Changing Existing Values
 
-⚠️ **Warning**: Modifying reference values affects all sheets using them.
+**Important**: Changing a value affects all projects using it.
 
-1. **Assess impact** - How many sheets reference this value?
-2. **Update reference sheet** - Modify value in PMO Standards
-3. **Existing data** - Previously selected values remain as-is
-4. **New selections** - Users see updated value list
+**Steps**:
+1. Assess which projects use this value
+2. Update the value in the Standards workspace
+3. Existing selections in projects remain unchanged
+4. New selections show the updated list
 
 ### Removing Values
 
-⚠️ **Warning**: Removing values can break existing data references.
+**Important**: Removing values can break existing selections in your projects.
 
-**Recommended approach**:
-1. **Add "deprecated" marker** instead of deleting
-2. **Communicate change** to users
-3. **Data migration** - Update existing selections if needed
-4. **Remove after verification** - Only delete when confirmed unused
-
----
-
-## Reference Integrity
-
-### Validation Rules
-
-**Strict Picklist Enforcement**:
-- ✅ Values must exist in reference sheet
-- ✅ Manual entry not allowed
-- ✅ Type-ahead from reference values only
-- ❌ Cannot enter custom values
-
-**Contact Column Enforcement**:
-- ✅ Work resources must have valid email
-- ✅ Type-ahead from resource list
-- ⚠️ Can manually enter new contacts (not recommended)
-
-### Data Quality Checks
-
-**Pre-Import Validation**:
-1. Verify PMO Standards workspace exists
-2. Verify all reference sheets populated
-3. Validate reference sheet IDs available
-4. Check resource email addresses valid
-
-**Post-Import Verification**:
-1. Verify picklist columns reference correct sheets
-2. Verify contact columns source from resource sheet
-3. Test picklist value selection
-4. Test contact type-ahead
+**Recommended Approach**:
+1. Mark the value as "deprecated" instead of deleting it
+2. Communicate the change to your team
+3. Update existing projects to use different values
+4. Only remove the value after confirming it's no longer used anywhere
 
 ---
 
-## Performance Considerations
+## Data Validation
 
-### Reference Resolution
+### What Gets Enforced
 
-**Smartsheet Behavior**:
-- References resolved at display time
-- No performance impact on large datasets
-- Cross-sheet references cached by Smartsheet
+**For Dropdown Lists**:
+- ✅ Values must come from the reference sheet
+- ✅ You cannot type in custom values
+- ✅ Type-ahead helps you find valid options
+- ❌ Invalid values are not accepted
 
-**API Considerations**:
-- Column configuration is one-time setup
-- No ongoing API calls for reference resolution
-- Reference updates propagate automatically
+**For Contact Lists (Team Members)**:
+- ✅ Team members must have valid email addresses
+- ✅ Type-ahead from your resource list
+- ⚠️ You can manually add new contacts if needed (though using the resource list is recommended)
 
-### Limitations
+### Quality Checks
 
-**Smartsheet Limits**:
-- Maximum cross-sheet references per sheet: No documented limit
-- Reference sheet size: Same as regular sheets (20,000 rows)
-- Update frequency: Real-time propagation
+**Before Migration**:
+1. Verifies the Standards workspace exists
+2. Confirms all reference sheets are populated
+3. Validates that reference connections can be made
+4. Checks that team members have email addresses
+
+**After Migration**:
+1. Verifies dropdown lists connect to the correct reference sheets
+2. Confirms team member assignment columns connect to your resources
+3. Tests that you can select values from dropdowns
+4. Validates type-ahead search works
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+### Dropdown List Shows Empty
 
-#### Issue: Picklist Values Not Appearing
+**What you see**:
+- Clicking the dropdown shows no options
+- Cannot select any values
 
-**Symptoms**:
-- Dropdown shows empty
-- Cannot select values
+**How to fix**:
+1. Verify the Standards workspace exists and you have access to it
+2. Check that the reference sheet has values in it
+3. Confirm the reference connection is set up correctly
 
-**Solutions**:
-1. Verify reference sheet ID correct
-2. Check reference column ID correct
-3. Verify reference sheet has data
-4. Confirm user has access to reference sheet
+### Cannot Find Team Members When Assigning
 
-#### Issue: Contact Type-Ahead Not Working
+**What you see**:
+- Type-ahead doesn't show your resource list
+- Have to manually type in names
 
-**Symptoms**:
-- Cannot see resource list
-- Manual entry required
+**How to fix**:
+1. Verify your Resources sheet exists and is populated
+2. Check that the resources have the Contact column filled in
+3. Confirm the column type is set for contacts (not plain text)
 
-**Solutions**:
-1. Verify resource sheet ID correct
-2. Check contact column ID correct
-3. Verify resource sheet populated
-4. Confirm column type is MULTI_CONTACT_LIST (not MULTI_PICKLIST)
+### Reference Sheet Not Found
 
-#### Issue: Reference Sheet Not Found
+**What you see**:
+- Error message during migration
+- Cannot complete the reference setup
 
-**Symptoms**:
-- Error during column configuration
-- API returns 404
-
-**Solutions**:
-1. Create PMO Standards workspace first
-2. Verify workspace ID captured correctly
-3. Check sheet names match expected values
-4. Verify API token has access to workspace
+**How to fix**:
+1. Ensure the Standards workspace is created first
+2. Verify the workspace ID is correct in your configuration
+3. Check that sheet names match what's expected
+4. Confirm your access token has permission to access the workspace
 
 ---
 
-## Migration Scenarios
+## Migration Process
 
-### Scenario 1: Single Project Migration
-
-```
-Setup:
-1. Create/verify PMO Standards workspace
-2. Create project workspace
-3. Create sheets with basic structure
-4. Configure column references
-5. Populate data
-
-References:
-- Summary: 2 picklist references (Status, Priority)
-- Tasks: 3 picklist references (Status, Priority, Constraint Type)
-- Resources: 1 picklist reference (Type)
-- Assignments: N contact references (N = number of Work resources)
-```
-
-### Scenario 2: Multi-Project Migration
+### For a Single Project
 
 ```
-Setup:
-1. Create/verify PMO Standards workspace (once)
+The tool:
+1. Sets up or verifies the Standards workspace exists
+2. Creates your project workspace
+3. Creates sheets with basic structure
+4. Connects dropdown lists to Standards workspace
+5. Loads your data
+
+Result:
+- Your summary sheet has 2 dropdown lists connected (Status, Priority)
+- Your tasks sheet has 3 dropdown lists connected (Status, Priority, Constraint Type)
+- Your resources sheet has 1 dropdown list connected (Type)
+- Your assignments columns are connected to your resources (number varies by project)
+```
+
+### For Multiple Projects
+
+```
+The tool:
+1. Sets up or verifies the Standards workspace (done once)
 2. For each project:
-   a. Create project workspace
-   b. Create sheets
-   c. Configure column references (same reference sheets)
-   d. Populate data
+   - Creates project workspace
+   - Creates sheets
+   - Connects dropdown lists (all use the same Standards workspace)
+   - Loads data
 
-Efficiency:
-- PMO Standards created once
-- All projects share same reference sheets
-- Consistent values across all projects
-- Centralized management
+Benefits:
+- Standards workspace created once, used by all projects
+- Consistent values across all your projects
+- Single place to manage dropdown options
+- Easy centralized control
 ```
-
----
-
-## Future Enhancements
-
-### Planned Reference Types
-
-1. **Cross-Project Links**
-   - Link related tasks across projects
-   - Dependencies between projects
-   - Resource allocation across projects
-
-2. **Formula-Based References**
-   - Calculated fields from resource sheet
-   - Rollup summaries to project summary
-   - Resource utilization calculations
-
-3. **Report Integration**
-   - Cross-workspace reporting
-   - Consolidated dashboards
-   - Portfolio-level views
-
----
-
-## Reference Diagram
-
-### Complete Reference Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    PMO Standards Workspace                   │
-│                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │   Project   │  │    Task     │  │  Resource   │        │
-│  │   Status    │  │   Status    │  │    Type     │        │
-│  │   Priority  │  │   Priority  │  │  Department │        │
-│  │             │  │  Constraint │  │             │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-└────────┬─────────────────┬──────────────────┬──────────────┘
-         │                 │                  │
-         │ Picklist        │ Picklist         │ Picklist
-         │ References      │ References       │ References
-         │                 │                  │
-┌────────▼─────────────────▼──────────────────▼──────────────┐
-│              Project Workspace: {ProjectName}               │
-│                                                              │
-│  ┌───────────────┐  ┌────────────────┐  ┌────────────────┐│
-│  │    Summary    │  │     Tasks      │  │   Resources    ││
-│  │               │  │                │  │                ││
-│  │  Status ◄─────┼──┤  Status        │  │  Type          ││
-│  │  Priority     │  │  Priority      │  │  Department    ││
-│  │               │  │  Constraint    │  │  Contact ◄─────┼┤
-│  └───────────────┘  │                │  │     ▲          ││
-│                     │  Assignments:  │  └─────┼──────────┘│
-│                     │  - John Doe────┼────────┘           │
-│                     │  - Jane Smith  │  Contact            │
-│                     │  - Equipment   │  References         │
-│                     └────────────────┘                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## API Implementation Examples
-
-### Configure Picklist Column
-
-```typescript
-async function configurePicklistColumn(
-  client: SmartsheetClient,
-  sheetId: number,
-  columnId: number,
-  referenceSheetId: number,
-  referenceColumnId: number
-): Promise<void> {
-  await client.updateColumn(sheetId, columnId, {
-    type: 'PICKLIST',
-    options: {
-      strict: true,
-      options: [
-        {
-          value: {
-            objectType: 'CELL_LINK',
-            sheetId: referenceSheetId,
-            columnId: referenceColumnId
-          }
-        }
-      ]
-    }
-  });
-}
-```
-
-### Configure Contact Column
-
-```typescript
-async function configureContactColumn(
-  client: SmartsheetClient,
-  taskSheetId: number,
-  columnId: number,
-  resourceSheetId: number,
-  resourceContactColumnId: number
-): Promise<void> {
-  await client.updateColumn(taskSheetId, columnId, {
-    type: 'MULTI_CONTACT_LIST',
-    contactOptions: [
-      {
-        sheetId: resourceSheetId,
-        columnId: resourceContactColumnId
-      }
-    ]
-  });
-}
-```
-
----
-
-## References
-
-- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and implementation
-- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Complete data mappings and structure
-- [Smartsheet API - Column Types](https://smartsheet.redoc.ly/#section/Column-Types)
-- [Smartsheet API - Cell Links](https://smartsheet.redoc.ly/#section/Cell-Links)
 
 ---
 
 <div align="center">
 
-| [← Previous: Re-run Resiliency](./Re-run-Resiliency.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Authentication Setup →](./Authentication-Setup.md) |
+| [← Previous: Using Workspace Templates](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Authentication Setup →](./Authentication-Setup.md) |
 |:---|:---:|---:|
 
 </div>

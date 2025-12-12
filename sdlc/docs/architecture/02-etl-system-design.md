@@ -2,583 +2,385 @@
 
 <div align="center">
 
-| [← Previous: Project Online Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
+| [← Previous: Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
 |:---|:---:|---:|
 
 </div>
 
 ---
 
-# ETL System Design
+# System Design
 
-**Status**: Production Implementation  
 **Last Updated**: 2024-12-08
 
-## Component Architecture
+## How the Migration Tool Works
 
-The ETL system is organized into six primary layers, each with specific responsibilities and clear boundaries.
+The migration tool is organized into six main components, each handling a specific part of moving your data from Project Online to Smartsheet.
 
-### 1. CLI Interface Layer
+### 1. Command Interface
 
-**File**: [`src/cli.ts`](../../../src/cli.ts)
+**What It Does**: Provides the commands you use to run migrations
 
-**Purpose**: User-facing command-line interface
-
-**Commands**:
+**Available Commands**:
 
 ```bash
-# Import command - Execute full migration
-po-import import \
-  --source <project-guid> \
-  --destination <workspace-id> \
-  [--dry-run] \
-  [--verbose] \
-  [--config <path>]
+# Run a complete migration
+po-import import --source <your-project-id> --destination <workspace-id>
 
-# Validate command - Check source data before migration
-po-import validate \
-  --source <project-guid> \
-  [--verbose] \
-  [--config <path>]
+# Check your Project Online data before migrating
+po-import validate --source <your-project-id>
 
-# Config command - Display current configuration
-po-import config \
-  [--config <path>]
+# Preview the migration without making changes
+po-import import --source <your-project-id> --destination <workspace-id> --dry-run
+
+# View your current configuration
+po-import config
 ```
 
-**Key Responsibilities**:
-- Parse command-line arguments (Commander.js)
-- Load and validate configuration from .env files
-- Initialize logging infrastructure
-- Coordinate with importer layer
-- Display progress and status to user
-- Handle errors gracefully with actionable messages
+**Key Features**:
+- Parses your command options
+- Loads your configuration settings
+- Shows you progress as the migration runs
+- Displays helpful error messages if something goes wrong
+- Lets you preview changes before committing
 
-**Technology**: Commander.js for argument parsing
+### 2. Migration Coordinator
 
-### 2. Orchestration Layer
+**What It Does**: Manages the overall migration workflow
 
-**File**: [`src/lib/importer.ts`](../../../src/lib/importer.ts)
+The coordinator runs through these stages:
 
-**Purpose**: Orchestrate the complete ETL workflow
-
-**Key Class**: `ProjectOnlineImporter`
-
-**Key Methods**:
-- `import(options)` - Execute full import workflow
-- `validate(source)` - Validate source data
-- `performImport(options)` - Internal import execution with error handling
-
-**Workflow States**:
 ```
-1. Initialization → Configuration validation
-2. Extraction → Fetch entity data from Project Online
-3. Transformation → Data mapping and validation
-4. Loading → Write to Smartsheet
-5. Completion → Cleanup and reporting
+1. Initialization → Checks your configuration is valid
+2. Extraction → Fetches your data from Project Online
+3. Transformation → Converts your data for Smartsheet
+4. Loading → Creates your workspaces and sheets in Smartsheet
+5. Completion → Reports the results
 ```
 
-**Responsibilities**:
-- Coordinate Extract → Transform → Load workflow
-- Implement retry logic with exponential backoff
-- Provide validation interface for pre-flight checks
-- Error handling and reporting
-- Dry-run mode support (preview without changes)
+**Features**:
+- Automatically retries if temporary issues occur
+- Validates your data before migration
+- Supports preview mode so you can test first
+- Handles errors gracefully with clear messages
 
-### 3. Extractor Layer
+### 3. Data Extraction
 
-**File**: [`src/lib/ProjectOnlineClient.ts`](../../../src/lib/ProjectOnlineClient.ts)
+**What It Does**: Retrieves your project data from Project Online
 
-**Purpose**: Extract data from Project Online oData API
+**How It Works**:
+- Authenticates securely to your Project Online environment
+- Automatically handles large projects with many tasks
+- Respects rate limits to avoid overloading the system
+- Retries automatically if network issues occur
+- Tests connectivity before starting
 
-**Key Class**: `ProjectOnlineClient`
+**What It Extracts**:
+- Your project information and metadata
+- All tasks with their hierarchy and relationships
+- Your resources (team members, equipment, costs)
+- All assignments linking resources to tasks
 
-**Authentication**:
-- **Handler**: [`src/lib/auth/MSALAuthHandler.ts`](../../../src/lib/auth/MSALAuthHandler.ts)
-- **Method**: Microsoft MSAL (OAuth 2.0)
-- **Token Management**: Automatic caching and refresh
+**Error Protection**:
+- Automatic retry with increasing wait times on failures
+- Detection and handling of rate limits
+- Detailed logging to help troubleshoot any issues
+- Graceful handling if some data is missing
 
-**Core Capabilities**:
-- HTTP client using Axios for Project Online API
-- Automatic pagination handling with `@odata.nextLink`
-- Rate limiting (300 requests/minute default)
-- Exponential backoff retry logic
-- Connection testing and validation
+### 4. Data Transformation
 
-**Key Methods**:
-- `getProjects(options)` - Fetch all projects with OData query options
-- `getProject(projectId)` - Fetch single project by GUID
-- `getTasks(projectId, options)` - Fetch tasks for a project
-- `getResources(options)` - Fetch all resources
-- `getAssignments(projectId, options)` - Fetch assignments for a project
-- `extractProjectData(projectId)` - Extract complete project data bundle
-- `testConnection()` - Test API connectivity and authentication
+**What It Does**: Converts your Project Online data into Smartsheet format
 
-**Entity Types Extracted**:
-- Projects (single project by GUID)
-- Tasks (all tasks for the project)
-- Resources (all resources in organization)
-- Assignments (all assignments for the project)
+The transformation handles these conversions:
 
-**Error Handling**:
-- Retry with exponential backoff on transient failures
-- Rate limit detection and automatic throttling
-- Detailed error logging for troubleshooting
-- Graceful degradation on partial failures
+#### Your Project Information
+- Creates workspace structure
+- Generates a summary sheet with your project metadata
+- Validates your project data
+- Sets up consistent dropdown lists (status, priority)
 
-### 4. Transformer Layer
+**Features**:
+- Uses templates for faster workspace creation
+- Cleans up project names to work in Smartsheet
+- Configures dropdown lists that reference central standards
 
-**Directory**: [`src/transformers/`](../../../src/transformers/)
+#### Your Tasks
+- Creates 18 columns to hold all your task information
+- Builds each task row preserving your hierarchy
+- Converts task status and priority values
+- Handles predecessor relationships between tasks
+- Sets up dropdown lists for consistency
 
-**Purpose**: Convert Project Online entities to Smartsheet-compatible structures
+**Features**:
+- Maintains your task hierarchy through parent-child relationships
+- Enables Gantt chart view automatically
+- Calculates duration based on your start and end dates
+- Handles 8 constraint types (start as soon as possible, finish by date, etc.)
+- Can safely re-run if the migration is interrupted
 
-**Transformer Classes**:
+#### Your Resources
+- Creates 18 columns for resource information
+- Builds a row for each of your team members and resources
+- Discovers and lists your department values
+- Validates resource data
+- Sets up dropdown lists
 
-#### ProjectTransformer
-**File**: [`ProjectTransformer.ts`](../../../src/transformers/ProjectTransformer.ts)
+**Features**:
+- Keeps email addresses separate from names
+- Handles people, equipment, and cost resources differently
+- Manages standard rates, overtime rates, and cost per use
+- Converts availability percentages properly
+- Can safely re-run without creating duplicates
 
-**Responsibilities**:
-- Create workspace structure (using template or manual creation)
-- Generate project summary sheet with metadata
-- Validate project data
-- Configure picklist references to PMO Standards
+#### Your Assignments
+- Creates columns on your task sheet for assignments
+- Groups resources by type (people vs equipment/costs)
+- Generates one column per unique resource
 
-**Key Features**:
-- Template-based workspace creation (efficient)
-- Falls back to manual creation for testing
-- Workspace name sanitization
-- Cross-sheet picklist configuration
+**Important Feature**: Assignment columns work differently based on type:
+- **People resources** → Collaboration-enabled columns (you can @mention team members)
+- **Equipment/cost resources** → Simple selection lists (text-based)
 
-#### TaskTransformer
-**File**: [`TaskTransformer.ts`](../../../src/transformers/TaskTransformer.ts)
+**Features**:
+- Creates columns dynamically based on your actual assignments
+- Handles re-runs safely
+- Uses the right column type for people vs non-people resources
 
-**Responsibilities**:
-- Define 18 task sheet columns
-- Build individual task rows with proper hierarchy
-- Map task status, priority, and constraints
-- Parse and format predecessor relationships
-- Configure picklist references to PMO Standards
+#### Standards Management
+- Manages centralized reference lists for dropdown values
+- Creates reference sheets for status, priority, and other standard fields
+- Discovers values from your data (like department names)
 
-**Key Features**:
-- Hierarchical task structure via `OutlineLevel` and `ParentTaskId`
-- Automatic Gantt and dependencies enablement
-- Duration auto-calculated by Smartsheet
-- Constraint type handling (8 types: ASAP, ALAP, SNET, SNLT, FNET, FNLT, MSO, MFO)
-- Parent-child relationships using `parentId` in row structure
-- Re-run resiliency (skips existing columns)
-
-#### ResourceTransformer
-**File**: [`ResourceTransformer.ts`](../../../src/transformers/ResourceTransformer.ts)
-
-**Responsibilities**:
-- Define 18 resource sheet columns
-- Build individual resource rows
-- Discover and populate department values
-- Validate resource data
-- Configure picklist references to PMO Standards
-
-**Key Features**:
-- Email column (separate from name)
-- Resource type handling (Work, Material, Cost)
-- Rate management (Standard, Overtime, Cost Per Use)
-- Department picklist with discovered values
-- MaxUnits conversion (decimal → percentage string)
-- Re-run resiliency (skips existing columns)
-
-#### AssignmentTransformer
-**File**: [`AssignmentTransformer.ts`](../../../src/transformers/AssignmentTransformer.ts)
-
-**Responsibilities**:
-- Create assignment columns on task sheets based on resource types
-- Group resources by type (Work vs Material/Cost)
-- Generate one column per unique resource in assignments
-
-**Critical Feature**: Type-based column distinction
-- **Work resources** → `MULTI_CONTACT_LIST` columns (enables Smartsheet collaboration)
-- **Material/Cost resources** → `MULTI_PICKLIST` columns (text-based selection)
-
-**Key Features**:
-- Dynamic column creation based on actual assignment data
-- Re-run resiliency using `getOrAddColumn` helper
-- Proper column type for people vs non-people resources
-
-#### PMOStandardsTransformer
-**File**: [`PMOStandardsTransformer.ts`](../../../src/transformers/PMOStandardsTransformer.ts)
-
-**Purpose**: Manage PMO Standards workspace containing reference sheets for picklist values
-
-**Reference Sheets Created/Managed**:
-- Project - Status
-- Project - Priority
-- Task - Status
-- Task - Priority
-- Task - Constraint Type
-- Resource - Type
-- Resource - Department (discovered values)
+**Reference Sheets Created**:
+- Project - Status (Active, Planning, etc.)
+- Project - Priority (Highest, High, Medium, etc.)
+- Task - Status (Not Started, In Progress, Complete)
+- Task - Priority (same levels as project priority)
+- Task - Constraint Type (8 different constraint types)
+- Resource - Type (People, Equipment, Cost)
+- Resource - Department (discovered from your data)
 
 **Benefits**:
-- Enable strict picklists with cross-sheet references
-- Centralized value management across all projects
-- Single source of truth for organizational standards
+- Enables consistent dropdown lists across all your projects
+- Centralizes value management
+- Single source of truth for your organization's standards
 
-#### Utility Functions
-**File**: [`utils.ts`](../../../src/transformers/utils.ts)
+#### Common Conversions
+- Cleans workspace names to remove invalid characters
+- Converts ISO dates to standard format
+- Converts durations to hours or days
+- Maps numeric priorities to text labels
+- Creates contact objects with names and emails
+- Generates consistent sheet names
 
-**Common Transformations**:
-- `sanitizeWorkspaceName()` - Clean workspace names
-- `convertDateTimeToDate()` - ISO 8601 → YYYY-MM-DD
-- `convertDurationToHoursString()` - ISO 8601 duration → hours
-- `mapPriority()` - 0-1000 scale → 7-level picklist
-- `createContactObject()` - Create Smartsheet contact object
-- `createSheetName()` - Generate consistent sheet names
+### 5. Smartsheet Integration
 
-### 5. Smartsheet SDK Layer
+**What It Does**: Creates your workspaces, sheets, and data in Smartsheet
 
-**Integration**: Official Smartsheet SDK v3.0+
+**Operations**:
+- Creates workspaces for your projects
+- Creates sheets with proper column definitions
+- Inserts your data in batches for efficiency
+- Configures dropdown lists and references
+- Sets up cross-sheet references for consistency
 
-**Core Operations**:
-- Workspace creation and management
-- Sheet creation with column definitions
-- Batch row insertion
-- Column configuration (types, formats, references)
-- Cross-sheet picklist references
+**Smart Features**:
+- Automatically handles rate limits
+- Retries operations if temporary failures occur
+- Provides detailed feedback if issues arise
 
-**Rate Limiting**:
-- SDK handles 300 requests/minute limit automatically
-- Implements exponential backoff on rate limit responses
-- Batch operations preferred for efficiency
+### 6. Helper Utilities
+
+**What They Do**: Provide supporting functions throughout the migration
+
+**Configuration Management**:
+- Loads and validates your settings
+- Ensures all required credentials are present
+- Provides clear error messages for configuration issues
+
+**Progress Tracking**:
+- Shows real-time progress as the migration runs
+- Breaks complex operations into trackable phases
+- Estimates time remaining for long operations
 
 **Error Handling**:
-- Automatic retry on transient failures
-- Rate limit detection and throttling
-- Detailed error reporting for troubleshooting
+- Categorizes errors by type (configuration, network, data issues)
+- Provides actionable guidance for fixing problems
+- Makes error messages user-friendly
 
-### 6. Utility Layer
+**Retry Logic**:
+- Configurable retry attempts (default: 3-5 tries)
+- Increasing wait times between retries (1 to 30 seconds)
+- Applied to all network operations
 
-**Directory**: [`src/util/`](../../../src/util/)
+**Re-run Support**:
+- Reuses existing sheets by name if you run multiple times
+- Skips columns that already exist
+- Prevents data duplication
+- Enables safe retries if migrations are interrupted
 
-**Key Utilities**:
+## What You'll See
 
-- **ConfigManager** ([`ConfigManager.ts`](../../../src/util/ConfigManager.ts))
-  - Load and validate .env configuration
-  - Provide typed configuration access
-  - Validate required credentials
+### During a Successful Migration
 
-- **Logger** ([`Logger.ts`](../../../src/util/Logger.ts))
-  - Winston-based structured logging
-  - Multiple output targets (console, file)
-  - Configurable log levels (DEBUG, INFO, WARNING, ERROR)
+```
+[2024-12-08 10:30:00] Starting Project Online to Smartsheet Migration
+[2024-12-08 10:30:01] Configuration loaded successfully
 
-- **ProgressReporter** ([`ProgressReporter.ts`](../../../src/util/ProgressReporter.ts))
-  - Real-time progress feedback for CLI
-  - Phase-based progress tracking
-  - Estimated time remaining
+[2024-12-08 10:30:02] ========== EXTRACTING YOUR DATA ==========
+[2024-12-08 10:30:03] Connecting to Project Online...
+[2024-12-08 10:30:05] ✓ Connected successfully
+[2024-12-08 10:30:05] Extracting your project data...
+[2024-12-08 10:30:08] ✓ Extracted project information
+[2024-12-08 10:30:08] ✓ Extracted 25 tasks
+[2024-12-08 10:30:09] ✓ Extracted 8 resources
+[2024-12-08 10:30:10] ✓ Extracted 45 assignments
+[2024-12-08 10:30:10] Extraction completed
 
-- **ErrorHandler** ([`ErrorHandler.ts`](../../../src/util/ErrorHandler.ts))
-  - Centralized error handling
-  - Error categorization (validation, API, transformation)
-  - User-friendly error messages
+[2024-12-08 10:30:11] ========== CONVERTING YOUR DATA ==========
+[2024-12-08 10:30:11] Validating extracted data...
+[2024-12-08 10:30:12] ✓ Data validation passed
+[2024-12-08 10:30:12] Converting project structure...
+[2024-12-08 10:30:13] ✓ Project converted
+[2024-12-08 10:30:13] ✓ 25 tasks converted
+[2024-12-08 10:30:14] ✓ 8 resources converted
+[2024-12-08 10:30:14] Conversion completed
 
-- **ExponentialBackoff** ([`ExponentialBackoff.ts`](../../../src/util/ExponentialBackoff.ts))
-  - Configurable retry logic
-  - Initial delay: 1 second (configurable)
-  - Max delay: 30 seconds (configurable)
-  - Max attempts: 3-5 (configurable)
-  - Applied to all HTTP requests
+[2024-12-08 10:30:15] ========== CREATING IN SMARTSHEET ==========
+[2024-12-08 10:30:15] Connecting to Smartsheet...
+[2024-12-08 10:30:16] ✓ Connection established
+[2024-12-08 10:30:16] Creating workspace: Marketing Campaign Q1
+[2024-12-08 10:30:18] ✓ Workspace created
+[2024-12-08 10:30:18] Creating sheets...
+[2024-12-08 10:30:22] ✓ Created 3 sheets
+[2024-12-08 10:30:22] Loading your data...
+[2024-12-08 10:30:35] ✓ Loaded 25 tasks
+[2024-12-08 10:30:35] Loading completed
 
-- **SmartsheetHelpers** ([`SmartsheetHelpers.ts`](../../../src/util/SmartsheetHelpers.ts))
-  - Re-run resiliency utilities
-  - `getOrCreateSheet()` - Reuse existing sheets by name
-  - `addColumnsIfNotExist()` - Skip columns that already exist
-  - `getOrAddColumn()` - Single column addition with existence check
-
-## CLI User Experience
-
-### Command Structure
-
-#### Basic Migration
-```bash
-# Full migration with default settings
-npm start -- import --source <project-guid> --destination <workspace-id>
-
-# With configuration file
-npm start -- import --source <project-guid> --destination <workspace-id> --config .env.customer1
-
-# Dry-run mode (preview without changes)
-npm start -- import --source <project-guid> --destination <workspace-id> --dry-run
-
-# Verbose logging for troubleshooting
-npm start -- import --source <project-guid> --destination <workspace-id> --verbose
+[2024-12-08 10:30:36] ========== MIGRATION COMPLETE ==========
+[2024-12-08 10:30:36] Summary:
+[2024-12-08 10:30:36]   - Tasks: 25
+[2024-12-08 10:30:36]   - Resources: 8
+[2024-12-08 10:30:36]   - Assignments: 45
+[2024-12-08 10:30:36] View your workspace: https://app.smartsheet.com/workspaces/1234567890
 ```
 
-#### Validation
-```bash
-# Validate Project Online data before migration
-npm start -- validate --source <project-guid>
+### If Issues Occur
 
-# With verbose output
-npm start -- validate --source <project-guid> --verbose
+```
+[2024-12-08 10:35:42] Issue loading data to "Tasks" sheet
+[2024-12-08 10:35:42] Rate limit reached - this is temporary
+[2024-12-08 10:35:42] Waiting 5 seconds before retry (Attempt 1/3)...
+[2024-12-08 10:35:47] Retrying...
+[2024-12-08 10:35:49] ✓ Retry successful
 ```
 
-#### Configuration
-```bash
-# Display current configuration (validates .env)
-npm start -- config
+## Software Requirements
 
-# With custom config file
-npm start -- config --config .env.customer1
-```
+The tool uses these technologies:
 
-### Console Output Design
+**For Connecting to Project Online**:
+- Microsoft Authentication Library
+- Secure HTTP client
 
-#### Successful Migration
-```
-[2024-12-08 10:30:00] INFO: Starting Project Online to Smartsheet Migration
-[2024-12-08 10:30:01] INFO: Configuration loaded: .env
-[2024-12-08 10:30:01] INFO: Mode: full | Dry Run: false
+**For Creating in Smartsheet**:
+- Official Smartsheet software development kit
 
-[2024-12-08 10:30:02] INFO: ========== EXTRACTION PHASE ==========
-[2024-12-08 10:30:03] INFO: Authenticating to Project Online...
-[2024-12-08 10:30:05] INFO: ✓ Authentication successful
-[2024-12-08 10:30:05] INFO: Extracting project data...
-[2024-12-08 10:30:08] INFO: ✓ Extracted project metadata
-[2024-12-08 10:30:08] INFO: ✓ Extracted 25 tasks
-[2024-12-08 10:30:09] INFO: ✓ Extracted 8 resources
-[2024-12-08 10:30:10] INFO: ✓ Extracted 45 assignments
-[2024-12-08 10:30:10] INFO: Extraction completed in 8s
+**Supporting Tools**:
+- Configuration file management
+- Progress tracking
+- Error handling
+- Command-line interface
 
-[2024-12-08 10:30:11] INFO: ========== TRANSFORMATION PHASE ==========
-[2024-12-08 10:30:11] INFO: Validating extracted data...
-[2024-12-08 10:30:12] INFO: ✓ Data validation passed
-[2024-12-08 10:30:12] INFO: Transforming project structure...
-[2024-12-08 10:30:13] INFO: ✓ Project transformed
-[2024-12-08 10:30:13] INFO: ✓ 25 tasks transformed
-[2024-12-08 10:30:14] INFO: ✓ 8 resources transformed
-[2024-12-08 10:30:14] INFO: Transformation completed in 3s
+All required software is included - you just need Node.js installed on your computer.
 
-[2024-12-08 10:30:15] INFO: ========== LOADING PHASE ==========
-[2024-12-08 10:30:15] INFO: Connecting to Smartsheet...
-[2024-12-08 10:30:16] INFO: ✓ Smartsheet connection established
-[2024-12-08 10:30:16] INFO: Creating workspace: Marketing Campaign Q1
-[2024-12-08 10:30:18] INFO: ✓ Workspace created (ID: 1234567890)
-[2024-12-08 10:30:18] INFO: Creating sheets...
-[2024-12-08 10:30:22] INFO: ✓ Created 3 sheets
-[2024-12-08 10:30:22] INFO: Loading data...
-[2024-12-08 10:30:35] INFO: ✓ Loaded 25 tasks
-[2024-12-08 10:30:35] INFO: Loading completed in 20s
+## Security Measures
 
-[2024-12-08 10:30:36] INFO: ========== MIGRATION COMPLETE ==========
-[2024-12-08 10:30:36] INFO: Total time: 31s
-[2024-12-08 10:30:36] INFO: Summary:
-[2024-12-08 10:30:36] INFO:   - Tasks: 25
-[2024-12-08 10:30:36] INFO:   - Resources: 8
-[2024-12-08 10:30:36] INFO:   - Assignments: 45
-[2024-12-08 10:30:36] INFO: Workspace: https://app.smartsheet.com/workspaces/1234567890
-```
-
-#### Error Handling
-```
-[2024-12-08 10:35:42] ERROR: Failed to load data to sheet "Tasks"
-[2024-12-08 10:35:42] ERROR: Error: Rate limit exceeded (429 Too Many Requests)
-[2024-12-08 10:35:42] INFO: Retrying in 5 seconds... (Attempt 1/3)
-[2024-12-08 10:35:47] INFO: Retry attempt 1...
-[2024-12-08 10:35:49] INFO: ✓ Retry successful
-
-# If retries exhausted:
-[2024-12-08 10:36:30] ERROR: Failed to load data after 3 attempts
-[2024-12-08 10:36:30] ERROR: Operation failed: Rate limit exceeded
-[2024-12-08 10:36:30] ERROR: Please wait and retry the migration
-```
-
-## Dependencies and Integration Points
-
-### External Dependencies
-
-#### Node.js Packages
-```json
-{
-  "dependencies": {
-    "@azure/msal-node": "^2.6.0",
-    "axios": "^1.6.0",
-    "chalk": "^5.3.0",
-    "commander": "^11.1.0",
-    "dotenv": "^16.3.0",
-    "smartsheet": "^3.0.0",
-    "winston": "^3.11.0",
-    "zod": "^3.22.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "typescript": "^5.3.0",
-    "ts-node": "^10.9.0"
-  }
-}
-```
-
-**Key Package Purposes**:
-- `axios` - HTTP client for oData API requests
-- `dotenv` - .env configuration file management
-- `smartsheet` - Official Smartsheet SDK
-- `@azure/msal-node` - Microsoft Authentication Library
-- `commander` - CLI argument parsing and command structure
-- `winston` - Structured logging framework
-- `chalk` - Terminal text formatting and colors
-- `zod` - Runtime data validation and type safety
-
-#### External APIs
-
-**Project Online oData API**:
-- **Authentication**: OAuth 2.0 (Microsoft Identity Platform)
-- **Endpoint**: `https://{tenant}.sharepoint.com/sites/pwa/_api/ProjectData`
-- **Rate Limits**: Varies by tenant, implement defensive retry logic
-- **Documentation**: [Microsoft Project Online REST API Reference](https://docs.microsoft.com/en-us/previous-versions/office/project-odata/jj163015(v=office.15))
-
-**Smartsheet API**:
-- **Authentication**: Access Token (Bearer auth)
-- **SDK**: Official Node.js SDK v3.0+
-- **Rate Limits**: 300 requests per minute per access token
-- **Documentation**: [Smartsheet API Documentation](https://smartsheet.redoc.ly/)
-
-### Integration Patterns
-
-#### Authentication Flow
-```
-1. Load credentials from .env file
-2. Authenticate to Microsoft Identity Platform (MSAL)
-3. Obtain access token for Project Online
-4. Validate Smartsheet access token
-5. Test connectivity to both APIs
-6. Proceed with ETL workflow
-```
-
-#### Data Flow with Checkpoints
-```
-Project Online → Extracted JSON → Transformed Data → Smartsheet
-                  (in-memory)      (in-memory)
-```
-
-**Note**: Current implementation uses in-memory processing (suitable for typical project sizes). Checkpoint/resume capability planned for future enhancement.
-
-#### Error Recovery
-```
-Error Detected → Log Error → Retry with Exponential Backoff → 
-  Success: Continue workflow
-  Failure: Report to user with actionable message
-```
-
-## Performance Considerations
-
-### Smartsheet API Rate Limits
-
-**Limit**: 300 requests/minute per access token
-
-**Mitigation Strategies**:
-- Batch operations for row creation (all rows at once per sheet)
-- Sequential column operations (required by API)
-- SDK automatic rate limit handling
-- Exponential backoff on 429 responses
-
-### Memory Management
-
-**Current Approach**: In-memory processing
-- Suitable for typical project sizes (< 1000 tasks)
-- Fast and simple implementation
-- No intermediate file I/O overhead
-
-**For Large Projects** (> 1000 tasks):
-- Level-by-level task hierarchy processing
-- Batch row insertion to minimize memory footprint
-- Considered acceptable for target use cases
-
-### Network Resilience
-
-**Implemented Patterns**:
-- Exponential backoff on failures (ExponentialBackoff utility)
-- Connection pooling (via Axios)
-- Configurable timeout settings
-- Automatic retry with increasing delays
-- Rate limit detection and automatic throttling
-
-### Re-run Resiliency
-
-**Pattern**: Idempotent operations support running multiple times against same workspace
-
-**Implementation**:
-- `getOrCreateSheet()` - Reuses existing sheets by name
-- `addColumnsIfNotExist()` - Skips columns that already exist
-- `getOrAddColumn()` - Single column addition with existence check
-- PMO Standards workspace creation is idempotent
-- Template workspace copying only on first run
-
-**Benefits**:
-- Safe to re-run migrations if interrupted
-- Can add new columns to existing sheets
-- No data duplication or corruption
-- Enables iterative development and testing
-
-## Risk Assessment
-
-### Technical Risks
-
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Project Online API changes | High | Medium | Document API version, implement version detection |
-| Smartsheet rate limiting | High | High | Use SDK rate limit handling, implement batching |
-| Data mapping complexity | High | High | Comprehensive validation, quality gates |
-| Network interruptions | Medium | Medium | Exponential backoff, idempotent operations |
-| Large dataset memory | Medium | Low | Batch processing, level-by-level hierarchy |
-
-### Operational Risks
-
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Configuration errors | High | Medium | Validation on startup, clear error messages |
-| Credential management | High | Medium | Secure .env pattern, documentation |
-| Support burden | Medium | Low | Comprehensive documentation, troubleshooting guides |
-
-### Mitigation Strategies
-
-1. **Comprehensive Testing**: Unit tests, integration tests, end-to-end tests
-2. **Clear Documentation**: User guide, troubleshooting guide, configuration examples
-3. **Defensive Programming**: Validate inputs, handle errors gracefully, log comprehensively
-4. **Iterative Validation**: Test with sample projects, gather feedback, refine
-5. **Monitoring**: Log all operations, track success rates, identify patterns
-
-## Security
-
-### Credential Management
+### Managing Your Credentials
 
 **Best Practices**:
-- All credentials in `.env` file (git-ignored via `.gitignore`)
-- `.env.sample` provides template without secrets
-- API tokens never logged or displayed
-- Configuration validation on startup
+- All credentials are stored in a local `.env` file
+- This file is excluded from version control for security
+- A sample template is provided without actual credentials
+- Credentials are never displayed in logs or on screen
+- Configuration is validated before running
 
-### Data Handling
+### Protecting Your Data
 
-**Compliance**:
-- No PII in logs (only entity counts and IDs)
-- Secure transmission via HTTPS only
-- Audit trail via Smartsheet system columns
-- Read-only access to Project Online (no modifications)
+**Security Features**:
+- No personal information is written to logs (only counts and identifiers)
+- All transfers use encrypted HTTPS connections
+- Smartsheet tracks all changes automatically
+- The tool only reads from Project Online, never modifies your original data
 
-### Access Control
+### Access Requirements
 
-**Requirements**:
-- **Project Online**: Read access to ProjectData endpoint
-- **Smartsheet**: API token with workspace creation permissions
-- **PMO Standards**: Owner access to PMO Standards workspace (for picklist management)
+**What You'll Need**:
+- **Project Online**: Read access to your project data
+- **Smartsheet**: API token with permission to create workspaces
+- **Standards Workspace**: Owner access to manage dropdown list values
+
+## Network Reliability
+
+### Handling Connection Issues
+
+The tool automatically handles network problems:
+
+**Automatic Retries**:
+- Retries failed operations with exponential backoff
+- Uses connection pooling for efficiency
+- Configurable timeout settings
+- Increasing delays between retry attempts
+- Automatic rate limit detection and throttling
+
+### Re-run Safety
+
+**What Happens If You Run Multiple Times**:
+- The tool reuses existing sheets by name
+- Skips columns that already exist
+- Prevents data duplication
+- Safe to continue interrupted migrations
+- Can add new columns to existing sheets
+
+**Benefits**:
+- Safe to re-run if the migration is interrupted
+- Can be used iteratively during testing
+- No corruption from multiple runs
+
+## Quality Assurance
+
+### Validation Checks
+
+**During Extraction**:
+- Verifies all required fields are present
+- Checks for empty or invalid values
+- Validates identifier formats
+- Confirms date and time formats
+
+**During Transformation**:
+- Validates converted values match expected formats
+- Checks text lengths don't exceed limits
+- Verifies parent-child relationships are valid
+- Validates all references between entities
+- Confirms numeric values are within acceptable ranges
+
+**Before Creating in Smartsheet**:
+- Ensures sheet names are unique within each workspace
+- Checks column types are compatible
+- Verifies task hierarchy is consistent
+- Validates all predecessor references
+- Confirms required columns exist
+- Prevents duplicate identifiers
 
 ## Next Steps
 
-For detailed entity mapping specifications and transformation rules, see:
-- **Next Document**: [Data Transformation Guide](./03-data-transformation-guide.md) - Complete mappings and output structure
+The next guide provides detailed information about how your data is converted from Project Online format to Smartsheet format.
 
 ---
 
 <div align="center">
 
-| [← Previous: Project Online Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
+| [← Previous: Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
 |:---|:---:|---:|
 
 </div>

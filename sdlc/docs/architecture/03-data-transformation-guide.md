@@ -2,321 +2,314 @@
 
 <div align="center">
 
-| [← Previous: ETL System Design](./02-etl-system-design.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Template-Based Workspace Creation →](../project/Template-Based-Workspace-Creation.md) |
+| [← Previous: System Design](./02-etl-system-design.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md) |
 |:---|:---:|---:|
 
 </div>
 
 ---
 
-# Data Transformation Guide
+# How Your Data Transforms
 
-**Status**: Production Implementation  
 **Last Updated**: 2024-12-08
 
-This guide provides detailed specifications for transforming Microsoft Project Online entities to Smartsheet structures, including property mappings, data type conversions, and naming conventions.
+This guide explains how your Project Online data converts to Smartsheet format, including field mappings, data type conversions, and naming patterns.
 
 ## Table of Contents
 
-1. [Transformation Strategy](#transformation-strategy)
-2. [Entity Mappings](#entity-mappings)
-   - [Project Mapping](#1-project-mapping)
-   - [Task Mapping](#2-task-mapping)
-   - [Resource Mapping](#3-resource-mapping)
-   - [Assignment Mapping](#4-assignment-mapping)
+1. [Transformation Approach](#transformation-approach)
+2. [Field Mappings](#field-mappings)
+   - [Project Information](#1-project-information)
+   - [Tasks](#2-tasks)
+   - [Resources](#3-resources)
+   - [Assignments](#4-assignments)
 3. [Data Type Conversions](#data-type-conversions)
-4. [Naming Conventions](#naming-conventions)
-5. [PMO Standards Architecture](#pmo-standards-architecture)
+4. [Naming Patterns](#naming-patterns)
+5. [Standards Architecture](#standards-architecture)
 
-## Transformation Strategy
+## Transformation Approach
 
-### Approach: Workspace-Based Mapping
+### How Your Data Maps
 
 ```
-Project Online Entity    →    Smartsheet Structure
-══════════════════════════════════════════════════
+Your Project Online Data    →    What You Get in Smartsheet
+═══════════════════════════════════════════════════════════
 
-Project                  →    Workspace (one per project)
-                         →    Name matches Project Online exactly
+Project                     →    Workspace (one per project)
+                            →    Name matches your project name
 
-Task (root)              →    Row in Tasks Sheet (level 0)
-  └─ Task (child)        →    Child Row (level 1, indented)
-      └─ Task (grandchild) → Child Row (level 2, indented)
+Task (top level)            →    Row in Tasks Sheet (level 0)
+  └─ Task (subtask)         →    Indented Row (level 1)
+      └─ Task (sub-subtask) →    Indented Row (level 2)
 
-Resource                 →    Row in Resources Sheet
-                         →    Contact object with name+email
-                         →    Sources assignment column options
+Resource                    →    Row in Resources Sheet
+                            →    Contact with name and email
+                            →    Available for assignment selection
 
-Assignment               →    Contact List column in Tasks Sheet
-                         →    Grouped by type/role
+Assignment                  →    Column in Tasks Sheet
+                            →    Shows who's assigned to each task
 ```
 
-### Design Decisions
+### Design Approach
 
-1. **Project → Workspace**: Each Project Online project becomes a Smartsheet workspace with matching name
-2. **No Folders**: Sheets placed directly in workspace root
-3. **Project Sheet Type**: Tasks sheet configured as project sheet (Gantt + dependencies enabled)
-4. **Dual ID Pattern**: GUID preserved in hidden column, plus readable auto-number ID
-5. **Contact Objects**: Name+Email pairs mapped to single Contact column with objectValue format
-6. **Embedded Assignments**: Assignment relationships as Contact List columns sourced from Resources Sheet
+1. **One Project = One Workspace**: Each Project Online project becomes its own Smartsheet workspace
+2. **Direct Placement**: Sheets are placed directly in the workspace (no folders)
+3. **Project Sheet Features**: Tasks sheet includes Gantt chart and dependency tracking
+4. **Dual Identifiers**: Original identifier preserved plus readable auto-number
+5. **Contact Integration**: Names and email addresses work together
+6. **Embedded Assignments**: Assignments appear as columns in your task list
 
-## Entity Mappings
+## Field Mappings
 
-## 1. Project Mapping
+## 1. Project Information
 
-### Project Online → Smartsheet Workspace
+### From Project Online to Smartsheet Workspace
 
-**Source**: Project Online `Project` entity  
-**Target**: Smartsheet `Workspace` (dedicated per project)
+**What Happens**: Your Project Online project becomes a dedicated Smartsheet workspace
 
-**Workspace Naming**:
-- **Pattern**: `{ProjectName}` (NO prefix)
-- **Sanitization**: Remove invalid chars `/\:*?"<>|` → `-`, consolidate dashes, trim
-- **Max Length**: 100 characters
-- **Truncation**: If > 100 chars, truncate to 97 chars and append `"..."`
+**Workspace Name**:
+- Uses your exact project name
+- Removes characters that aren't allowed: `/\:*?"<>|` become `-`
+- Multiple dashes are consolidated to one
+- Limited to 100 characters maximum
+- If longer, truncates to 97 characters and adds `"..."`
 
 **Examples**:
 ```
-"Website Redesign 2024"                    → "Website Redesign 2024"
-"Q1/Q2 Planning & Execution"               → "Q1-Q2 Planning & Execution"
-"IT Infrastructure | Phase 1"              → "IT Infrastructure - Phase 1"
+"Website Redesign 2024"           → "Website Redesign 2024"
+"Q1/Q2 Planning & Execution"      → "Q1-Q2 Planning & Execution"
+"IT Infrastructure | Phase 1"     → "IT Infrastructure - Phase 1"
 ```
 
-### Project Summary Sheet (Optional)
+### Project Summary Sheet
 
-**Sheet Name**: `{ProjectName} - Summary`
+**Sheet Name**: `{Your Project Name} - Summary`
 
-**Column Definitions** (15 columns, single row):
+**Columns Created** (15 columns, one row with your project information):
 
-| Column Name | Type | Source | Format | Example |
-|-------------|------|--------|--------|---------|
-| Project Online Project ID | TEXT_NUMBER | `Project.Id` | Hidden, Locked | "a1b2c3d4-e5f6..." |
-| Project Name | TEXT_NUMBER | `Project.Name` | Primary | "Website Redesign 2024" |
-| Description | TEXT_NUMBER | `Project.Description` | Multi-line | "Complete redesign..." |
-| Owner | CONTACT_LIST | `Project.Owner` + `OwnerEmail` | objectValue | John Doe (john@example.com) |
-| Start Date | DATE | `Project.StartDate` | YYYY-MM-DD | "2024-03-15" |
-| Finish Date | DATE | `Project.FinishDate` | YYYY-MM-DD | "2024-06-30" |
-| Status | PICKLIST | `Project.ProjectStatus` | From PMO Standards | "Active" |
-| Priority | PICKLIST | `Project.Priority` | 7 levels, from PMO Standards | "High" |
-| % Complete | TEXT_NUMBER | `Project.PercentComplete` | 0-100% | "45%" |
-| Project Online Created Date | DATE | `Project.CreatedDate` | User-settable | "2024-03-01" |
-| Project Online Modified Date | DATE | `Project.ModifiedDate` | User-settable | "2024-03-15" |
-| Created Date | CREATED_DATE | System | Auto | "2024-12-03" |
-| Modified Date | MODIFIED_DATE | System | Auto | "2024-12-04" |
-| Created By | CREATED_BY | System | Auto | User contact |
-| Modified By | MODIFIED_BY | System | Auto | User contact |
+| Column Name | What It Stores | Source | Example |
+|-------------|----------------|--------|---------|
+| Project Online Project ID | Original identifier | `Project.Id` | Hidden column |
+| Project Name | Your project name | `Project.Name` | "Website Redesign 2024" |
+| Description | Project description | `Project.Description` | "Complete redesign..." |
+| Owner | Project owner with email | `Project.Owner` + Email | John Doe (john@example.com) |
+| Start Date | When project starts | `Project.StartDate` | "2024-03-15" |
+| Finish Date | When project completes | `Project.FinishDate` | "2024-06-30" |
+| Status | Current status | `Project.ProjectStatus` | "Active" |
+| Priority | Project priority | `Project.Priority` | "High" |
+| % Complete | Completion percentage | `Project.PercentComplete` | "45%" |
+| Project Online Created Date | When created in Project Online | `Project.CreatedDate` | "2024-03-01" |
+| Project Online Modified Date | When last changed in Project Online | `Project.ModifiedDate` | "2024-03-15" |
+| Created Date | When created in Smartsheet | System | Automatic |
+| Modified Date | When last changed in Smartsheet | System | Automatic |
+| Created By | Who created in Smartsheet | System | Automatic |
+| Modified By | Who last changed in Smartsheet | System | Automatic |
 
-## 2. Task Mapping
+## 2. Tasks
 
-### Project Online Task → Smartsheet Task Sheet Row
+### From Project Online Tasks to Smartsheet Task Rows
 
-**Sheet Name**: `{ProjectName} - Tasks`
+**Sheet Name**: `{Your Project Name} - Tasks`
 
-**Sheet Type**: Project Sheet (Gantt enabled, dependencies enabled)
+**Sheet Features**: Includes Gantt chart view and dependency tracking
 
-**Column Definitions** (18+ columns, multiple rows):
+**Columns Created** (18+ columns for each task):
 
-| Column Name | Type | Source | Format | Example |
-|-------------|------|--------|--------|---------|
-| Task Name | TEXT_NUMBER | `Task.TaskName` | Primary, Hierarchy | "Design Homepage" |
-| Task ID | AUTO_NUMBER | Auto | `{PREFIX}-#####` | "WEB-00001" |
-| Project Online Task ID | TEXT_NUMBER | `Task.Id` | Hidden, Locked | "a1b2c3d4..." |
-| Start Date | DATE | `Task.Start` | System column | "2024-03-15" |
-| End Date | DATE | `Task.Finish` | System column | "2024-03-22" |
-| Duration | DURATION | `Task.Duration` | Decimal days | 5.0 |
-| % Complete | TEXT_NUMBER | `Task.PercentComplete` | 0-100% | "45%" |
-| Status | PICKLIST | Calculated | From PMO Standards | "In Progress" |
-| Priority | PICKLIST | `Task.Priority` | 7 levels | "Very High" |
-| Work (hrs) | TEXT_NUMBER | `Task.Work` | Hours string | "40h" |
-| Actual Work (hrs) | TEXT_NUMBER | `Task.ActualWork` | Hours string | "32h" |
-| Milestone | CHECKBOX | `Task.IsMilestone` | Boolean | ☑ |
-| Notes | TEXT_NUMBER | `Task.TaskNotes` | Multi-line | "Review with team" |
-| Predecessors | PREDECESSOR | `Task.Predecessors` | Row relationships | "5FS" |
-| Constraint Type | PICKLIST | `Task.ConstraintType` | From PMO Standards | "ASAP" |
-| Constraint Date | DATE | `Task.ConstraintDate` | YYYY-MM-DD | "2024-03-20" |
-| Deadline | DATE | `Task.Deadline` | YYYY-MM-DD | "2024-04-01" |
-| **Dynamic Assignment Columns** | MULTI_CONTACT_LIST or MULTI_PICKLIST | See Assignment Mapping | Varies | Multiple resources |
+| Column Name | What It Stores | Source | Example |
+|-------------|----------------|--------|---------|
+| Task Name | Your task name | `Task.TaskName` | "Design Homepage" |
+| Task ID | Auto-generated identifier | Automatic | "WEB-00001" |
+| Project Online Task ID | Original identifier | `Task.Id` | Hidden column |
+| Start Date | When task starts | `Task.Start` | "2024-03-15" |
+| End Date | When task finishes | `Task.Finish` | "2024-03-22" |
+| Duration | How long task takes | `Task.Duration` | 5.0 days |
+| % Complete | Task completion | `Task.PercentComplete` | "45%" |
+| Status | Current status | Calculated | "In Progress" |
+| Priority | Task priority | `Task.Priority` | "Very High" |
+| Work (hrs) | Planned hours | `Task.Work` | "40h" |
+| Actual Work (hrs) | Hours completed | `Task.ActualWork` | "32h" |
+| Milestone | Is this a milestone? | `Task.IsMilestone` | Checkmark or empty |
+| Notes | Task notes | `Task.TaskNotes` | "Review with team" |
+| Predecessors | Dependencies | `Task.Predecessors` | "5FS" (finish-to-start) |
+| Constraint Type | Schedule constraint | `Task.ConstraintType` | "As Soon As Possible" |
+| Constraint Date | Constraint date | `Task.ConstraintDate` | "2024-03-20" |
+| Deadline | Must finish by | `Task.Deadline` | "2024-04-01" |
+| **Assignments** | Who's assigned | Dynamic | Your team members |
 
-### Task Hierarchy Handling
+### How Task Hierarchy Works
 
-**Source**: `OutlineLevel` property (0 = root, 1 = child, 2 = grandchild, etc.)  
-**Target**: Smartsheet parent-child relationships via row indentation
+**Your Project Online Structure**: Tasks have outline levels (0 = top, 1 = subtask, 2 = sub-subtask, etc.)  
+**In Smartsheet**: Parent-child relationships show as indentation
 
-**Conversion Strategy**:
-1. Sort tasks by `TaskIndex` (maintains original order)
-2. Track `OutlineLevel` for each task
-3. When `OutlineLevel` increases, create child relationship
-4. When `OutlineLevel` decreases, return to parent level
-5. Use `parentId` in row structure to establish hierarchy
+**How It Converts**:
+1. Tasks are sorted by their original order
+2. The tool tracks each task's outline level
+3. When the outline level increases, a child relationship is created
+4. When the outline level decreases, the tool returns to the parent level
+5. Parent-child relationships are established in the row structure
 
 **Example**:
 ```
-Project Online:                  Smartsheet:
-- Task 1 (Level 0)      →       Row 1: Task 1 (no parent)
-- Task 1.1 (Level 1)    →         Row 2: Task 1.1 (parent: Row 1)
-- Task 1.1.1 (Level 2)  →           Row 3: Task 1.1.1 (parent: Row 2)
-- Task 1.2 (Level 1)    →         Row 4: Task 1.2 (parent: Row 1)
-- Task 2 (Level 0)      →       Row 5: Task 2 (no parent)
+Your Project Online:             In Smartsheet:
+- Task 1 (Level 0)      →       Row 1: Task 1 (top level)
+- Task 1.1 (Level 1)    →         Row 2: Task 1.1 (indented under Row 1)
+- Task 1.1.1 (Level 2)  →           Row 3: Task 1.1.1 (indented under Row 2)
+- Task 1.2 (Level 1)    →         Row 4: Task 1.2 (indented under Row 1)
+- Task 2 (Level 0)      →       Row 5: Task 2 (top level)
 ```
 
-## 3. Resource Mapping
+## 3. Resources
 
-### Project Online Resource → Smartsheet Resource Sheet Row
+### From Project Online Resources to Smartsheet Resource Rows
 
-**Sheet Name**: `{ProjectName} - Resources`
+**Sheet Name**: `{Your Project Name} - Resources`
 
-**Sheet Type**: Standard sheet (no hierarchy)
+**Sheet Type**: Flat list (no hierarchy)
 
-**Column Definitions** (18 columns, multiple rows):
+**Columns Created** (18 columns for each resource):
 
-| Column Name | Type | Source | Format | Example |
-|-------------|------|--------|--------|---------|
-| Resource ID | AUTO_NUMBER | Auto | `{PREFIX}-#####` | "WEB-00042" |
-| Project Online Resource ID | TEXT_NUMBER | `Resource.Id` | Hidden, Locked | "a1b2c3d4..." |
-| Contact | CONTACT_LIST | `Resource.Name` + `Email` | Primary, objectValue | John Doe (john@example.com) |
-| Resource Type | PICKLIST | `Resource.ResourceType` | From PMO Standards | "Work" |
-| Max Units | TEXT_NUMBER | `Resource.MaxUnits` | Percentage | "100%" |
-| Standard Rate | TEXT_NUMBER | `Resource.StandardRate` | Currency format | 75.00 |
-| Overtime Rate | TEXT_NUMBER | `Resource.OvertimeRate` | Currency format | 112.50 |
-| Cost Per Use | TEXT_NUMBER | `Resource.CostPerUse` | Currency format | 50.00 |
-| Department | PICKLIST | `Resource.Department` | Discovered values | "Engineering" |
-| Code | TEXT_NUMBER | `Resource.Code` | Text | "ENG-001" |
-| Is Active | CHECKBOX | `Resource.IsActive` | Boolean | ☑ |
-| Is Generic | CHECKBOX | `Resource.IsGeneric` | Boolean | ☐ |
+| Column Name | What It Stores | Source | Example |
+|-------------|----------------|--------|---------|
+| Resource ID | Auto-generated identifier | Automatic | "WEB-00042" |
+| Project Online Resource ID | Original identifier | `Resource.Id` | Hidden column |
+| Contact | Name and email together | `Resource.Name` + `Email` | John Doe (john@example.com) |
+| Resource Type | People, Equipment, or Cost | `Resource.ResourceType` | "Work" (people) |
+| Max Units | Availability percentage | `Resource.MaxUnits` | "100%" |
+| Standard Rate | Regular hourly rate | `Resource.StandardRate` | 75.00 |
+| Overtime Rate | Overtime hourly rate | `Resource.OvertimeRate` | 112.50 |
+| Cost Per Use | One-time cost | `Resource.CostPerUse` | 50.00 |
+| Department | Department assignment | `Resource.Department` | "Engineering" |
+| Code | Resource code | `Resource.Code` | "ENG-001" |
+| Is Active | Currently active? | `Resource.IsActive` | Checkmark or empty |
+| Is Generic | Generic resource? | `Resource.IsGeneric` | Checkmark or empty |
 
-## 4. Assignment Mapping
+## 4. Assignments
 
-### Assignments → Dynamic Contact List Columns in Tasks Sheet
+### From Project Online Assignments to Task Sheet Columns
 
-**NO Separate Assignments Sheet** - Assignments are embedded as columns in the Tasks Sheet.
+**Important**: There is no separate Assignments sheet - assignments appear as columns in your Tasks sheet.
 
-**Critical Column Type Distinction**:
-- **People Resources (Work type)** → `MULTI_CONTACT_LIST` columns (name + email)
-- **Non-People Resources (Material/Cost)** → `MULTI_PICKLIST` columns (text only)
+**How It Works**:
+- **Team members (people)** → Collaboration-enabled columns (you can @mention them)
+- **Equipment/materials** → Simple selection lists (text-based)
 
 **Example Assignment Columns**:
 
-| Column Name | Type | Source | Configuration |
-|------------|------|--------|---------------|
-| Team Members | MULTI_CONTACT_LIST | Work resources | Options from Resources Sheet |
-| Equipment | MULTI_PICKLIST | Material resources | Options from resource names |
-| Cost Centers | MULTI_PICKLIST | Cost resources | Options from resource names |
+| Column Name | Type | Contains | How It's Set Up |
+|------------|------|----------|-----------------|
+| Team Members | Contact list | Your team members | Options come from Resources Sheet |
+| Equipment | Selection list | Equipment items | Text-based options |
+| Cost Centers | Selection list | Cost allocations | Text-based options |
 
 **Benefits**:
-- Assignments visible directly in task list
-- Validated data (sourced from Resources Sheet)
-- Native Smartsheet collaboration features (@mentions)
-- Simpler structure (fewer sheets to manage)
+- See assignments directly in your task list
+- Validated against your resource list
+- Enable collaboration features (notifications, mentions)
+- Simpler structure with fewer sheets
 
 ## Data Type Conversions
 
 ### Duration Conversion
 
-**Source**: ISO 8601 Duration (e.g., `PT40H` = 40 hours)
+**From Project Online**: ISO 8601 Duration format (e.g., `PT40H` means 40 hours)
 
-**Target for Project Sheet Duration Column**: Decimal days
+**To Smartsheet Duration Column**: Decimal days
 
 ```typescript
-// PT40H → 5.0 (40 hours / 8-hour workday = 5 days)
-// P5D → 5.0 (5 days direct)
+// PT40H → 5.0 (40 hours ÷ 8-hour day = 5 days)
+// P5D → 5.0 (5 days)
 // PT480M → 1.0 (480 minutes = 8 hours = 1 day)
 ```
 
-**Target for Work/Actual Work Columns**: Hours string
+**To Work Hour Columns**: Hours with "h" suffix
 
 ```typescript
 // PT40H → "40h"
 // PT80H → "80h"
 ```
 
-### DateTime Conversion
+### Date and Time Conversion
 
-**Source**: ISO 8601 DateTime (e.g., `2024-03-15T09:00:00Z`)
+**From Project Online**: ISO 8601 DateTime (e.g., `2024-03-15T09:00:00Z`)
 
-**Target**: Date string `YYYY-MM-DD`
+**To Smartsheet**: Date in `YYYY-MM-DD` format
 
 ```typescript
 // 2024-03-15T09:00:00Z → "2024-03-15"
 // 2024-12-31T23:59:59-08:00 → "2024-12-31"
 ```
 
-### Priority Mapping
+### Priority Conversion
 
-**Source**: Integer 0-1000 (7 fixed levels)
+**From Project Online**: Number from 0 to 1000
 
-**Target**: Picklist with 7 matching labels
+**To Smartsheet**: Text label from dropdown list
 
-| Project Online Value | Smartsheet Picklist |
-|---------------------|---------------------|
-| 1000+ | Highest |
+| Your Project Online Value | Becomes in Smartsheet |
+|---------------------------|----------------------|
+| 1000 or higher | Highest |
 | 800-999 | Very High |
 | 600-799 | Higher |
-| 500-599 | Medium (default) |
+| 500-599 | Medium |
 | 400-499 | Lower |
 | 200-399 | Very Low |
 | 0-199 | Lowest |
 
-### Status Derivation
+### Status Conversion
 
-**Source**: Calculated from `PercentComplete`
+**From Project Online**: Calculated from completion percentage
 
-**Logic**:
+**Conversion Rules**:
 - `0%` → "Not Started"
 - `1-99%` → "In Progress"
 - `100%` → "Complete"
 
-### Contact Objects
+### Contact Information
 
-**Source**: Separate Name and Email fields
+**From Project Online**: Separate name and email fields
 
-**Target**: Single CONTACT_LIST column with objectValue
+**To Smartsheet**: Single contact field with both
 
 ```typescript
 // Project Online
 Owner: "John Doe"
 OwnerEmail: "john@example.com"
 
-// Smartsheet Cell Value
+// Smartsheet (stored as one contact)
 {
-  "objectValue": {
-    "email": "john@example.com",
-    "name": "John Doe"
-  }
+  "email": "john@example.com",
+  "name": "John Doe"
 }
 ```
 
-### Currency Conversion
+### Currency Values
 
-**Source**: Decimal (e.g., `75.00`)
+**From Project Online**: Decimal number (e.g., `75.00`)
 
-**Target**: Numeric value (NOT string)
-
-```typescript
-// Store as number, let Smartsheet format as currency
-75.0 → 75.0 (displayed as "$75.00" by Smartsheet)
-112.5 → 112.5 (displayed as "$112.50" by Smartsheet)
-```
-
-**Key Principle**: Store rates/costs as numeric values and let Smartsheet's column formatting handle currency display.
-
-### Boolean to Checkbox
-
-**Source**: Boolean (true/false)
-
-**Target**: CHECKBOX column
+**To Smartsheet**: Numeric value (Smartsheet formats it as currency)
 
 ```typescript
-// IsActive = true → ☑ (checked)
-// IsActive = false → ☐ (unchecked)
+// Store as number, Smartsheet displays with currency symbol
+75.0 → Displayed as "$75.00" in Smartsheet
+112.5 → Displayed as "$112.50" in Smartsheet
 ```
 
-**Key Principle**: Use native CHECKBOX columns for boolean values instead of text picklists.
+### Yes/No Fields
 
-### Percentage Conversion
+**From Project Online**: Boolean (true/false)
 
-**Source**: Decimal (e.g., `1.0` = 100%)
+**To Smartsheet**: Checkbox column
 
-**Target**: Percentage string
+```typescript
+// IsActive = true → ☑ (checked box)
+// IsActive = false → ☐ (empty box)
+```
+
+### Percentage Values
+
+**From Project Online**: Decimal where 1.0 = 100%
+
+**To Smartsheet**: Percentage with "%" symbol
 
 ```typescript
 // 1.0 → "100%"
@@ -324,33 +317,33 @@ OwnerEmail: "john@example.com"
 // 1.5 → "150%" (overallocated)
 ```
 
-## Naming Conventions
+## Naming Patterns
 
 ### Workspace Names
 
-- **Pattern**: `{ProjectName}` (NO prefix, sanitized only)
-- **Sanitization**: Remove invalid chars `/\:*?"<>|` → `-`, consolidate, trim
+- **Pattern**: Uses your project name directly
+- **Cleaning**: Removes characters that aren't allowed: `/\:*?"<>|` become `-`
 - **Examples**:
-  - `"Website Redesign 2024"`
-  - `"Q1-Q2 Planning & Execution"`
-  - `"IT Infrastructure - Phase 1"`
+  - `"Website Redesign 2024"` stays as `"Website Redesign 2024"`
+  - `"Q1/Q2 Planning & Execution"` becomes `"Q1-Q2 Planning & Execution"`
+  - `"IT Infrastructure | Phase 1"` becomes `"IT Infrastructure - Phase 1"`
 
 ### Sheet Names
 
-- **Pattern**: `{ProjectName} - {EntityType}` OR `{EntityType}` (in workspace)
+- **Pattern**: `{Your Project Name} - {Sheet Type}`
 - **Examples**:
-  - `"Website Redesign - Tasks"` or `"Tasks"`
-  - `"Website Redesign - Resources"` or `"Resources"`
-  - `"Website Redesign - Summary"` or `"Summary"`
+  - `"Website Redesign - Tasks"`
+  - `"Website Redesign - Resources"`
+  - `"Website Redesign - Summary"`
 
-**Note**: No folders. All sheets in workspace root.
+**Note**: All sheets are placed directly in the workspace (no folders).
 
 ### Column Names
 
-**Standard Columns**:
-- Use Title Case
-- Separate words with spaces
-- Include units in parentheses
+**Standard Format**:
+- Each Word Starts With Capital Letter
+- Words are separated by spaces
+- Units are shown in parentheses
 
 **Examples**:
 - `"Task Name"` (not "TaskName")
@@ -358,9 +351,9 @@ OwnerEmail: "john@example.com"
 - `"Work (hrs)"` (not "WorkHours")
 - `"% Complete"` (not "PercentComplete")
 
-**ID Columns**:
-- Always append " ID" to entity name
-- Keep as hidden columns
+**Identifier Columns**:
+- Always include " ID" in the name
+- Hidden by default
 
 **Examples**:
 - `"Task ID"`
@@ -369,55 +362,55 @@ OwnerEmail: "john@example.com"
 
 ### Value Formats
 
-**Dates**: `YYYY-MM-DD` (e.g., `"2024-03-15"`)
+**Dates**: Year-Month-Day (e.g., `"2024-03-15"`)
 
 **Durations**: Number + unit (e.g., `"5d"`, `"40h"`, `"2w"`)
 
-**Percentages**: Integer + `%` (e.g., `"0%"`, `"50%"`, `"100%"`)
+**Percentages**: Number + `%` symbol (e.g., `"0%"`, `"50%"`, `"100%"`)
 
-**Currency**: Numeric (e.g., `75.00`, `112.50`) - formatted by Smartsheet
+**Currency**: Numeric value (e.g., `75.00`, `112.50`) - Smartsheet formats it with currency symbol
 
-**Booleans**: Checkbox (`☑` or `☐`)
+**Yes/No**: Checkbox (☑ checked or ☐ empty)
 
-## PMO Standards Architecture
+## Standards Architecture
 
-### Centralized Reference Data Workspace
+### Centralized Reference Values
 
-A single "PMO Standards" workspace contains reference sheets for all picklist values used across all project migrations.
+A single "Standards" workspace contains reference sheets with all the dropdown list values used across your projects.
 
 ```
-PMO Standards Workspace (Centralized)
-├── Standard Field Reference Sheets
-│   ├── Project - Status
-│   ├── Project - Priority
-│   ├── Task - Status
-│   ├── Task - Priority
-│   ├── Task - Constraint Type
-│   └── Resource - Type
+Standards Workspace (Centralized)
+├── Standard Reference Sheets
+│   ├── Project - Status (Active, Planning, etc.)
+│   ├── Project - Priority (Highest, High, Medium, etc.)
+│   ├── Task - Status (Not Started, In Progress, Complete)
+│   ├── Task - Priority (same levels as project priority)
+│   ├── Task - Constraint Type (8 different types)
+│   └── Resource - Type (People, Equipment, Cost)
 │
-└── Discovered Field Reference Sheets
-    └── Resource - Department (values discovered from data)
+└── Discovered Reference Sheets
+    └── Resource - Department (departments found in your data)
 ```
 
-### Sheet Naming Convention
+### Reference Sheet Names
 
-**Pattern**: `{EntityType} - {FieldName}`
+**Pattern**: `{Data Type} - {Field Name}`
 
 **Examples**:
-- `"Project - Status"` (not just "Status")
-- `"Task - Priority"` (separate from Project Priority)
+- `"Project - Status"` (clearly indicates it's for projects)
+- `"Task - Priority"` (separate from project priority)
 - `"Resource - Type"`
 - `"Resource - Department"`
 
-**Purpose**: Disambiguate fields with same property names across entity types
+**Why**: Prevents confusion when the same field name appears in different contexts
 
 ### Reference Sheet Structure
 
-Each reference sheet has a simple structure:
-- **Column 1**: "Name" (primary column)
-- **Rows**: One per valid option value
+Each reference sheet is simple:
+- **First Column**: "Name" (main column)
+- **Rows**: One row for each valid option
 
-**Example - Task Priority Reference**:
+**Example - Task Priority Reference Sheet**:
 
 | Name |
 |------|
@@ -429,117 +422,106 @@ Each reference sheet has a simple structure:
 | Very Low |
 | Lowest |
 
-### Project Column Configuration
+### How Dropdown Lists Work
 
-Project sheets reference PMO Standards sheets for picklist values:
+Your project sheets reference the standards workspace for dropdown values:
 
 ```typescript
-// Example: Task Priority Column
+// Example: Task Priority Column Setup
 {
   "title": "Priority",
   "type": "PICKLIST",
   "options": [{
-    "sheetId": 234567890,      // PMO Standards/Task - Priority sheet
+    "sheetId": 234567890,      // Standards workspace Task - Priority sheet
     "columnId": 345678901       // "Name" column in that sheet
   }],
-  "validation": true            // Strict validation
+  "validation": true            // Only values from list are allowed
 }
 ```
 
-### Benefits
+### Benefits of This Approach
 
-1. **Centralized Management**: PMO maintains reference data in one place
-2. **Cross-Project Consistency**: All projects use same validated values
-3. **Easy Updates**: Update reference sheet once, affects all projects
-4. **Data Governance**: Single source of truth for standards
-5. **Scalability**: Works across unlimited project migrations
-6. **Automatic Discovery**: Tool discovers and populates reference sheets
+1. **Centralized Management**: Update values in one place, affects all projects
+2. **Consistency Across Projects**: All projects use the same validated values
+3. **Easy Updates**: Change a reference sheet once, all projects reflect the change
+4. **Single Source of Truth**: One place for your organization's standard values
+5. **Unlimited Scale**: Works no matter how many projects you migrate
+6. **Automatic Discovery**: The tool finds and populates reference sheets for you
 
-### Migration Flow
+### Migration Process
 
 ```
-1. CLI Startup
-   └─> Initialize/Verify PMO Standards workspace
+1. When You Start
+   └─> Tool sets up or verifies the Standards workspace exists
 
-2. Per Project Migration
-   └─> Create project workspace
-   └─> Create sheets (Tasks, Resources, Summary)
-   └─> Configure columns with PMO Standards references
-   └─> Populate data with validation
+2. For Each Project You Migrate
+   └─> Creates your project workspace
+   └─> Creates sheets (Tasks, Resources, Summary)
+   └─> Connects dropdown lists to Standards workspace
+   └─> Loads your data with validation
 
-3. PMO Standards Evolution
+3. As You Migrate More Projects
    └─> New values automatically added to reference sheets
-   └─> Existing projects reference updated values
+   └─> Existing projects reference the updated values
 ```
 
-## Validation Rules
+## Data Validation
 
-### During Extraction
-- Verify required fields present (Id, Name, etc.)
-- Check null/empty values in non-nullable fields
-- Validate Guid formats
-- Validate date/time formats
+### When Extracting from Project Online
+- Checks that required fields have values
+- Validates that identifiers are in the correct format
+- Confirms dates and times are valid
+- Ensures no critical data is missing
 
-### During Transformation
-- Validate transformed values match target data types
-- Check string lengths (column names max 50 chars, cell values max 4000 chars)
-- Verify hierarchical relationships (parent tasks exist)
-- Validate foreign key references (ProjectId, TaskId, ResourceId)
-- Check numerical ranges (percentages 0-100, priority 0-1000)
+### When Converting Your Data
+- Validates converted values match expected formats
+- Checks text doesn't exceed column limits (4000 characters max)
+- Verifies parent tasks exist for child tasks
+- Validates all references between tasks, projects, and resources
+- Confirms numeric values are within acceptable ranges
 
-### Before Loading
-- Sheet name uniqueness within workspace
-- Column type compatibility
-- Row hierarchy consistency
-- Predecessor references valid (row numbers exist)
-- Required columns exist
-- No duplicate IDs
+### Before Creating in Smartsheet
+- Ensures each sheet has a unique name in the workspace
+- Checks column types are compatible
+- Verifies task hierarchy is consistent
+- Validates all predecessor (dependency) references
+- Confirms all required columns exist
+- Prevents duplicate identifiers
 
-## Summary
+## Summary of Your Migration
 
-This transformation guide provides the complete mapping specifications for migrating Project Online data to Smartsheet. Key points:
+**What Gets Migrated**: 4 main types of data (Projects, Tasks, Resources, Assignments)
 
-**Entity Coverage**: 4 core entities (Projects, Tasks, Resources, Assignments)
+**Fields Mapped**: 50+ individual pieces of information with detailed conversion rules
 
-**Properties Mapped**: 50+ properties with detailed conversion rules
+**Data Conversions**: 8 major types (Identifiers, Dates, Durations, Priority, Status, Contacts, Currency, Yes/No)
 
-**Data Types**: 8 major conversions (Guid, DateTime, Duration, Priority, Status, Contact, Currency, Boolean)
+**Relationships Maintained**: 
+- Your project-task connections
+- Task parent-child relationships (hierarchy)
+- Task dependencies (what must finish before what starts)
+- Resource assignments (who's assigned to what)
 
-**Relationships Preserved**: 
-- Project-Task hierarchy
-- Task parent-child relationships
-- Task dependencies (predecessors)
-- Resource assignments (via Contact List columns)
+**Result Structure**:
+- 1 Workspace for each project
+- 2-3 sheets per project (Tasks, Resources, and optional Summary)
+- All sheets in workspace root (no folders)
+- Assignments embedded in task list (no separate sheet)
 
-**Sheet Structure**:
-- 1 Workspace per project
-- 2-3 sheets per project (Tasks, Resources, optional Summary)
-- Sheets in workspace root (no folders)
-- Embedded assignments (no separate sheet)
-
-**Key Design Patterns**:
-1. Workspace-per-project mapping
-2. Name preservation (sanitized)
-3. Dual ID pattern (GUID + auto-number)
-4. Contact objects (name + email)
-5. Embedded assignments
-6. PMO Standards integration
-7. Re-run resiliency
-
-## Related Documentation
-
-For system architecture and component details:
-- [ETL System Design](./02-etl-system-design.md) - Component architecture
-
-For system architecture and overview:
-- [Project Online Migration Overview](./01-project-online-migration-overview.md) - Business context
-- [ETL System Design](./02-etl-system-design.md) - Component architecture and implementation
+**Key Patterns**:
+1. One workspace per project
+2. Names preserved (with minor cleaning)
+3. Two identifiers (original + auto-number)
+4. Contacts with names and emails together
+5. Assignments embedded in tasks
+6. Standards workspace for consistency
+7. Safe to re-run if needed
 
 ---
 
 <div align="center">
 
-| [← Previous: ETL System Design](./02-etl-system-design.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Template-Based Workspace Creation →](../project/Template-Based-Workspace-Creation.md) |
+| [← Previous: System Design](./02-etl-system-design.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md) |
 |:---|:---:|---:|
 
 </div>

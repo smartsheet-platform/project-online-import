@@ -2,350 +2,282 @@
 
 <div align="center">
 
-| [← Previous: Sheet References](./Sheet-References.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: CLI Usage Guide →](./CLI-Usage-Guide.md) |
+| [← Previous: Sheet Connections](./Sheet-References.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Using the Migration Tool →](./CLI-Usage-Guide.md) |
 |:---|:---:|---:|
 
 </div>
 
 ---
 
-# Project Online Authentication Setup Guide
+# Setting Up Authentication
 
-This guide walks through setting up Azure AD authentication for the Project Online to Smartsheet ETL tool.
+This guide walks you through connecting the migration tool to your Project Online environment.
 
-## Overview
+## What You'll Need
 
-The ETL tool uses OAuth 2.0 client credentials flow to authenticate with Project Online via Azure Active Directory (Azure AD). This requires:
+To migrate your projects, the tool needs secure access to both your Project Online data and your Smartsheet account. This requires:
 
-1. An Azure AD app registration
-2. Appropriate API permissions
-3. Admin consent for the application
-4. Configuration in your `.env` file
+1. An application registration in Azure Active Directory
+2. Appropriate permissions to read your Project Online data
+3. Administrator approval for the application
+4. Your credentials in a configuration file
 
-## Prerequisites
+## Requirements
 
-- **Azure AD Admin Access**: You need administrator privileges to:
-  - Create app registrations
-  - Grant admin consent for API permissions
-- **Project Online Access**: The app needs access to your Project Online site
-- **Tenant Information**: Know your organization's Azure AD tenant
+- **Azure Active Directory Admin Access**: You'll need someone with administrator privileges who can:
+  - Create application registrations
+  - Grant approval for application permissions
+- **Project Online Access**: The application needs access to read your Project Online data
+- **Your Organization's Information**: Know your Azure Active Directory tenant details
 
 ## Step-by-Step Setup
 
-### Step 1: Create Azure AD App Registration
+### Step 1: Create the Application Registration
 
-1. Navigate to the [Azure Portal](https://portal.azure.com)
+1. Go to the [Azure Portal](https://portal.azure.com)
 
-2. Go to **Azure Active Directory** → **App registrations**
+2. Navigate to **Azure Active Directory** → **App registrations**
 
 3. Click **New registration**
 
-4. Fill in the registration form:
-   - **Name**: `Project Online ETL Tool`
+4. Fill in the form:
+   - **Name**: `Project Online Migration Tool`
    - **Supported account types**: Select "Accounts in this organizational directory only"
-   - **Redirect URI**: Leave blank (not needed for service principal authentication)
+   - **Redirect URI**: Leave blank
 
 5. Click **Register**
 
-### Step 2: Copy Application Credentials
+### Step 2: Copy Your Application Information
 
-After registration, you'll see the app overview page.
+After registering, you'll see the application overview page.
 
 1. **Copy the Application (client) ID**
-   - This is your `CLIENT_ID`
-   - Example: `12345678-1234-1234-1234-123456789012`
+   - Save this as your `CLIENT_ID`
+   - It looks like: `12345678-1234-1234-1234-123456789012`
 
 2. **Copy the Directory (tenant) ID**
-   - This is your `TENANT_ID`
-   - Example: `87654321-4321-4321-4321-210987654321`
+   - Save this as your `TENANT_ID`
+   - It looks like: `87654321-4321-4321-4321-210987654321`
 
-### Step 3: Create Client Secret
+### Step 3: Create a Client Secret
 
-1. In your app registration, go to **Certificates & secrets**
+1. In your application registration, go to **Certificates & secrets**
 
 2. Click **New client secret**
 
 3. Fill in the form:
-   - **Description**: `ETL Tool Secret`
-   - **Expires**: Choose expiration period (recommended: 12-24 months)
+   - **Description**: `Migration Tool Secret`
+   - **Expires**: Choose 12-24 months
    
 4. Click **Add**
 
-5. **CRITICAL**: Copy the secret **Value** immediately
+5. **IMPORTANT**: Copy the secret value immediately
    - This is your `CLIENT_SECRET`
-   - **You won't be able to see it again!**
-   - If you lose it, you'll need to create a new secret
+   - **You can only see it once!**
+   - If you close the page without copying it, you'll need to create a new one
 
-### Step 4: Grant API Permissions
+### Step 4: Grant Permissions
 
-1. In your app registration, go to **API permissions**
+1. In your application registration, go to **API permissions**
 
 2. Click **Add a permission**
 
-3. Select **SharePoint** (Project Online uses SharePoint APIs)
+3. Select **SharePoint** (Project Online uses SharePoint's infrastructure)
 
-4. Choose **Application permissions** (not Delegated permissions)
+4. Choose **Application permissions**
 
 5. Find and check **Sites.ReadWrite.All**
-   - This allows the app to read and write to all site collections
-   - Required for accessing Project Online data
+   - This lets the application read your Project Online data
+   - Required for the migration to work
 
 6. Click **Add permissions**
 
-7. **CRITICAL**: Click **Grant admin consent for [Your Organization]**
-   - This button requires admin privileges
-   - Without admin consent, the app cannot access the API
-   - The button should show a green checkmark after consenting
+7. **IMPORTANT**: Click **Grant admin consent for [Your Organization]**
+   - This requires administrator privileges
+   - The application won't work without this approval
+   - You should see a green checkmark after approval
 
-### Step 5: Verify Permissions
+### Step 5: Verify the Setup
 
-After granting consent, you should see:
+After granting consent, verify you see:
 
-| API / Permission Name | Type | Status |
-|----------------------|------|--------|
-| SharePoint / Sites.ReadWrite.All | Application | ✓ Granted for [Organization] |
+| Permission | Type | Status |
+|-----------|------|--------|
+| SharePoint / Sites.ReadWrite.All | Application | ✓ Granted for [Your Organization] |
 
-If you see "Not granted" or a warning icon, click "Grant admin consent" again.
+If you don't see the green checkmark, click "Grant admin consent" again.
 
-### Step 6: Configure Environment Variables
+### Step 6: Configure the Tool
 
-1. Copy the sample environment file:
+1. Copy the sample configuration file:
    ```bash
    cp .env.sample .env
    ```
 
-2. Edit `.env` and fill in your Azure AD credentials:
+2. Edit the `.env` file and add your credentials:
    ```bash
-   # Azure AD Configuration
-   TENANT_ID=your-tenant-id-here
-   CLIENT_ID=your-client-id-here
-   CLIENT_SECRET=your-client-secret-here
-   PROJECT_ONLINE_URL=https://your-org.sharepoint.com/sites/pwa
+   # Azure Active Directory Configuration
+   TENANT_ID=your-tenant-id-from-step-2
+   CLIENT_ID=your-client-id-from-step-2
+   CLIENT_SECRET=your-client-secret-from-step-3
+   PROJECT_ONLINE_URL=https://your-organization.sharepoint.com/sites/pwa
    
    # Smartsheet Configuration
-   SMARTSHEET_API_TOKEN=your-smartsheet-token-here
+   SMARTSHEET_API_TOKEN=your-smartsheet-token
    ```
 
-3. Replace the placeholder values:
-   - `TENANT_ID`: From Step 2
-   - `CLIENT_ID`: From Step 2
-   - `CLIENT_SECRET`: From Step 3
-   - `PROJECT_ONLINE_URL`: Your Project Online site URL
-   - `SMARTSHEET_API_TOKEN`: Your Smartsheet API token
+3. Replace each placeholder value with your actual information
 
-### Step 7: Test Authentication
+### Step 7: Test the Connection
 
-Run the validation command to test your configuration:
+Test that everything is configured correctly:
 
 ```bash
-npm run dev validate -- --source [project-guid]
+npm run dev validate -- --source [your-project-id]
 ```
 
-Replace `[project-guid]` with an actual Project Online project ID (GUID format).
+Replace `[your-project-id]` with one of your Project Online project identifiers.
 
-Expected output if successful:
+If successful, you'll see:
 ```
 🔍 Validating Project Online data
 
 ✓ Project ID format is valid
-✓ Azure AD Tenant ID is configured
-✓ Azure AD Client ID is configured
-✓ Azure AD Client Secret is configured
+✓ Azure Active Directory tenant ID is configured
+✓ Azure Active Directory client ID is configured
+✓ Azure Active Directory client secret is configured
 ✓ Project Online URL is configured
-✓ Smartsheet API token is configured
+✓ Smartsheet access token is configured
 
 🔌 Testing Project Online connection...
-✓ Authentication successful
-✓ Connection to Project Online successful
+✓ Connection successful
+✓ Can access Project Online data
 
 ✅ Validation passed
 ```
 
-## Common Issues and Troubleshooting
+## Troubleshooting
 
-### Issue: "Authentication failed (401 Unauthorized)"
+### "Authentication failed" Error
 
-**Possible Causes:**
-- Invalid `CLIENT_ID`, `CLIENT_SECRET`, or `TENANT_ID`
-- Client secret expired
-- App registration was deleted
+**What this means**:
+Your credentials aren't working
 
-**Solution:**
-1. Verify all credentials are copied correctly
-2. Check if client secret has expired (Azure Portal → App registration → Certificates & secrets)
+**How to fix**:
+1. Double-check that you copied all credentials correctly
+2. Verify your client secret hasn't expired (check in Azure Portal)
 3. Create a new client secret if needed
 
-### Issue: "Access forbidden (403 Forbidden)"
+### "Access forbidden" Error
 
-**Possible Causes:**
-- Missing API permissions
-- Admin consent not granted
-- App doesn't have access to the Project Online site
+**What this means**:
+The application doesn't have the necessary permissions
 
-**Solution:**
-1. Verify API permissions:
-   - Go to Azure Portal → App registration → API permissions
-   - Ensure **Sites.ReadWrite.All** is present
-   - Check for green checkmark indicating admin consent
-2. If not granted, click "Grant admin consent for [Organization]"
-3. Contact your SharePoint/Project Online administrator to grant site access
+**How to fix**:
+1. Go to Azure Portal → Your app registration → API permissions
+2. Make sure **Sites.ReadWrite.All** shows with a green checkmark
+3. If not approved, click "Grant admin consent for [Organization]"
+4. Contact your administrator if you don't have permission to grant consent
 
-### Issue: "MSAL authentication error"
+### Common Error Messages
 
-**Common MSAL Error Codes:**
+| Error | What It Means | How to Fix |
+|-------|---------------|------------|
+| `invalid_client` | Credentials are wrong | Verify `CLIENT_ID` and `CLIENT_SECRET` are correct |
+| `invalid_resource` | URL is wrong | Check `PROJECT_ONLINE_URL` format |
+| `unauthorized_client` | Not authorized | Grant admin consent for the application |
+| `invalid_grant` | Token request failed | Create a new client secret |
 
-| Error Code | Meaning | Solution |
-|-----------|---------|----------|
-| `invalid_client` | Invalid client credentials | Verify `CLIENT_ID` and `CLIENT_SECRET` |
-| `invalid_resource` | Invalid Project Online URL | Check `PROJECT_ONLINE_URL` format |
-| `unauthorized_client` | App not authorized | Grant admin consent for API permissions |
-| `invalid_grant` | Token request failed | Re-create client secret |
+### "Resource not found" Error
 
-**Solution:**
-1. Check error message for specific error code
-2. Verify configuration values in `.env`
-3. Ensure admin consent is granted
-4. Try creating a new client secret
+**What this means**:
+- Your Project Online URL is incorrect
+- The site doesn't exist
+- The application doesn't have access
 
-### Issue: "The specified resource was not found"
+**How to fix**:
+1. Verify your Project Online URL format: `https://[your-organization].sharepoint.com/sites/[site-name]`
+2. Test the URL in your web browser (you should be able to access it)
+3. Ensure your application has been granted access to the SharePoint site
 
-**Possible Causes:**
-- Invalid `PROJECT_ONLINE_URL`
-- Site doesn't exist
-- App doesn't have access to the site
+### "Cannot get token" Error
 
-**Solution:**
-1. Verify Project Online URL format:
-   - Should be: `https://[tenant].sharepoint.com/sites/[site-name]`
-   - Example: `https://contoso.sharepoint.com/sites/pwa`
-2. Test URL in browser (you should be able to access it)
-3. Ensure your Azure AD app has access to this SharePoint site
-
-### Issue: "Token acquisition failed"
-
-**Possible Causes:**
+**What this means**:
 - Network connectivity issues
-- Firewall blocking Azure AD endpoints
+- Firewall blocking Microsoft authentication
 - Invalid tenant ID
 
-**Solution:**
-1. Check internet connectivity
-2. Verify firewall allows access to:
+**How to fix**:
+1. Check your internet connection
+2. Verify your firewall allows access to:
    - `https://login.microsoftonline.com`
    - `https://*.sharepoint.com`
-3. Confirm `TENANT_ID` is correct
+3. Confirm your `TENANT_ID` is correct
 
 ## Security Best Practices
 
-### Client Secret Management
+### Protecting Your Credentials
 
-1. **Never commit secrets to version control**
-   - The `.env` file is in `.gitignore` by default
-   - Never share your `.env` file
+1. **Never commit `.env` files to source control**
+   - The file is excluded by default
+   - Never share your `.env` file with others
 
-2. **Rotate secrets regularly**
-   - Set expiration when creating secrets (12-24 months)
-   - Create new secret before expiration
-   - Update `.env` with new secret
-   - Delete old secret after confirming new one works
+2. **Rotate credentials regularly**
+   - Set an expiration when creating secrets (12-24 months is recommended)
+   - Create a new secret before the old one expires
+   - Update your `.env` file with the new secret
+   - Delete the old secret after confirming the new one works
 
-3. **Use separate credentials per environment**
-   - Development: Use test app registration
-   - Production: Use separate production app registration
-   - Never use production credentials in development
+3. **Use separate credentials for testing and production**
+   - Create different application registrations for testing versus actual use
+   - Never use production credentials for testing
 
-### Permission Management
+### Managing Permissions
 
-1. **Principle of Least Privilege**
-   - Only grant necessary permissions
-   - Sites.ReadWrite.All is required for Project Online access
-   - Don't grant additional unnecessary permissions
+1. **Grant only necessary permissions**
+   - Sites.ReadWrite.All is required to read Project Online data
+   - Don't grant additional permissions you don't need
 
-2. **Regular Audits**
-   - Review app permissions periodically
-   - Remove unused app registrations
-   - Check which users/apps have admin consent
+2. **Review regularly**
+   - Periodically review which applications have permissions
+   - Remove application registrations you're no longer using
+   - Check who has administrative consent approval
 
-### Monitoring
+### Monitoring Access
 
-1. **Review Sign-in Logs**
-   - Azure Portal → Azure AD → Sign-ins
-   - Filter by application name
-   - Check for failed authentication attempts
+1. **Review sign-in activity**
+   - Azure Portal → Azure Active Directory → Sign-ins
+   - Filter by your application name
+   - Watch for failed authentication attempts
 
-2. **Set Up Alerts**
-   - Configure alerts for:
-     - Multiple failed sign-ins
-     - Unusual sign-in patterns
-     - Permission changes
+2. **Set up alerts** for unusual activity:
+   - Multiple failed sign-in attempts
+   - Unexpected sign-in patterns
+   - Permission changes
 
-## Advanced Configuration
-
-### Using Different Environments
-
-You can maintain separate configurations for different environments:
-
-**Development (.env.dev):**
-```bash
-TENANT_ID=dev-tenant-id
-CLIENT_ID=dev-client-id
-CLIENT_SECRET=dev-secret
-PROJECT_ONLINE_URL=https://contoso-dev.sharepoint.com/sites/pwa-dev
-```
-
-**Production (.env.prod):**
-```bash
-TENANT_ID=prod-tenant-id
-CLIENT_ID=prod-client-id
-CLIENT_SECRET=prod-secret
-PROJECT_ONLINE_URL=https://contoso.sharepoint.com/sites/pwa
-```
-
-Load specific configuration:
-```bash
-npm run dev import -- --config .env.prod --source [project-id]
-```
-
-### Default Client Configuration
-
-The Project Online client uses these default configuration values:
-
-- **Timeout**: 30 seconds per request
-- **Max Retries**: 3 attempts for failed requests
-- **Rate Limit**: 300 API calls per minute
-
-These values are built into the client and provide reliable operation for most scenarios. Custom values can only be configured programmatically (e.g., for testing), not through environment variables or CLI options.
-
-## Support and Additional Resources
+## Additional Resources
 
 ### Microsoft Documentation
 
-- [Azure AD App Registration](https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app)
+- [Creating App Registrations](https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app)
 - [Application Permissions](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent)
-- [Project Online REST API](https://docs.microsoft.com/en-us/previous-versions/office/project-javascript-api/jj712612(v=office.15))
-- [MSAL Node Documentation](https://github.com/AzureAD/microsoft-authentication-library-for-js/tree/dev/lib/msal-node)
-
-### Internal Resources
-
-- [Project Plan](./Project-Plan.md) - Implementation status
-- [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md) - System architecture overview
-- [CLI Usage Guide](./CLI-Usage-Guide.md) - Command reference
+- [Project Online Documentation](https://docs.microsoft.com/en-us/previous-versions/office/project-javascript-api/jj712612(v=office.15))
 
 ### Getting Help
 
-If you encounter issues not covered in this guide:
+If you encounter issues:
 
-1. Check the error message carefully for specific guidance
-2. Review the [Troubleshooting](#common-issues-and-troubleshooting) section
-3. Verify all configuration values are correct
-4. Test authentication with the `validate` command
-5. Contact your Azure AD administrator for permission-related issues
+1. Read the error message carefully - it often explains what's wrong
+2. Review the troubleshooting section above
+3. Verify all your configuration values are correct
+4. Test the connection using the `validate` command
+5. Contact your Azure Active Directory administrator for permission issues
 
 ---
 
 <div align="center">
 
-| [← Previous: Sheet References](./Sheet-References.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: CLI Usage Guide →](./CLI-Usage-Guide.md) |
+| [← Previous: Sheet Connections](./Sheet-References.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Using the Migration Tool →](./CLI-Usage-Guide.md) |
 |:---|:---:|---:|
 
 </div>

@@ -9,7 +9,11 @@
 
 ---
 
-# Project Online Import - Code Conventions
+> **📘 Developer Documentation**
+>
+> This document is intended for developers working on the migration tool code. If you're a Project Online user evaluating migration options, you can skip this section. The troubleshooting guide in the previous section covers everything you need for using the tool.
+
+# Code Conventions
 
 This document describes coding standards, naming conventions, file organization patterns, and development workflows used in this project.
 

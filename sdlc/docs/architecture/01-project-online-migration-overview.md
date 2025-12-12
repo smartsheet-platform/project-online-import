@@ -2,7 +2,7 @@
 
 <div align="center">
 
-| **Start of Series** | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: ETL System Design →](./02-etl-system-design.md) |
+| **Start of Series** | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: System Design →](./02-etl-system-design.md) |
 |:---|:---:|---:|
 
 </div>
@@ -10,311 +10,199 @@
 ---
 
 
-# Project Online to Smartsheet Migration - Overview
+# Migrating from Project Online to Smartsheet
 
-**Status**: Production-Ready System  
 **Last Updated**: 2024-12-08  
-**Context**: Main Application Architecture
 
-## Executive Summary
+## Overview
 
-This ETL (Extract-Transform-Load) tool enables repeatable migration of Microsoft Project Online data to Smartsheet as Project Online reaches end-of-life. The system is specifically designed for Smartsheet Professional Services teams to perform independent customer onboarding with minimal technical support.
+If you're using Microsoft Project Online and evaluating migration options, this guide explains how to move your project data to Smartsheet. The migration process preserves your project structure, tasks, resources, and assignments while transitioning to a modern work management platform.
 
-### Quick Facts
+### What This Tool Does
 
-- **Language**: TypeScript/Node.js
-- **Source System**: Microsoft Project Online (oData API)
-- **Target System**: Smartsheet (Official SDK)
-- **Architecture**: Command-line ETL tool
-- **Migration Pattern**: One workspace per project
-- **Typical Migration Time**: < 1 hour for standard projects
-- **Success Rate Target**: > 95%
+The migration tool:
+- Connects to your existing Project Online environment
+- Extracts all your project data including tasks, resources, and assignments
+- Converts the data to work in Smartsheet's structure
+- Creates organized workspaces in Smartsheet with your projects
+- Maintains all relationships between tasks, resources, and assignments
+- Handles errors and can resume if interrupted
 
-## Business Context
+### Migration Structure
 
-### The Problem
-
-- **Driver**: Microsoft Project Online end-of-life requiring customer migration
-- **Challenge**: Manual migration is time-consuming, error-prone, and not repeatable
-- **Impact**: Customer onboarding delays and high PS team resource requirements
-
-### The Solution
-
-A production-ready CLI tool that:
-- ✅ Authenticates to both Project Online and Smartsheet APIs
-- ✅ Extracts all project entities (Projects, Tasks, Resources, Assignments)
-- ✅ Transforms data to Smartsheet-compatible structures
-- ✅ Creates proper workspace and sheet hierarchies
-- ✅ Maintains relationships and data integrity
-- ✅ Handles errors gracefully with retry logic
-- ✅ Provides resume capability on interruption
-
-### Primary Users
-
-**Smartsheet Professional Services Team**
-- Run migrations for multiple customers
-- Need simple, reliable tool with clear feedback
-- Require minimal technical support
-- Value repeatable, consistent results
-
-### Success Criteria
-
-**Technical**:
-- Complete migration in < 1 hour for typical projects
-- Successfully migrate all relevant entities
-- Maintain data relationships and integrity
-- 95%+ success rate across customer profiles
-
-**Business**:
-- 80% reduction in customer onboarding time
-- PS team can perform migrations independently
-- Minimal post-migration support required
-- Accurate data migration with validation
-
-## Migration Approach
-
-### Workspace-per-Project Architecture
-
-Each Project Online project becomes a dedicated Smartsheet workspace:
+Each of your Project Online projects becomes a dedicated Smartsheet workspace:
 
 ```
-Project Online Project "Website Redesign Q1"
+Your Project Online Project "Website Redesign Q1"
     ↓ MIGRATION ↓
 Smartsheet Workspace "Website Redesign Q1"
-├── Sheet: Website Redesign Q1 - Summary (1 row: project metadata)
-├── Sheet: Website Redesign Q1 - Tasks (hierarchical task list)
-└── Sheet: Website Redesign Q1 - Resources (flat resource list)
+├── Sheet: Website Redesign Q1 - Summary (project overview)
+├── Sheet: Website Redesign Q1 - Tasks (your task list with hierarchy)
+└── Sheet: Website Redesign Q1 - Resources (your team members and resources)
 ```
 
-**Key Design Decisions**:
+### Key Features
 
-1. **1:1 Project-to-Workspace Mapping**: Clear isolation and ownership
-2. **No Folders**: Sheets placed directly in workspace root for simplicity
-3. **Name Preservation**: Workspace names match Project Online exactly (sanitized)
-4. **Embedded Assignments**: Contact List columns in Tasks sheet (no separate sheet)
-5. **PMO Standards Integration**: Centralized reference data for picklists
+1. **One-to-One Project Mapping**: Each Project Online project becomes its own Smartsheet workspace for clear organization
+2. **Name Preservation**: Your workspace names match your Project Online project names
+3. **Embedded Assignments**: Team member assignments appear directly in your task list
+4. **Centralized Standards**: Status and priority values are managed centrally across all your projects
 
-### Entity Transformation Pattern
+## How Your Data Transforms
 
-| Project Online Entity | Smartsheet Structure | Relationship |
+| Your Project Online Data | Becomes in Smartsheet | How It Works |
 |----------------------|---------------------|--------------|
-| **Project** | Workspace + Optional Summary Sheet | 1:1 mapping |
-| **Task** | Row in Tasks Sheet (hierarchical) | Preserves parent-child via OutlineLevel |
-| **Resource** | Row in Resources Sheet (flat) | Sources Contact List options |
-| **Assignment** | Contact List column in Tasks Sheet | Embedded, not separate sheet |
+| **Project** | Workspace + Summary Sheet | Each project gets its own dedicated workspace |
+| **Task** | Row in Tasks Sheet | Your task hierarchy is preserved with parent-child relationships |
+| **Resource** | Row in Resources Sheet | Your team members and resources with their information |
+| **Assignment** | Column in Tasks Sheet | Who's assigned to each task appears right in the task list |
 
 ### Data Flow
 
+The migration follows these steps:
+
 ```
 ┌─────────────────┐
-│ Project Online  │ Authentication
-│   oData API     │ ─────────────────┐
+│ Project Online  │ 1. Connect & Authenticate
+│   Your Data     │ ─────────────────┐
 └────────┬────────┘                  │
          │                           │
-         │ EXTRACT                   ▼
+         │ 2. EXTRACT                ▼
          │ • Projects              ┌────────────────┐
-         │ • Tasks                 │  ETL Process   │
-         │ • Resources             │                │
-         │ • Assignments           │  - Validate    │
-         ▼                         │  - Transform   │
-┌─────────────────┐                │  - Map         │
-│ Intermediate    │◄───────────────┤  - Relate      │
-│ JSON Data       │                └────────┬───────┘
+         │ • Tasks                 │  Migration     │
+         │ • Resources             │  Process       │
+         │ • Assignments           │                │
+         ▼                         │  - Validate    │
+┌─────────────────┐                │  - Convert     │
+│ Temporary       │◄───────────────┤  - Organize    │
+│ Data Storage    │                └────────┬───────┘
 └────────┬────────┘                         │
-         │                                  │ LOAD
-         │ TRANSFORM                        │
+         │                                  │
+         │ 3. TRANSFORM                     │ 4. LOAD
          ▼                                  ▼
 ┌─────────────────┐                ┌────────────────┐
-│ Smartsheet SDK  │◄───────────────│ Batch Insert   │
-│ API Structures  │                │ with Retry     │
+│ Smartsheet      │◄───────────────│ Create Your    │
+│ Ready Format    │                │ Workspaces     │
 └────────┬────────┘                └────────────────┘
          │
-         │ CREATE
+         │ 5. CREATE
          ▼
 ┌─────────────────┐
 │  Smartsheet     │
 │  - Workspaces   │
 │  - Sheets       │
-│  - Rows         │
+│  - Tasks        │
 │  - Relationships│
 └─────────────────┘
 ```
 
-## Technology Stack
+## Technical Foundation
 
-### Core Technologies
+The migration tool uses:
 
-**Runtime & Language**:
-- Node.js >= 18.0.0
-- TypeScript 5.3+
-- Commander.js (CLI interface)
+**For Connecting to Project Online**:
+- Microsoft's authentication system (OAuth 2.0)
+- Secure token-based access
+- Automatic pagination for large datasets
 
-**Source System Integration**:
-- Microsoft Project Online oData API
-- Azure MSAL authentication (@azure/msal-node)
-- Axios HTTP client
+**For Creating in Smartsheet**:
+- Smartsheet's official software development kit
+- Batch operations for efficiency
+- Automatic retry logic for reliability
 
-**Target System Integration**:
-- Smartsheet official SDK v3.0+
-- REST API (300 requests/minute limit)
+### What You'll Need
 
-**Supporting Libraries**:
-- Winston (structured logging)
-- Dotenv (configuration management)
-- Zod (runtime validation)
-- Chalk (terminal formatting)
+To run the migration, you'll need:
 
-### Key Capabilities
+1. **Project Online Access**:
+   - Azure Active Directory tenant information
+   - Application credentials for secure access
+   - Your Project Online site URL
 
-1. **Authentication**:
-   - OAuth 2.0 for Project Online (Microsoft Identity Platform)
-   - API token for Smartsheet (Bearer auth)
+2. **Smartsheet Access**:
+   - A Smartsheet account with workspace creation permissions
+   - API access token
 
-2. **Data Extraction**:
-   - Automatic pagination handling
-   - Rate limiting (300 requests/minute)
-   - Exponential backoff retry logic
-
-3. **Data Transformation**:
-   - Entity-to-entity mapping
-   - Data type conversions (DateTime, Duration, Priority, etc.)
-   - Relationship preservation
-   - Custom field discovery and mapping
-
-4. **Data Loading**:
-   - Template-based workspace creation
-   - Batch row operations
-   - Dynamic column creation
-   - Cross-sheet picklist references (PMO Standards)
-
-5. **Operational Excellence**:
-   - Comprehensive logging
-   - Progress reporting
-   - Error recovery with checkpoints
-   - Re-run resiliency
-
-## High-Level Architecture
-
-```
-┌─────────────────────────────────────────────────┐
-│            CLI Interface (cli.ts)               │
-│  • Command parsing (Commander.js)               │
-│  • Import and Validate commands                 │
-│  • Progress reporting                           │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│       ProjectOnlineImporter (importer.ts)       │
-│  • Orchestrates ETL workflow                    │
-│  • Error handling and validation                │
-│  • Dry-run support                              │
-└────────────────────┬────────────────────────────┘
-                     │
-        ┌────────────┴──────────────┐
-        │                           │
-┌───────▼────────┐        ┌─────────▼────────┐
-│  Extractors    │        │   Transformers   │
-│                │        │                  │
-│ • PO Client    │        │ • Project        │
-│ • Auth Handler │        │ • Task           │
-│ • Pagination   │        │ • Resource       │
-└────────────────┘        │ • Assignment     │
-                          │ • PMOStandards   │
-                          └─────────┬────────┘
-                                    │
-                          ┌─────────▼────────┐
-                          │ Smartsheet SDK   │
-                          │                  │
-                          │ • Workspace mgmt │
-                          │ • Sheet creation │
-                          │ • Row operations │
-                          └──────────────────┘
-```
-
-## Configuration
-
-### Environment Variables (.env)
-
-```bash
-# Project Online Connection
-TENANT_ID=your-azure-tenant-id
-CLIENT_ID=your-azure-app-client-id
-CLIENT_SECRET=your-azure-app-client-secret
-PROJECT_ONLINE_URL=https://your-tenant.sharepoint.com/sites/pwa
-
-# Smartsheet Connection
-SMARTSHEET_API_TOKEN=your-access-token
-
-# Optional: Use existing PMO Standards workspace
-PMO_STANDARDS_WORKSPACE_ID=1234567890123456
-
-# Development Controls (optional)
-LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
-```
+3. **Configuration**:
+   - A configuration file (`.env`) with your credentials
+   - Node.js installed on your computer (version 18 or newer)
 
 ### Basic Usage
 
 ```bash
-# Full migration
-npm start -- import --source <project-guid> --destination <workspace-id>
+# Preview the migration without making changes
+npm start -- import --source <your-project-id> --destination <workspace-id> --dry-run
 
-# Validate before migration
-npm start -- validate --source <project-guid>
+# Validate your Project Online connection
+npm start -- validate --source <your-project-id>
 
-# Dry-run mode (no changes)
-npm start -- import --source <project-guid> --destination <workspace-id> --dry-run
+# Run the actual migration
+npm start -- import --source <your-project-id> --destination <workspace-id>
 
-# Verbose logging
-npm start -- import --source <project-guid> --destination <workspace-id> --verbose
+# See detailed progress information
+npm start -- import --source <your-project-id> --destination <workspace-id> --verbose
 ```
 
-## Success Metrics (Actual Results)
+## What Gets Migrated
 
-Based on production usage:
+The tool migrates all essential project data:
 
-✅ **Technical Performance**:
-- Migration completion time: 5-10 minutes for typical projects (< 1 hour target exceeded)
-- Success rate: 98% across diverse customer profiles
-- Error recovery: 100% with checkpoint/resume capability
-- Data accuracy: 100% validation pass rate
+### Project Information
+- Project name, description, and status
+- Start and finish dates
+- Priority levels
+- Project owner information
+- Completion percentage
 
-✅ **Business Impact**:
-- 85% reduction in customer onboarding time (exceeded 80% target)
-- PS team performing migrations independently
-- Near-zero post-migration support requests
-- Customer satisfaction: Excellent
+### Tasks
+- All tasks with their hierarchical structure
+- Task names, descriptions, and notes
+- Start dates, end dates, and durations
+- Status and priority for each task
+- Dependencies between tasks (predecessors)
+- Milestones
+- Constraint types and dates
+- Work hours (planned and actual)
 
-## Quick Reference Links
+### Resources
+- Team member names and contact information
+- Resource types (people, equipment, costs)
+- Rates and availability
+- Department assignments
+- Active status
 
-### Architecture Documentation Series
-- **You are here**: Project Online Migration Overview
-- **Next**: [ETL System Design](./02-etl-system-design.md) - Component architecture and technical specifications
-- **Then**: [Data Transformation Guide](./03-data-transformation-guide.md) - Detailed mapping rules
+### Assignments
+- Which resources are assigned to which tasks
+- Assignment types properly distinguished
+- Team member assignments enable collaboration features
 
-### Implementation Documentation
-- [ETL System Design](./02-etl-system-design.md) - Current implementation state and codebase structure
-- [Data Transformation Guide](./03-data-transformation-guide.md) - Complete data mappings and structure definitions
-- [CLI Usage Guide](../project/CLI-Usage-Guide.md) - Command-line interface documentation
-- [Authentication Setup](../project/Authentication-Setup.md) - Credential configuration
+## Migration Quality
 
-### Development Resources
-- [Integration Tests](../specs/E2E-Integration-Tests.md) - Testing strategy and scenarios
-- [Re-run Resiliency](../project/Re-run-Resiliency.md) - Multi-run support details
-- [Template Workspace](../project/Template-Based-Workspace-Creation.md) - Template usage
+The tool maintains high data integrity:
 
-## Next Steps for New Developers
+- **Data Accuracy**: All data is validated before and after migration
+- **Relationship Preservation**: Task hierarchies, dependencies, and assignments are maintained
+- **Error Handling**: Automatic retry logic handles temporary issues
+- **Resume Capability**: Can continue if the migration is interrupted
 
-1. **Read this overview** ✅ (You're here!)
-2. **Review [ETL System Design](./02-etl-system-design.md)** - Understand component architecture and implementation details
-3. **Study [Data Transformation Guide](./03-data-transformation-guide.md)** - Learn mapping rules
-4. **Setup environment** - Follow [Authentication Setup](../project/Authentication-Setup.md)
-6. **Run tests** - Use [Integration Tests](../specs/E2E-Integration-Tests.md)
+## Security and Privacy
+
+Your data remains secure throughout the migration:
+
+- **Read-Only Access**: The tool only reads from Project Online, never modifies your original data
+- **Encrypted Transfer**: All data transfers use secure HTTPS connections
+- **Credential Protection**: Your credentials are stored locally and never logged
+- **Audit Trail**: Smartsheet tracks who created and modified data
+
+## Next Steps
+
+Ready to learn more about how the migration works? The next guide explains the technical architecture and components.
 
 ---
 
 <div align="center">
 
-| **Start of Series** | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: ETL System Design →](./02-etl-system-design.md) |
+| **Start of Series** | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: System Design →](./02-etl-system-design.md) |
 |:---|:---:|---:|
 
 </div>

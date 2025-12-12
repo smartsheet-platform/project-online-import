@@ -9,7 +9,11 @@
 
 ---
 
-# Project Online Import - Test Suite
+> **📘 Developer Documentation**
+>
+> This document describes the testing framework for developers working on the migration tool. If you're a Project Online user evaluating migration options, you can skip this section.
+
+# Test Suite
 
 This directory contains the complete test suite for the Project Online to Smartsheet ETL tool, including both **unit tests** (using mocks) and **integration tests** (using real Smartsheet API).
 

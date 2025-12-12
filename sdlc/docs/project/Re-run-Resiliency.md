@@ -2,320 +2,115 @@
 
 <div align="center">
 
-| [← Previous: Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet References →](./Sheet-References.md) |
+| [← Previous: Using Workspace Templates](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet Connections →](./Sheet-References.md) |
 |:---|:---:|---:|
 
 </div>
 
 ---
 
-# Re-run Resiliency
-
-## Overview
-
-The Project Online to Smartsheet ETL implements re-run resiliency to handle scenarios where the import process is run multiple times for the same data. This prevents duplicate sheets, duplicate columns, and API errors when operations are retried.
+# Safe Re-runs
 
 **Last Updated**: 2025-12-05
 
----
+## What This Means
 
-## Why Re-run Resiliency Is Needed
-
-### Common Re-run Scenarios
-
-1. **Partial Failures**: The import process fails partway through (network issues, API limits, crashes)
-2. **Data Updates**: Running the import again to update existing data
-3. **Testing/Development**: Running imports multiple times during development
-4. **Manual Re-runs**: Operators manually re-running imports after fixing issues
-
-### Problems Without Resiliency
-
-Without resiliency checks, re-running the import would cause:
-
-- **Duplicate Sheets**: Attempting to create sheets that already exist
-- **Duplicate Columns**: Adding columns that already exist in sheets
-- **API Errors**: Smartsheet API rejecting duplicate creations
-- **Data Integrity Issues**: Multiple versions of the same data
-- **Wasted API Calls**: Unnecessary calls consuming rate limits
+If you need to run a migration more than once for any reason, the tool protects against creating duplicate sheets or columns. This makes it safe to retry a migration if something goes wrong.
 
 ---
 
-## How Resiliency Works
+## Why This Matters
 
-### Sheet-Level Resiliency
+### When You Might Run a Migration Twice
 
-Before creating a sheet, the system checks if a sheet with the same name already exists in the workspace. If it does, the existing sheet is reused instead of creating a new one.
+You might need to run a migration again if:
 
-**Helper Function**: [`getOrCreateSheet()`](../../../src/util/SmartsheetHelpers.ts)
+1. **The Migration Stops Partway Through**: Network issues or other interruptions occur
+2. **You Want to Update Data**: Running the migration again after making changes in Project Online
+3. **You're Testing**: Trying out the migration before committing to it
+4. **You Had an Issue**: Fixing a configuration problem and trying again
 
-```typescript
-// Usage example
-const sheet = await getOrCreateSheet(client, workspaceId, {
-  name: 'Project Tasks',
-  columns: [
-    { title: 'Task Name', type: 'TEXT_NUMBER', primary: true }
-  ]
-});
+### What Could Go Wrong Without Protection
 
-// Result:
-// - If sheet exists: Returns existing sheet
-// - If sheet doesn't exist: Creates and returns new sheet
+Without this safety feature, running a migration twice would cause:
+
+- **Duplicate Sheets**: The tool would try to create sheets that already exist
+- **Duplicate Columns**: Attempting to add columns that are already there
+- **Error Messages**: Smartsheet would reject the duplicate attempts
+- **Data Confusion**: Multiple versions of the same information
+- **Unnecessary Work**: Repeating operations that already completed
+
+---
+
+## How the Protection Works
+
+### Sheet-Level Protection
+
+Before creating a new sheet, the tool checks if a sheet with that name already exists in your workspace. If it finds one, it uses that existing sheet instead of creating a duplicate.
+
+**What Happens**:
+- Tool looks for a sheet with the same name
+- If found: Uses the existing sheet
+- If not found: Creates a new sheet
+
+### Column-Level Protection
+
+Before adding a column to a sheet, the tool checks if a column with that name already exists. If it does, the existing column is used instead of adding a duplicate.
+
+**What Happens**:
+- Tool checks for columns with the same name
+- Existing columns: Kept and reused
+- New columns: Added to the sheet
+- Result: You see which columns were added versus which already existed
+
+Example of what you might see:
 ```
-
-### Column-Level Resiliency
-
-Before adding a column to a sheet, the system checks if a column with the same title already exists. If it does, the existing column is reused instead of adding a duplicate.
-
-**Helper Functions**:
-- [`getOrAddColumn()`](../../../src/util/SmartsheetHelpers.ts) - Add single column with existence check
-- [`addColumnsIfNotExist()`](../../../src/util/SmartsheetHelpers.ts) - Add multiple columns, skipping existing ones
-
-```typescript
-// Single column example
-const column = await getOrAddColumn(client, sheetId, {
-  title: 'Status',
-  type: 'PICKLIST',
-  width: 120
-});
-
-// Multiple columns example
-const results = await addColumnsIfNotExist(client, sheetId, [
-  { title: 'Start Date', type: 'DATE', width: 120 },
-  { title: 'End Date', type: 'DATE', width: 120 },
-  { title: 'Status', type: 'PICKLIST', width: 100 }
-]);
-
-// Results indicate which columns were created vs. existing:
-// [
-//   { title: 'Start Date', id: 123, wasCreated: true },
-//   { title: 'End Date', id: 124, wasCreated: true },
-//   { title: 'Status', id: 125, wasCreated: false }  // Already existed
-// ]
+Results:
+- Start Date: Created (new column)
+- End Date: Created (new column)
+- Status: Already exists (reused existing)
 ```
 
 ---
 
-## Implementation Details
+## Benefits for You
 
-### Helper Utilities
+### Safety and Reliability
 
-All resiliency helpers are located in [`src/util/SmartsheetHelpers.ts`](../../../src/util/SmartsheetHelpers.ts):
+- **Safe Retries**: Run the migration again without worrying about duplicates
+- **Resume from Interruptions**: Continue where you left off if something stops the migration
+- **Efficiency**: Skips work that's already done
+- **Clean Results**: No manual cleanup needed after retries
 
-| Function | Purpose | Returns |
-|----------|---------|---------|
-| `findSheetInWorkspace()` | Check if sheet exists by name | Sheet info or null |
-| `getOrCreateSheet()` | Get existing or create new sheet | Sheet object |
-| `findColumnInSheet()` | Check if column exists by title | Column info or null |
-| `getOrAddColumn()` | Get existing or add new column | Column object |
-| `getColumnMap()` | Get all columns as a map | Map of title → column info |
-| `addColumnsIfNotExist()` | Add multiple columns, skip existing | Array of results |
-| `copyWorkspace()` | Copy workspace with all contents | New workspace info |
-| `renameSheet()` | Rename a sheet | Updated sheet info |
-| `deleteAllRows()` | Delete all rows from a sheet | Number of rows deleted |
-| `findSheetByPartialName()` | Find sheet by partial name match | Sheet info or null |
+### When Testing
 
-### Transformer Integration
-
-The resiliency helpers are integrated into all transformers:
-
-#### ProjectTransformer
-
-[`src/transformers/ProjectTransformer.ts`](../../../src/transformers/ProjectTransformer.ts)
-
-Uses `getOrCreateSheet()` for:
-- Summary sheet creation
-- Task sheet creation  
-- Resource sheet creation
-
-```typescript
-// Before resiliency:
-const summaryResponse = await client.sheets?.createSheetInWorkspace?.({ ... });
-
-// After resiliency:
-const summarySheet = await getOrCreateSheet(client, workspaceId, { ... });
-```
-
-#### TaskTransformer
-
-[`src/transformers/TaskTransformer.ts`](../../../src/transformers/TaskTransformer.ts)
-
-Uses `addColumnsIfNotExist()` for adding task columns:
-- Start Date, End Date, Duration
-- Status, Priority, Constraint Type
-- Work hours, Notes, Predecessors
-- Project Online metadata columns
-
-```typescript
-// Before resiliency:
-for (const column of columnsToAdd) {
-  await client.sheets?.addColumn?.({ sheetId, body: column });
-}
-
-// After resiliency:
-const results = await addColumnsIfNotExist(client, sheetId, columnsToAdd);
-```
-
-#### ResourceTransformer
-
-[`src/transformers/ResourceTransformer.ts`](../../../src/transformers/ResourceTransformer.ts)
-
-Uses `addColumnsIfNotExist()` for adding resource columns:
-- Email, Resource Type, Max Units
-- Rates (Standard, Overtime, Cost Per Use)
-- Department, Code, Active/Generic flags
-- Project Online metadata columns
-
-#### AssignmentTransformer
-
-[`src/transformers/AssignmentTransformer.ts`](../../../src/transformers/AssignmentTransformer.ts)
-
-Uses `getOrAddColumn()` for adding assignment columns:
-- MULTI_CONTACT_LIST columns for Work resources
-- MULTI_PICKLIST columns for Material/Cost resources
+- **Experiment Freely**: Try different approaches without creating a mess
+- **Easy Troubleshooting**: Re-run specific parts to diagnose issues
+- **No Cleanup Needed**: Don't have to manually remove duplicate content
 
 ---
 
-## Testing
+## What Gets Protected
 
-Comprehensive tests verify resiliency behavior in [`test/util/SmartsheetHelpers.test.ts`](../../../test/util/SmartsheetHelpers.test.ts).
+### Always Protected
 
-### Test Coverage
-
-1. **Sheet Existence Checks**
-   - Finding existing sheets
-   - Returning null for non-existent sheets
-   - Creating new sheets when needed
-   - Reusing existing sheets
-
-2. **Column Existence Checks**
-   - Finding existing columns
-   - Returning null for non-existent columns
-   - Adding new columns when needed
-   - Reusing existing columns
-
-3. **Batch Operations**
-   - Adding multiple new columns
-   - Skipping some existing, adding some new
-   - Handling complete re-runs (all columns exist)
-
-4. **Integration Scenarios**
-   - Full re-run of sheet and column creation
-   - Verifying no duplicates created
-   - Confirming same resources reused
-
-### Running Tests
-
-```bash
-# Run all resiliency tests
-npm test -- test/util/SmartsheetHelpers.test.ts
-
-# Run specific test suite
-npm test -- test/util/SmartsheetHelpers.test.ts -t "getOrCreateSheet"
-```
-
----
-
-## Usage Guidelines
-
-### When to Use Resiliency Helpers
-
-✅ **Always use resiliency helpers for:**
-- Creating sheets in workspaces
+✅ **Use for these operations:**
+- Creating new sheets in workspaces
 - Adding columns to sheets
-- Any operation that could be re-run
+- Any operation you might need to run more than once
 
-❌ **Don't use resiliency helpers for:**
-- Adding rows (rows are always new data)
-- Updating existing data (updates are idempotent)
+### Not Needed for Protection
+
+❌ **Don't use for:**
+- Adding data rows (new data is always new)
+- Updating existing information (updates are already safe)
 - One-time setup operations
-
-### Best Practices
-
-1. **Sheet Creation**: Always use `getOrCreateSheet()` instead of direct creation
-   ```typescript
-   // ✅ Good
-   const sheet = await getOrCreateSheet(client, workspaceId, config);
-   
-   // ❌ Bad
-   const sheet = await client.sheets.createSheetInWorkspace({ ... });
-   ```
-
-2. **Column Addition**: Always use `addColumnsIfNotExist()` for multiple columns
-   ```typescript
-   // ✅ Good
-   const results = await addColumnsIfNotExist(client, sheetId, columns);
-   
-   // ❌ Bad
-   for (const col of columns) {
-     await client.sheets.addColumn({ sheetId, body: col });
-   }
-   ```
-
-3. **Error Handling**: Resiliency helpers throw errors for actual failures
-   ```typescript
-   try {
-     const sheet = await getOrCreateSheet(client, workspaceId, config);
-   } catch (error) {
-     // Handle real errors (network, auth, etc.)
-     // Not duplicate errors - those are handled internally
-   }
-   ```
-
-4. **Logging**: Helpers include debug logging for troubleshooting
-   ```typescript
-   // Console output shows:
-   // - Which sheets were found vs. created
-   // - Which columns were found vs. added
-   // - Helps debug re-run scenarios
-   ```
-
----
-
-## Benefits
-
-### Operational Benefits
-
-- **Safer Re-runs**: Can safely re-run imports without creating duplicates
-- **Faster Recovery**: Partial failures can resume from where they left off
-- **Cost Efficiency**: Reduces unnecessary API calls and rate limit usage
-- **Better UX**: No manual cleanup of duplicate sheets/columns needed
-
-### Development Benefits
-
-- **Easier Testing**: Can run tests multiple times without cleanup
-- **Simpler Debugging**: Can re-run specific parts during development
-- **Cleaner Code**: Encapsulates existence checks in reusable helpers
-- **Better Reliability**: Handles edge cases consistently
-
----
-
-## Migration Notes
-
-If updating existing code to use resiliency helpers:
-
-1. Replace direct sheet creation with `getOrCreateSheet()`
-2. Replace direct column addition with `addColumnsIfNotExist()` or `getOrAddColumn()`
-3. Update tests to verify resiliency behavior
-4. Add logging to track which resources were reused vs. created
-
-See the implementation in:
-- [`src/transformers/ProjectTransformer.ts`](../../../src/transformers/ProjectTransformer.ts)
-- [`src/transformers/TaskTransformer.ts`](../../../src/transformers/TaskTransformer.ts)
-- [`src/transformers/ResourceTransformer.ts`](../../../src/transformers/ResourceTransformer.ts)
-- [`src/transformers/AssignmentTransformer.ts`](../../../src/transformers/AssignmentTransformer.ts)
-
----
-
-## Related Documentation
-
-- [ETL System Design](../architecture/02-etl-system-design.md) - Overall system design and implementation details
-- [Data Transformation Guide](../architecture/03-data-transformation-guide.md) - Data transformation rules and sheet structure
 
 ---
 
 <div align="center">
 
-| [← Previous: Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet References →](./Sheet-References.md) |
+| [← Previous: Using Workspace Templates](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet Connections →](./Sheet-References.md) |
 |:---|:---:|---:|
 
 </div>

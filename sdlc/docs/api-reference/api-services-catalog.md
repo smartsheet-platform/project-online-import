@@ -9,6 +9,10 @@
 
 ---
 
+> **📘 Developer Documentation**
+>
+> This document is a technical API reference intended for developers working on the migration tool. If you're a Project Online user evaluating migration options, you can skip this section.
+
 # API Services Reference
 
 This catalog provides a comprehensive reference for all APIs and services used by the Project Online to Smartsheet ETL application.
