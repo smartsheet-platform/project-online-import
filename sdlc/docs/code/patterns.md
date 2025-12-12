@@ -1,26 +1,11 @@
 **📚 Implementation Guide Series**
 
-**Previous**: [← Code Conventions](./conventions.md)
+<div align="center">
 
-📍 **Current**: Code Patterns
+| [← Previous: Code Conventions](./conventions.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Anti-Patterns →](./anti-patterns.md) |
+|:---|:---:|---:|
 
-**Next**: [Anti-Patterns →](./anti-patterns.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
-10. [Code Conventions](../code/conventions.md)
-11. [Code Patterns](../code/patterns.md)
-12. [Anti-Patterns](../code/anti-patterns.md)
-13. [API Services Catalog](../code/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
+</div>
 
 ---
 
@@ -735,33 +720,9 @@ When you need to add a new pattern:
 
 ---
 
-**📚 Implementation Guide Series**
+<div align="center">
 
-**Previous**: [← Code Conventions](./conventions.md)
+| [← Previous: Code Conventions](./conventions.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Anti-Patterns →](./anti-patterns.md) |
+|:---|:---:|---:|
 
-📍 **Current**: Code Patterns
-
-**Next**: [Anti-Patterns →](./anti-patterns.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
-10. [Code Conventions](./conventions.md)
-11. **Code Patterns** (You are here)
-12. [Anti-Patterns](./anti-patterns.md)
-13. [API Services Catalog](../api-reference/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
-
-**🔗 Related Documentation**:
-- [Code Conventions](./conventions.md) - Coding standards and naming conventions
-- [Anti-Patterns](./anti-patterns.md) - Common mistakes to avoid
-- [ETL System Design](../architecture/02-etl-system-design.md) - Component architecture details
-
----
+</div>

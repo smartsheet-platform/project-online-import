@@ -1,26 +1,13 @@
 **📚 Implementation Guide Series**
 
-**Previous**: [← Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+<div align="center">
 
-📍 **Current**: Re-run Resiliency
+| [← Previous: Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet References →](./Sheet-References.md) |
+|:---|:---:|---:|
 
-**Next**: [Sheet References →](./Sheet-References.md)
+</div>
 
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
-10. [Code Conventions](../code/conventions.md)
-11. [Code Patterns](../code/patterns.md)
-12. [Anti-Patterns](../code/anti-patterns.md)
-13. [API Services Catalog](../code/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
+---
 
 # Re-run Resiliency
 
@@ -326,27 +313,9 @@ See the implementation in:
 
 ---
 
-**📚 Implementation Guide Series**
+<div align="center">
 
-**Previous**: [← Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
+| [← Previous: Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet References →](./Sheet-References.md) |
+|:---|:---:|---:|
 
-📍 **Current**: Re-run Resiliency
-
-**Next**: [Sheet References →](./Sheet-References.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md)
-5. **Re-run Resiliency** (You are here)
-6. [Sheet References](./Sheet-References.md)
-7. [Authentication Setup](./Authentication-Setup.md)
-8. [CLI Usage Guide](./CLI-Usage-Guide.md)
-
-**🔗 Related Documentation**:
-- [Template-Based Workspace Creation](./Template-Based-Workspace-Creation.md) - Template-based workspace approach
-- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture and components
-
-**Version**: 1.0
-**Status**: Implemented and Tested
+</div>

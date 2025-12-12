@@ -1,846 +1,436 @@
 **📚 Implementation Guide Series**
 
-**Previous**: [← CLI Usage Guide](../project/CLI-Usage-Guide.md)
+<div align="center">
 
-📍 **Current**: Troubleshooting Playbook
+| [← Previous: CLI Usage Guide](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
+|:---|:---:|---:|
 
-**Next**: [Code Conventions →](./conventions.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
-10. [Code Conventions](../code/conventions.md)
-11. [Code Patterns](../code/patterns.md)
-12. [Anti-Patterns](../code/anti-patterns.md)
-13. [API Services Catalog](../code/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
+</div>
 
 ---
 
 # Project Online Import - Troubleshooting Playbook
 
-This playbook provides systematic approaches to diagnosing and resolving common issues with the Project Online to Smartsheet ETL tool.
+This document provides systematic approaches to diagnose and resolve common issues encountered during Project Online to Smartsheet migration.
 
-## Quick Diagnostic Commands
+## Overview
 
-```bash
-# Check configuration
-npm run config
+This playbook contains real-world troubleshooting scenarios based on production experience. Each entry includes:
 
-# Run in debug mode
-LOG_LEVEL=DEBUG npm run import -- --source <project-id>
+- **Symptoms**: What you're seeing
+- **Root Cause**: Why it's happening
+- **Diagnosis Steps**: How to confirm the issue
+- **Solutions**: How to fix it
+- **Prevention**: How to avoid in future runs
 
-# Validate environment
-node -e "console.log(process.env.SMARTSHEET_API_TOKEN ? 'Token set' : 'Token missing')"
+**Last Updated**: 2024-12-08
 
-# Test authentication
-npm run test -- --testNamePattern="authentication"
-
-# Run integration tests
-npm run test:integration
-```
+---
 
 ## Common Error Categories
 
-### Configuration Errors
+### 1. Authentication & Connection Issues
 
-#### Error: "Configuration Error: SMARTSHEET_API_TOKEN is required"
-
-**Symptoms**:
-```
-❌ Configuration Error: SMARTSHEET_API_TOKEN is required but not set
-💡 What to do: Update your .env file to set SMARTSHEET_API_TOKEN correctly
-```
-
-**Diagnosis**:
-1. Check if `.env` file exists: `ls -la .env`
-2. Check if token is set: `grep SMARTSHEET_API_TOKEN .env`
-3. Check if token is valid length (26 characters)
-
-**Resolution**:
-```bash
-# 1. Copy sample if .env doesn't exist
-cp .env.sample .env
-
-# 2. Edit .env and add token
-# SMARTSHEET_API_TOKEN=your_26_character_token
-
-# 3. Verify token format
-node -e "const t = process.env.SMARTSHEET_API_TOKEN; console.log(t ? \`Length: \${t.length}\` : 'Not set')"
-
-# 4. Get token from Smartsheet:
-# - Go to Account > Personal Settings > API Access
-# - Generate New Access Token
-# - Copy 26-character token to .env
-```
-
-**Prevention**:
-- Add `.env` to `.gitignore` (already done)
-- Use `.env.sample` as template
-- Document token requirements in README
-
----
-
-#### Error: "Configuration Error: Invalid format for SMARTSHEET_API_TOKEN"
+#### Error: "Authentication failed (401 Unauthorized)"
 
 **Symptoms**:
-```
-⚠️  SMARTSHEET_API_TOKEN format may be invalid. Expected 26-character alphanumeric token.
-```
-
-**Diagnosis**:
-```bash
-# Check token length and format
-node -e "
-const token = process.env.SMARTSHEET_API_TOKEN || '';
-console.log('Length:', token.length);
-console.log('Valid format:', /^[a-zA-Z0-9]{26}$/.test(token));
-console.log('Sample:', token.substring(0, 4) + '...' + token.substring(token.length - 4));
-"
-```
-
-**Resolution**:
-1. Token must be exactly 26 alphanumeric characters
-2. No spaces, no special characters
-3. Regenerate token in Smartsheet if corrupted
-4. Copy carefully (no line breaks)
-
----
-
-### Authentication Errors
-
-#### Error: "Authentication error: Failed to acquire token from Azure AD"
-
-**Symptoms**:
-```
-❌ Authentication error: Failed to acquire token
-💡 What to do: Check TENANT_ID, CLIENT_ID, CLIENT_SECRET are correct
-```
-
-**Diagnosis**:
-1. **Check credentials are set**:
-```bash
-echo "TENANT_ID: ${TENANT_ID:0:8}..."
-echo "CLIENT_ID: ${CLIENT_ID:0:8}..."
-echo "CLIENT_SECRET: ${CLIENT_SECRET:0:8}..."
-```
-
-2. **Verify format** (all should be GUIDs):
-```bash
-node -e "
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-console.log('TENANT_ID valid:', uuidRegex.test(process.env.TENANT_ID || ''));
-console.log('CLIENT_ID valid:', uuidRegex.test(process.env.CLIENT_ID || ''));
-"
-```
-
-3. **Test authentication manually**:
-```bash
-# Use curl to test Azure AD token endpoint
-curl -X POST "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "client_id=${CLIENT_ID}" \
-  -d "client_secret=${CLIENT_SECRET}" \
-  -d "scope=https://<your-domain>.sharepoint.com/.default" \
-  -d "grant_type=client_credentials"
-```
-
-**Resolution**:
-1. **Verify Azure AD App Registration**:
-   - Go to Azure Portal → Azure Active Directory → App registrations
-   - Find your app registration
-   - Copy Application (client) ID → `CLIENT_ID`
-   - Copy Directory (tenant) ID → `TENANT_ID`
-   
-2. **Create/Verify Client Secret**:
-   - In app registration → Certificates & secrets
-   - Create new client secret if expired
-   - Copy secret VALUE (not ID) → `CLIENT_SECRET`
-   
-3. **Verify API Permissions**:
-   - API permissions should include Sites.Read.All or Sites.FullControl.All
-   - Grant admin consent if required
-
-4. **Check expiration**:
-   - Client secrets expire (check expiration date)
-   - Rotate before expiry
-
-**Prevention**:
-- Set calendar reminders for secret expiration
-- Use key vault for production
-- Document app registration setup
-
----
-
-#### Error: "AADSTS700016: Application not found in directory"
-
-**Symptoms**:
-```
-Error: AADSTS700016: Application with identifier 'xxx' was not found in the directory
-```
-
-**Diagnosis**:
-- CLIENT_ID doesn't match any app registration in TENANT_ID
-- Wrong tenant or wrong client ID
-
-**Resolution**:
-1. Verify CLIENT_ID and TENANT_ID match
-2. Check app registration exists in correct tenant
-3. Ensure app is not deleted or disabled
-
----
-
-### API Errors
-
-#### Error: "API rate limit exceeded"
-
-**Symptoms**:
-```
-❌ API rate limit exceeded
-💡 What to do: Wait 60 seconds before retrying. Consider reducing batch size.
-```
-
-**Diagnosis**:
-```bash
-# Check current batch size
-grep BATCH_SIZE .env
-
-# Monitor API calls
-LOG_LEVEL=DEBUG npm run import 2>&1 | grep "API call"
-```
-
-**Resolution**:
-1. **Wait for rate limit reset** (usually 60 seconds)
-2. **Reduce batch size**:
-```bash
-# In .env
-BATCH_SIZE=50  # Down from default 100
-```
-3. **Add delays between operations**
-4. **Check rate limit headers** in debug logs
-
-**Prevention**:
-- Implement rate limiting (already done in ProjectOnlineClient)
-- Batch operations when possible
-- Use pagination efficiently
-
----
-
-#### Error: "Network error: ECONNREFUSED" or "ETIMEDOUT"
-
-**Symptoms**:
-```
-❌ Failed to connect to Project Online: ECONNREFUSED
-💡 What to do: Check internet connection and verify PROJECT_ONLINE_URL
-```
-
-**Diagnosis**:
-1. **Test basic connectivity**:
-```bash
-# Ping Project Online
-ping <your-tenant>.sharepoint.com
-
-# Test HTTPS
-curl -I https://<your-tenant>.sharepoint.com
-```
-
-2. **Verify URL format**:
-```bash
-# Should be: https://<tenant>.sharepoint.com/sites/<site>
-echo $PROJECT_ONLINE_URL
-```
-
-3. **Check proxy settings** (if behind corporate firewall):
-```bash
-echo $HTTP_PROXY
-echo $HTTPS_PROXY
-```
-
-**Resolution**:
-1. Verify internet connection
-2. Check PROJECT_ONLINE_URL is correct
-3. Configure proxy if needed:
-```bash
-# In .env
-HTTP_PROXY=http://proxy.company.com:8080
-HTTPS_PROXY=http://proxy.company.com:8080
-```
-4. Check firewall/VPN requirements
-5. Test from different network if possible
-
----
-
-#### Error: "Request failed with status code 404"
-
-**Symptoms**:
-```
-❌ Project not found: Request failed with status code 404
-```
-
-**Diagnosis**:
-1. **Verify project ID**:
-```bash
-# Project ID should be a GUID
-echo "Project ID: ${PROJECT_ID}"
-# Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
-
-2. **Test project access**:
-```bash
-# Try listing all projects
-npm run import -- --list-projects
-```
-
-**Resolution**:
-1. Verify project ID is correct (copy from Project Online)
-2. Check user has access to project
-3. Verify project is published (not draft)
-4. Check project hasn't been deleted
-
----
-
-### Data Transformation Errors
-
-#### Error: "Validation error: Project Name must be non-empty string"
-
-**Symptoms**:
-```
-❌ Validation error: Project Name must be non-empty string
-💡 What to do: Check source data for missing required fields
-```
-
-**Diagnosis**:
-```bash
-# Run validation only
-npm run validate -- --source <project-id>
-
-# Check raw Project Online data
-LOG_LEVEL=DEBUG npm run import 2>&1 | grep "Project data"
-```
-
-**Resolution**:
-1. Check Project Online project has Name field populated
-2. Verify OData query includes Name field
-3. Fix data in Project Online source
-4. Re-run import after fixing
-
----
-
-#### Error: "Failed to transform task: Invalid OutlineLevel"
-
-**Symptoms**:
-```
-❌ Failed to transform 5 of 100 tasks
-Task ID xxx has invalid OutlineLevel
-```
-
-**Diagnosis**:
-1. Check task hierarchy in Project Online
-2. Verify OutlineLevel values are sequential
-3. Look for orphaned tasks (parent doesn't exist)
-
-**Resolution**:
-1. Fix task hierarchy in Project Online
-2. Ensure all parent tasks exist
-3. Verify OutlineLevel starts at 1 (not 0)
-
----
-
-### Smartsheet API Errors
-
-#### Error: "Smartsheet API Error: Invalid column type"
-
-**Symptoms**:
-```
-❌ Failed to create column: Invalid column type for PREDECESSOR
-```
-
-**Diagnosis**:
-- PREDECESSOR column type only valid on project sheets
-- Dependencies must be enabled first
-
-**Resolution**:
-```typescript
-// Ensure dependencies are enabled before adding PREDECESSOR column
-await client.sheets.updateSheet({
-  sheetId,
-  body: { dependenciesEnabled: true }
-});
-
-// Then add PREDECESSOR column
-await client.sheets.addColumn({
-  sheetId,
-  body: {
-    title: 'Predecessors',
-    type: 'PREDECESSOR'
-  }
-});
-```
-
----
-
-#### Error: "Cannot set Duration column value when dependencies enabled"
-
-**Symptoms**:
-```
-❌ Error 500: Cannot set value for Duration column
-```
-
-**Diagnosis**:
-- Duration is auto-calculated from Start/End dates when dependencies enabled
-- Attempting to set it directly causes 500 error
-
-**Resolution**:
-```typescript
-// Don't set Duration directly
-// if (columnMap['Duration']) {
-//   cells.push({ columnId: columnMap['Duration'], value: duration });
-// }
-
-// Instead, set Start and End dates - Duration auto-calculated
-if (columnMap['Start Date']) {
-  cells.push({ columnId: columnMap['Start Date'], value: startDate });
-}
-if (columnMap['End Date']) {
-  cells.push({ columnId: columnMap['End Date'], value: endDate });
-}
-```
-
----
-
-### Template Workspace Errors
-
-#### Error: "Template workspace not found: [WORKSPACE_ID]"
-
-**Symptoms**:
-```
-❌ Failed to copy workspace: Workspace [ID] not found
-💡 What to do: Verify template workspace exists and API token has access
-```
-
-**Diagnosis**:
-```bash
-# Check environment configuration
-echo "TEMPLATE_WORKSPACE_ID: $TEMPLATE_WORKSPACE_ID"
-
-# If TEMPLATE_WORKSPACE_ID is set, check if token can access workspace
-if [ -n "$TEMPLATE_WORKSPACE_ID" ]; then
-  node -e "
-  const client = require('smartsheet');
-  const smartsheet = client.createClient({ accessToken: process.env.SMARTSHEET_API_TOKEN });
-  smartsheet.workspaces.getWorkspace({ workspaceId: process.env.TEMPLATE_WORKSPACE_ID })
-    .then(ws => console.log('Found:', ws.name))
-    .catch(err => console.log('Error:', err.message));
-  "
-else
-  echo "TEMPLATE_WORKSPACE_ID not set - will create blank workspaces"
-fi
-```
-
-**Resolution**:
-1. **Verify template workspace exists** (if using template)
-2. **Share workspace with API token user**:
-   - Open template workspace in Smartsheet
-   - Share with user who owns API token
-   - Grant Editor or Admin access
-3. **Alternative**: Leave `TEMPLATE_WORKSPACE_ID` empty to create blank workspaces
-
-**Creating Template Workspace** (Optional):
-1. Create new workspace: "Project Template"
-2. Add three sheets:
-   - "Summary" (15 columns)
-   - "Tasks" (18 columns)
-   - "Resources" (18 columns)
-3. Configure column structures per specification
-4. Share with API token user
-5. Set `TEMPLATE_WORKSPACE_ID` in .env file:
+- Import fails immediately with authentication error
+- Validation command shows "Authentication failed"
+- Token-related errors in logs
+
+**Root Cause**:
+- Invalid or expired Azure AD credentials
+- Incorrect client secret
+- Missing API permissions
+- Project Online URL format incorrect
+
+**Diagnosis Steps**:
+1. Run validation command: `npm run dev validate -- --source [project-id]`
+2. Check `.env` file for correct values:
    ```bash
-   # Template Workspace ID (optional)
-   # Leave empty to create blank workspaces from scratch
-   TEMPLATE_WORKSPACE_ID=your_template_workspace_id
+   TENANT_ID=your-tenant-id
+   CLIENT_ID=your-client-id
+   CLIENT_SECRET=your-client-secret
+   PROJECT_ONLINE_URL=https://your-tenant.sharepoint.com/sites/pwa
+   ```
+3. Verify client secret hasn't expired in Azure portal
+4. Test Project Online URL in browser
+
+**Solutions**:
+1. **Rotate client secret**:
+   - Azure portal → App registration → Certificates & secrets
+   - Create new client secret
+   - Update `.env` with new secret value
+2. **Fix URL format**:
+   - Must be: `https://[tenant].sharepoint.com/sites/[site-name]`
+   - Example: `https://contoso.sharepoint.com/sites/pwa`
+3. **Grant admin consent**:
+   - Azure portal → App registration → API permissions
+   - Click "Grant admin consent for [Organization]"
+
+**Prevention**:
+- Set client secret expiration for 12-24 months
+- Keep separate development/production credentials
+- Validate configuration before each major migration
+
+#### Error: "Access forbidden (403 Forbidden)"
+
+**Symptoms**:
+- Authentication succeeds but API calls fail
+- "Insufficient permissions" errors
+- Can see Project Online data but can't create workspace
+
+**Root Cause**:
+- Missing SharePoint API permissions
+- Incorrect Smartsheet API token scope
+- License restrictions on Smartsheet account
+
+**Diagnosis Steps**:
+1. Verify Azure AD permissions:
+   - Azure portal → App registration → API permissions
+   - Must have **Sites.ReadWrite.All** with green checkmark
+2. Check Smartsheet API token:
+   - Must be owner/admin of destination workspace location
+   - Token must have create workspace permissions
+3. Test Smartsheet API directly:
+   ```bash
+   curl -H "Authorization: Bearer $SMARTSHEET_API_TOKEN" \
+        "https://api.smartsheet.com/2.0/users/me"
    ```
 
----
-
-### Re-run / Resiliency Errors
-
-#### Error: "Sheet already exists but has different structure"
-
-**Symptoms**:
-```
-⚠️  Sheet 'Project X - Tasks' already exists but missing expected columns
-```
-
-**Diagnosis**:
-- Previous import failed mid-process
-- Sheet exists but incomplete
-
-**Resolution**:
-1. **Option A: Use existing sheet** (recommended):
-```typescript
-// Resiliency helpers automatically add missing columns
-await addColumnsIfNotExist(client, sheetId, requiredColumns);
-```
-
-2. **Option B: Delete and recreate**:
-   - Delete incomplete sheet in Smartsheet
-   - Re-run import (will create fresh sheet)
-
-3. **Option C: Manual cleanup**:
-   - Add missing columns manually in Smartsheet
-   - Ensure column types match specification
-   - Re-run import
+**Solutions**:
+1. **Add missing permissions**:
+   - Azure portal → API permissions → Add permission
+   - Select **SharePoint** → **Application permissions**
+   - Check **Sites.ReadWrite.All** → Grant admin consent
+2. **Use correct Smartsheet token**:
+   - Account → Personal Settings → API Access
+   - Generate new token with proper scope
+3. **Check Smartsheet account limits**:
+   - Verify workspace creation limits not exceeded
+   - Ensure proper licensing (Professional or higher)
 
 **Prevention**:
-- Use resiliency helpers (`getOrCreateSheet`, `addColumnsIfNotExist`)
-- Don't interrupt imports mid-process
-- Use dry-run mode first: `--dry-run`
+- Document required permissions in setup guide
+- Use validation command before each migration
+- Maintain separate test/production environments
+
+### 2. Data Transformation Issues
+
+#### Error: "Invalid data format" or "Transformation failed"
+
+**Symptoms**:
+- Import fails during transformation phase
+- Errors about invalid dates, numbers, or strings
+- Specific field mentioned in error message
+
+**Root Cause**:
+- Unexpected data formats in Project Online
+- Missing required fields
+- Invalid characters in names/descriptions
+- Data quality issues in source system
+
+**Diagnosis Steps**:
+1. Identify failing field from error message
+2. Run validation command to check data quality:
+   ```bash
+   npm run dev validate -- --source [project-id] --verbose
+   ```
+3. Export problematic Project Online data:
+   ```typescript
+   // Quick debug script
+   const client = new ProjectOnlineClient(config);
+   const project = await client.getProject(projectId);
+   console.log(JSON.stringify(project, null, 2));
+   ```
+4. Compare with expected format in [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
+
+**Solutions**:
+1. **Handle null/undefined values**:
+   ```typescript
+   // Before
+   const name = project.Name;
+   
+   // After
+   const name = project.Name || 'Unnamed Project';
+   ```
+2. **Add data validation**:
+   ```typescript
+   function validateProject(project: Project): void {
+     if (!project.Name || project.Name.trim() === '') {
+       throw ErrorHandler.validationError('Project Name', 'non-empty string');
+     }
+     if (project.StartDate && isNaN(new Date(project.StartDate).getTime())) {
+       throw ErrorHandler.validationError('Start Date', 'valid ISO date string');
+     }
+   }
+   ```
+3. **Add character sanitization**:
+   ```typescript
+   function sanitizeName(name: string): string {
+     return name
+       .replace(/[/\\:*?"<>|]/g, '-')
+       .replace(/-+/g, '-')
+       .trim()
+       .substring(0, 100);
+   }
+   ```
+
+**Prevention**:
+- Add comprehensive input validation
+- Create unit tests for edge cases
+- Document expected data formats
+- Implement data quality checks in validation command
+
+#### Error: "Duplicate sheets" or "Column already exists"
+
+**Symptoms**:
+- Warning about existing sheets during import
+- "Column already exists" messages
+- Multiple identical sheets created
+
+**Root Cause**:
+- Running import multiple times without cleanup
+- Resiliency helpers not working correctly
+- Template workspace already contains project sheets
+
+**Diagnosis Steps**:
+1. Check workspace before import:
+   ```bash
+   npm run dev validate -- --destination [workspace-id]
+   ```
+2. Look for existing sheets with similar names
+3. Verify resiliency helpers are called:
+   ```typescript
+   // Should be using these:
+   await getOrCreateSheet(client, workspaceId, sheetConfig);
+   await addColumnsIfNotExist(client, sheetId, columns);
+   ```
+
+**Solutions**:
+1. **Use proper resiliency helpers**:
+   ```typescript
+   // ✅ Correct
+   const sheet = await getOrCreateSheet(client, workspaceId, {
+     name: `${projectName} - Tasks`,
+     columns: baseTaskColumns
+   });
+   
+   const results = await addColumnsIfNotExist(client, sheet.id, customColumns);
+   ```
+2. **Manual cleanup** (if needed):
+   - Delete duplicate sheets manually
+   - Or use cleanup script: `scripts/cleanup-test-workspaces.ts`
+3. **Update template workspace**:
+   - Ensure template doesn't contain project-specific sheets
+   - Only contain PMO Standards reference sheets
+
+**Prevention**:
+- Always use resiliency helpers for sheet/column creation
+- Never run import on production workspace without verification
+- Use separate test workspaces for development
+- Implement proper re-run resiliency from start
+
+### 3. Performance & Scaling Issues
+
+#### Error: "API rate limit exceeded" or Slow Performance
+
+**Symptoms**:
+- Import takes significantly longer than expected
+- Errors about rate limiting
+- Logs show many retry attempts
+- System appears unresponsive
+
+**Root Cause**:
+- Too many API calls without batching
+- Rate limiting not properly implemented
+- Large datasets processing sequentially
+- Network latency issues
+
+**Diagnosis Steps**:
+1. Check logs for rate limit messages:
+   ```bash
+   # Look for these patterns:
+   # "Rate limit exceeded, waiting X seconds"
+   # "Retry attempt Y of Z"
+   ```
+2. Measure API call count:
+   ```typescript
+   // Add debug logging
+   let apiCallCount = 0;
+   
+   async function wrappedApiCall(fn: () => Promise<any>) {
+     apiCallCount++;
+     if (apiCallCount % 100 === 0) {
+       logger.debug(`API calls so far: ${apiCallCount}`);
+     }
+     return await fn();
+   }
+   ```
+3. Compare with expected call count from architecture docs
+4. Test with smaller dataset to isolate issue
+
+**Solutions**:
+1. **Enable batch operations**:
+   ```typescript
+   // Before - individual calls
+   for (const task of tasks) {
+     await client.addRow(sheetId, task);
+   }
+   
+   // After - batch operation
+   await client.addRows(sheetId, tasks);
+   ```
+2. **Optimize rate limiting**:
+   ```typescript
+   // Check built-in rate limiting in ProjectOnlineClient
+   // Should already be implemented with proper backoff
+   
+   // For custom operations:
+   const rateLimiter = new RateLimiter(250); // 250 calls/minute
+   await rateLimiter.checkLimit();
+   await client.createRow(sheetId, task);
+   ```
+3. **Parallelize independent operations**:
+   ```typescript
+   // Before - sequential
+   for (const project of projects) {
+     await importProject(project);
+   }
+   
+   // After - parallel with concurrency control
+   const concurrency = 3; // Match rate limit capabilities
+   for (let i = 0; i < projects.length; i += concurrency) {
+     const batch = projects.slice(i, i + concurrency);
+     await Promise.all(batch.map(p => importProject(p)));
+   }
+   ```
+
+**Prevention**:
+- Design with batch operations from start
+- Implement comprehensive rate limiting early
+- Test with large datasets during development
+- Monitor API usage patterns in production
+
+### 4. Integration Issues
+
+#### Error: "Reference sheet not found" or Picklist Issues
+
+**Symptoms**:
+- Errors about missing PMO Standards sheets
+- Picklist columns show empty or wrong values
+- Cross-sheet reference failures
+
+**Root Cause**:
+- PMO Standards workspace not created/setup
+- Reference sheet IDs incorrect
+- Workspace permissions issues
+- Template workspace missing reference sheets
+
+**Diagnosis Steps**:
+1. Verify PMO Standards workspace exists:
+   ```bash
+   npm run dev validate -- --pmo-standards
+   ```
+2. Check reference sheet configuration:
+   ```typescript
+   // Debug output
+   logger.debug('PMO Standards Info:', configManager.get().pmoStandards);
+   ```
+3. Manually verify sheets in Smartsheet UI
+4. Check workspace sharing permissions
+
+**Solutions**:
+1. **Create missing reference sheets**:
+   ```typescript
+   // Auto-create PMO Standards if missing
+   const pmoWorkspace = await getOrCreatePMOStandards(client);
+   const statusSheet = await getOrCreateSheet(client, pmoWorkspace.id, {
+     name: 'Project - Status',
+     columns: [{ title: 'Value', type: 'TEXT_NUMBER', primary: true }]
+   });
+   ```
+2. **Update configuration**:
+   ```bash
+   # In .env
+   PMO_STANDARDS_WORKSPACE_ID=existing_workspace_id
+   ```
+3. **Fix template workspace**:
+   - Ensure template contains all reference sheets
+   - Verify sheet names match expected values
+
+**Prevention**:
+- Include PMO Standards setup in installation process
+- Add validation for reference sheets
+- Document required workspace structure
+- Create automated setup script
 
 ---
 
-## Systematic Troubleshooting Process
+## Diagnostic Commands
 
-### Step 1: Identify Error Category
-
-1. **Configuration** → Missing/invalid .env values
-2. **Authentication** → Azure AD or API token issues  
-3. **Network** → Connectivity problems
-4. **API** → Rate limits, permissions, endpoints
-5. **Data** → Validation, transformation errors
-6. **Logic** → Code bugs, edge cases
-
-### Step 2: Gather Diagnostic Information
+### Quick Health Check
 
 ```bash
-# Enable verbose logging
-export LOG_LEVEL=DEBUG
+# Check authentication
+npm run dev validate -- --source [project-id]
 
-# Capture full output
-npm run import -- --source <id> 2>&1 | tee import.log
+# Check destination workspace
+npm run dev validate -- --destination [workspace-id]
 
-# Check configuration
-npm run config > config.txt
-
-# Check versions
-node --version > diagnostics.txt
-npm --version >> diagnostics.txt
-npm list --depth=0 >> diagnostics.txt
+# Check PMO Standards
+npm run dev validate -- --pmo-standards
 ```
 
-### Step 3: Isolate the Issue
+### Detailed Debugging
 
-1. **Test in isolation**:
 ```bash
-# Test just authentication
-npm test -- --testNamePattern="auth"
+# Verbose logging
+npm run dev import -- --source [project-id] --destination [workspace-id] --verbose
 
-# Test just one transformer
-npm test -- ProjectTransformer
+# Dry-run mode (no changes)
+npm run dev import -- --source [project-id] --destination [workspace-id] --dry-run
+
+# Specific phase debugging
+npm run dev validate -- --source [project-id] --only transformation
 ```
 
-2. **Reduce complexity**:
-   - Try with smaller dataset
-   - Skip optional features
-   - Use mock clients in tests
+### Log Analysis
 
-3. **Compare with working case**:
-   - Use sample data from `sample-workspace-info.json`
-   - Test with known-good project
-
-### Step 4: Check Assumptions
-
-Common false assumptions:
-- ❌ "The API token hasn't expired" → Check expiration
-- ❌ "The project ID is correct" → Verify in UI
-- ❌ "Dependencies are installed" → Run `npm install`
-- ❌ "Environment is loaded" → Print `process.env`
-- ❌ "The test data is valid" → Validate against schema
-
-### Step 5: Search Documentation
-
-1. **Project docs**: `sdlc/docs/project/`
-2. **This troubleshooting guide**
-3. **API documentation**:
-   - [Smartsheet API](https://smartsheet.redoc.ly/)
-   - [Project Online OData](https://docs.microsoft.com/en-us/previous-versions/office/project-odata/)
-4. **Error handler source**: `src/util/ErrorHandler.ts`
-
-### Step 6: Enable Debug Mode
-
-```typescript
-// In code - add temporary debug logging
-console.log('DEBUG: Value =', JSON.stringify(value, null, 2));
-
-// Use debugger
-debugger;  // In Node.js with --inspect
-
-// Check intermediate values
-const intermediate = transformStep1(data);
-logger.debug('After step 1:', intermediate);
-const final = transformStep2(intermediate);
-logger.debug('Final result:', final);
-```
-
-### Step 7: Create Minimal Reproduction
-
-```typescript
-// Isolate the failing case
-const minimalProject = {
-  Id: '123',
-  Name: 'Test',
-  // Only essential fields
-};
-
-const result = await transformer.transformProject(minimalProject);
-// Does it fail? If yes, good minimal reproduction
-```
-
-## Performance Issues
-
-### Symptom: Import Takes Too Long
-
-**Diagnosis**:
+**Common patterns to search for**:
 ```bash
-# Profile with time tracking
-time npm run import -- --source <id>
+# Authentication issues
+grep -i "auth\|401\|403" import.log
 
-# Check API call counts in debug mode
-LOG_LEVEL=DEBUG npm run import 2>&1 | grep "API call" | wc -l
+# Rate limiting
+grep -i "rate\|limit\|429" import.log
+
+# Data validation
+grep -i "validation\|invalid" import.log
+
+# API errors
+grep -i "error\|fail" import.log
 ```
-
-**Common Causes**:
-1. **Too many API calls** (N+1 problem)
-2. **Large dataset** without batching
-3. **No parallelization**
-4. **Retry loops** on persistent errors
-5. **Network latency**
-
-**Resolution**:
-1. **Batch operations**:
-```typescript
-// Bad: N API calls
-for (const row of rows) {
-  await client.addRow(sheetId, row);
-}
-
-// Good: 1 API call
-await client.addRows(sheetId, rows);
-```
-
-2. **Parallel when safe**:
-```typescript
-// Sequential
-const tasks = await getTasks();
-const resources = await getResources();
-
-// Parallel (if independent)
-const [tasks, resources] = await Promise.all([
-  getTasks(),
-  getResources()
-]);
-```
-
-3. **Cache expensive operations**:
-```typescript
-// Cache column map
-const columnMap = await getColumnMap(client, sheetId);
-// Reuse for all rows
-```
-
-4. **Use progress reporting** to identify bottlenecks
 
 ---
 
-## Getting Help
+## Escalation Path
 
-### Before Asking for Help
+If you cannot resolve an issue with this playbook:
 
-Prepare this information:
-1. **Error message** (full text)
-2. **Steps to reproduce**
-3. **Expected vs actual behavior**
-4. **Environment**:
-   - Node.js version
-   - Operating system
-   - Package versions
-5. **Configuration** (sanitized - no tokens!)
-6. **Logs** (debug mode)
-
-### Creating a Bug Report
-
-```markdown
-## Description
-Brief description of issue
-
-## Steps to Reproduce
-1. Run `npm run import --source <id>`
-2. Observe error: "..."
-
-## Expected Behavior
-Should create workspace with 3 sheets
-
-## Actual Behavior
-Error: "Configuration Error: ..."
-
-## Environment
-- Node.js: v18.17.0
-- OS: macOS 14.0
-- Package version: 1.0.0
-
-## Logs
-```
-[Paste relevant logs here]
-```
-
-## Configuration (Sanitized)
-SMARTSHEET_API_TOKEN: abc...xyz (26 chars)
-TENANT_ID: 550e8400...
-```
-
-### Support Channels
-
-1. **Search existing issues** in project repository
-2. **Check documentation** in `sdlc/docs/`
-3. **Review this troubleshooting guide**
-4. **Ask team** in project chat/Slack
-5. **Create issue** with bug report template
-
-## Preventive Measures
-
-### Development Best Practices
-
-1. **Always use error handling**
-2. **Write tests for edge cases**
-3. **Validate inputs**
-4. **Use resiliency helpers**
-5. **Enable debug logging during development**
-6. **Test with real data** (sample size)
-
-### Operations Best Practices
-
-1. **Monitor API token expiration**
-2. **Set up alerting** for failures
-3. **Log to file** for audit trail
-4. **Use dry-run mode** first
-5. **Backup before major operations**
-6. **Document custom configurations**
-
-### Monitoring Checklist
-
-- [ ] API token valid and not expired
-- [ ] Azure AD client secret not expired
-- [ ] API rate limits not exceeded
-- [ ] Network connectivity stable
-- [ ] Template workspace accessible
-- [ ] Test suite passing
-- [ ] Recent imports successful
-
-## Quick Reference
-
-### Environment Variables Checklist
-
-```bash
-# Required
-✓ SMARTSHEET_API_TOKEN (26 chars)
-✓ TENANT_ID (GUID)
-✓ CLIENT_ID (GUID)
-✓ CLIENT_SECRET (string)
-
-# Recommended
-✓ PROJECT_ONLINE_URL
-✓ PMO_STANDARDS_WORKSPACE_ID
-
-# Optional
-○ TEMPLATE_WORKSPACE_ID (blank = create from scratch)
-○ LOG_LEVEL (DEBUG/INFO/WARN/ERROR)
-○ BATCH_SIZE (default: 100)
-○ MAX_RETRIES (default: 3)
-○ DRY_RUN (true/false)
-```
-
-### Common Commands
-
-```bash
-# Validate configuration
-npm run config
-
-# Run import
-npm run import -- --source <project-guid>
-
-# Dry run (no changes)
-npm run import -- --source <project-guid> --dry-run
-
-# Debug mode
-LOG_LEVEL=DEBUG npm run import -- --source <project-guid>
-
-# Run tests
-npm test
-
-# Integration tests
-npm run test:integration
-
-# Lint and format
-npm run lint
-npm run format
-```
-
-### Log Levels
-
-- **DEBUG**: All details, including API calls and transformations
-- **INFO**: Progress updates and major milestones (default)
-- **WARN**: Non-fatal issues, deprecations
-- **ERROR**: Fatal errors, exceptions
-- **SILENT**: No output
-
-### Exit Codes
-
-- `0`: Success
-- `1`: General error
-- `2`: Configuration error
-- `3`: Authentication error
-- `4`: Validation error
-- `5`: API error
+1. **Check GitHub issues** - Search for similar problems
+2. **Review recent commits** - Look for related fixes
+3. **Contact team lead** - Provide:
+   - Complete error messages
+   - Relevant log excerpts
+   - Steps to reproduce
+   - Configuration details (without secrets)
 
 ---
 
-Remember: Most issues are configuration or environment problems. Check `.env` first, test authentication second, then investigate data/logic issues.
+<div align="center">
 
----
+| [← Previous: CLI Usage Guide](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
+|:---|:---:|---:|
 
-**📚 Implementation Guide Series**
-
-**Previous**: [← CLI Usage Guide](../project/CLI-Usage-Guide.md)
-
-📍 **Current**: Troubleshooting Playbook
-
-**Next**: [Code Conventions →](./conventions.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. **Troubleshooting Playbook** (You are here)
-10. [Code Conventions](./conventions.md)
-11. [Code Patterns](./patterns.md)
-12. [Anti-Patterns](./anti-patterns.md)
-13. [API Services Catalog](../api-reference/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
-
-**🔗 Related Documentation**:
-- [CLI Usage Guide](../project/CLI-Usage-Guide.md) - Command-line interface and common operations
-- [Code Conventions](./conventions.md) - Coding standards and best practices
-- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture overview
-
----
+</div>

@@ -1,26 +1,11 @@
-**📚 Architecture Documentation Series**
+**📚 Implementation Guide Series**
 
-**Previous**: [← Project Online Migration Overview](./01-project-online-migration-overview.md)
+<div align="center">
 
-📍 **Current**: ETL System Design
+| [← Previous: Project Online Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
+|:---|:---:|---:|
 
-**Next**: [Data Transformation Guide →](./03-data-transformation-guide.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
-10. [Code Conventions](../code/conventions.md)
-11. [Code Patterns](../code/patterns.md)
-12. [Anti-Patterns](../code/anti-patterns.md)
-13. [API Services Catalog](../code/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
+</div>
 
 ---
 
@@ -591,19 +576,9 @@ For detailed entity mapping specifications and transformation rules, see:
 
 ---
 
-**📚 Architecture Documentation Series**
+<div align="center">
 
-**Previous**: [← Project Online Migration Overview](./01-project-online-migration-overview.md)
+| [← Previous: Project Online Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
+|:---|:---:|---:|
 
-📍 **Current**: ETL System Design
-
-**Next**: [Data Transformation Guide →](./03-data-transformation-guide.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](./01-project-online-migration-overview.md)
-2. **ETL System Design** (You are here)
-3. [Data Transformation Guide](./03-data-transformation-guide.md)
-
-**🔗 Related Documentation**:
-- [Project Online Migration Overview](./01-project-online-migration-overview.md) - Business context and high-level approach
-- [Data Transformation Guide](./03-data-transformation-guide.md) - Complete data mappings and output structure
+</div>

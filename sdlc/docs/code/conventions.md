@@ -1,26 +1,11 @@
 **📚 Implementation Guide Series**
 
-**Previous**: [← Troubleshooting Playbook](./troubleshooting-playbook.md)
+<div align="center">
 
-📍 **Current**: Code Conventions
+| [← Previous: Troubleshooting Playbook](./troubleshooting-playbook.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Patterns →](./patterns.md) |
+|:---|:---:|---:|
 
-**Next**: [Code Patterns →](./patterns.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](../code/troubleshooting-playbook.md)
-10. [Code Conventions](../code/conventions.md)
-11. [Code Patterns](../code/patterns.md)
-12. [Anti-Patterns](../code/anti-patterns.md)
-13. [API Services Catalog](../code/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
+</div>
 
 ---
 
@@ -196,35 +181,37 @@ src/
 ```
 test/
 ├── setup.ts                   # Jest setup
-├── importer.test.ts          # Unit tests (match src/)
-├── lib/
-│   └── ProjectOnlineClient.test.ts
-├── transformers/
-│   ├── ProjectTransformer.test.ts
-│   ├── TaskTransformer.test.ts
-│   └── utils.test.ts
-├── util/
-│   ├── ExponentialBackoff.test.ts
-│   └── SmartsheetHelpers.test.ts
-├── integration/               # E2E integration tests
-│   ├── load-phase.test.ts
+├── importer.test.ts          # Importer validation tests
+├── unit/                              # Unit tests (mocks only, no API calls)
+│   ├── MockSmartsheetClient.ts       # Mock Smartsheet SDK
+│   ├── MockODataClient.ts            # Mock Project Online oData client
+│   ├── builders/                     # Fluent test data builders
+│   │   ├── ODataProjectBuilder.ts
+│   │   ├── ODataTaskBuilder.ts
+│   │   ├── ODataResourceBuilder.ts
+│   │   └── ODataAssignmentBuilder.ts
+│   └── transformers/                 # Transformer unit tests
+│       ├── PMOStandardsTransformer.test.ts
+│       ├── ProjectTransformer.test.ts
+│       ├── ResourceTransformer.test.ts
+│       ├── TaskTransformer.test.ts
+│       └── utils.test.ts
+├── integration/                       # Integration tests (real Smartsheet API)
+│   ├── load-phase.test.ts            # Main ETL integration tests
 │   ├── pmo-standards-integration.test.ts
-│   ├── helpers/              # Test helpers
-│   │   ├── odata-fixtures.ts
-│   │   └── smartsheet-setup.ts
-│   └── scenarios/            # Test scenarios
-│       ├── assignment-scenarios.ts
+│   ├── helpers/                      # Integration test utilities
+│   │   ├── smartsheet-setup.ts      # Workspace lifecycle management
+│   │   └── odata-fixtures.ts        # Complete test fixtures
+│   └── scenarios/                    # Pre-built test scenarios
 │       ├── project-scenarios.ts
+│       ├── task-scenarios.ts
 │       ├── resource-scenarios.ts
-│       └── task-scenarios.ts
-└── unit/                     # Mock implementations
-    ├── MockODataClient.ts
-    ├── MockSmartsheetClient.ts
-    └── builders/             # Test data builders
-        ├── ODataAssignmentBuilder.ts
-        ├── ODataProjectBuilder.ts
-        ├── ODataResourceBuilder.ts
-        └── ODataTaskBuilder.ts
+│       └── assignment-scenarios.ts
+├── lib/                              # Library tests
+│   └── ProjectOnlineClient.test.ts
+└── util/                             # Utility tests
+    ├── ExponentialBackoff.test.ts
+    └── SmartsheetHelpers.test.ts
 ```
 
 ### Import Organization
@@ -596,7 +583,7 @@ refactor(util): extract common validation logic
 // Good - Parallel when independent
 const [tasks, resources] = await Promise.all([
   client.getTasks(projectId),
-  client.getResources(),
+  client.getResources()
 ]);
 
 // Good - Sequential when dependent
@@ -720,33 +707,9 @@ When in doubt, consistency with existing code takes precedence.
 
 ---
 
-**📚 Implementation Guide Series**
+<div align="center">
 
-**Previous**: [← Troubleshooting Playbook](./troubleshooting-playbook.md)
+| [← Previous: Troubleshooting Playbook](./troubleshooting-playbook.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Patterns →](./patterns.md) |
+|:---|:---:|---:|
 
-📍 **Current**: Code Conventions
-
-**Next**: [Code Patterns →](./patterns.md)
-
-**Complete Series**:
-1. [Project Online Migration Overview](../architecture/01-project-online-migration-overview.md)
-2. [ETL System Design](../architecture/02-etl-system-design.md)
-3. [Data Transformation Guide](../architecture/03-data-transformation-guide.md)
-4. [Template-Based Workspace Creation](../project/Template-Based-Workspace-Creation.md)
-5. [Re-run Resiliency](../project/Re-run-Resiliency.md)
-6. [Sheet References](../project/Sheet-References.md)
-7. [Authentication Setup](../project/Authentication-Setup.md)
-8. [CLI Usage Guide](../project/CLI-Usage-Guide.md)
-9. [Troubleshooting Playbook](./troubleshooting-playbook.md)
-10. **Code Conventions** (You are here)
-11. [Code Patterns](./patterns.md)
-12. [Anti-Patterns](./anti-patterns.md)
-13. [API Services Catalog](../api-reference/api-services-catalog.md)
-14. [Test Suite Guide](../../test/README.md)
-
-**🔗 Related Documentation**:
-- [Code Patterns](./patterns.md) - Recurring implementation patterns
-- [Anti-Patterns](./anti-patterns.md) - Common mistakes to avoid
-- [ETL System Design](../architecture/02-etl-system-design.md) - System architecture overview
-
----
+</div>
