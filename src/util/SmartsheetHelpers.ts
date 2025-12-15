@@ -202,7 +202,8 @@ export async function getOrAddColumn(
   // Column doesn't exist - add it
   // Strip unsupported properties during creation (width, hidden, locked can only be set via UPDATE)
   // But DO include index - Smartsheet API requires it (despite docs saying it's optional)
-  const { width: _width, hidden: _hidden, locked: _locked, ...cleanConfig } = columnConfig;
+  //const { width: _width, hidden: _hidden, locked: _locked, ...cleanConfig } = columnConfig;
+  const cleanConfig = columnConfig;
 
   // Ensure index is set - default to 1 (add after primary column)
   if (!cleanConfig.index) {

@@ -109,6 +109,37 @@ npm run format:check
 npm test
 ```
 
+## Configuration
+
+### Solution Type
+
+The tool supports multiple workspace creation strategies via the `SOLUTION_TYPE` configuration:
+
+```bash
+# In your .env file
+SOLUTION_TYPE=StandaloneWorkspaces  # Default - creates independent workspaces
+# SOLUTION_TYPE=Portfolio            # Future - creates portfolio-based workspaces
+```
+
+**StandaloneWorkspaces** (default):
+- Creates independent PMO Standards workspace
+- Creates individual project workspaces
+- Current tested implementation
+
+**Portfolio** (future):
+- Creates workspaces within portfolio structure
+- Not yet implemented - coming soon!
+
+See [Factory Pattern Design](sdlc/docs/architecture/Factory-Pattern-Design.md) for technical details.
+
+### Other Configuration
+
+See `.env.sample` for all available configuration options including:
+- `SMARTSHEET_API_TOKEN` - Smartsheet API authentication
+- `PMO_STANDARDS_WORKSPACE_ID` - Reuse existing PMO Standards workspace
+- `TEMPLATE_WORKSPACE_ID` - Use template for project workspace creation
+- Project Online authentication settings
+
 ## Documentation
 
 Comprehensive documentation is organized in a guided reading series. Follow this recommended order:
@@ -116,17 +147,18 @@ Comprehensive documentation is organized in a guided reading series. Follow this
 1. **[Project Online Migration Overview](sdlc/docs/architecture/01-project-online-migration-overview.md)** - Business context, high-level approach, and system overview
 2. **[ETL System Design](sdlc/docs/architecture/02-etl-system-design.md)** - Component architecture and implementation details
 3. **[Data Transformation Guide](sdlc/docs/architecture/03-data-transformation-guide.md)** - Data mappings, output structure, and transformation specifications
-4. **[Template-Based Workspace Creation](sdlc/docs/project/Template-Based-Workspace-Creation.md)** - Efficient workspace creation using templates
-5. **[Re-run Resiliency](sdlc/docs/project/Re-run-Resiliency.md)** - Idempotent operations and multi-run support
-6. **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
-7. **[Authentication Setup](sdlc/docs/project/Authentication-Setup.md)** - Credential configuration for Project Online and Smartsheet
-8. **[CLI Usage Guide](sdlc/docs/project/CLI-Usage-Guide.md)** - Complete CLI command reference and examples
-9. **[Troubleshooting Playbook](sdlc/docs/code/troubleshooting-playbook.md)** - Common issues and solutions
-10. **[Code Conventions](sdlc/docs/code/conventions.md)** - Naming, formatting, and style standards
-11. **[Code Patterns](sdlc/docs/code/patterns.md)** - Recommended implementation patterns
-12. **[Anti-Patterns](sdlc/docs/code/anti-patterns.md)** - Common mistakes to avoid
-13. **[API Services Catalog](sdlc/docs/api-reference/api-services-catalog.md)** - External API integration reference
-14. **[Test Suite Guide](test/README.md)** - Testing strategy, scenarios, and implementation
+4. **[Factory Pattern Design](sdlc/docs/architecture/Factory-Pattern-Design.md)** - Workspace creation strategies and extensibility
+5. **[Template-Based Workspace Creation](sdlc/docs/project/Template-Based-Workspace-Creation.md)** - Efficient workspace creation using templates
+6. **[Re-run Resiliency](sdlc/docs/project/Re-run-Resiliency.md)** - Idempotent operations and multi-run support
+7. **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
+8. **[Authentication Setup](sdlc/docs/project/Authentication-Setup.md)** - Credential configuration for Project Online and Smartsheet
+9. **[CLI Usage Guide](sdlc/docs/project/CLI-Usage-Guide.md)** - Complete CLI command reference and examples
+10. **[Troubleshooting Playbook](sdlc/docs/code/troubleshooting-playbook.md)** - Common issues and solutions
+11. **[Code Conventions](sdlc/docs/code/conventions.md)** - Naming, formatting, and style standards
+12. **[Code Patterns](sdlc/docs/code/patterns.md)** - Recommended implementation patterns
+13. **[Anti-Patterns](sdlc/docs/code/anti-patterns.md)** - Common mistakes to avoid
+14. **[API Services Catalog](sdlc/docs/api-reference/api-services-catalog.md)** - External API integration reference
+15. **[Test Suite Guide](test/README.md)** - Testing strategy, scenarios, and implementation
 
 ## Project Structure
 
@@ -161,6 +193,12 @@ Comprehensive documentation is organized in a guided reading series. Follow this
 ├── src/                       # Source code
 │   ├── cli.ts                 # CLI entry point
 │   ├── index.ts               # Main export file
+│   ├── factories/             # Workspace creation strategies
+│   │   ├── index.ts           # Factory exports
+│   │   ├── WorkspaceFactory.ts  # Factory interface
+│   │   ├── WorkspaceFactoryProvider.ts  # Factory selector
+│   │   ├── StandaloneWorkspacesFactory.ts  # Default implementation
+│   │   └── PortfolioFactory.ts  # Future portfolio implementation
 │   ├── lib/                   # Core library code
 │   │   ├── importer.ts        # ETL orchestration
 │   │   ├── ProjectOnlineClient.ts  # Project Online API client
@@ -216,6 +254,7 @@ This tool implements an Extract-Transform-Load (ETL) pattern:
 - **Hierarchical Tasks** - Maintains task hierarchy from Project Online
 - **Resource Type Handling** - Work resources use contact lists, Material/Cost use picklists
 - **PMO Standards** - Centralized reference sheets for consistent picklist values
+- **Factory Pattern** - Extensible workspace creation supporting multiple strategies
 - **Type Safety** - Full TypeScript implementation with comprehensive type definitions
 
 See [Project Online Migration Overview](sdlc/docs/architecture/01-project-online-migration-overview.md) and [ETL System Design](sdlc/docs/architecture/02-etl-system-design.md) for complete details.

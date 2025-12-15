@@ -6,6 +6,11 @@
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { SmartsheetSheet, SmartsheetRow } from '../types/Smartsheet';
 import { Logger } from '../util/Logger';
+import { WorkspaceFactoryProvider } from '../factories';
+import type { ReferenceSheetInfo, PMOStandardsWorkspaceInfo } from '../factories/WorkspaceFactory';
+
+// Re-export types from factory interface for backward compatibility
+export type { ReferenceSheetInfo, PMOStandardsWorkspaceInfo };
 
 /**
  * Standard reference sheets with predefined values
@@ -21,30 +26,10 @@ export const STANDARD_REFERENCE_SHEETS: Record<string, string[]> = {
 };
 
 /**
- * Reference sheet metadata returned after creation
- */
-export interface ReferenceSheetInfo {
-  sheetId: number;
-  sheetName: string;
-  columnId: number;
-  type: 'standard' | 'discovered';
-  values: string[];
-}
-
-/**
- * PMO Standards workspace metadata
- */
-export interface PMOStandardsWorkspaceInfo {
-  workspaceId: number;
-  workspaceName: string;
-  permalink: string;
-  referenceSheets: Record<string, ReferenceSheetInfo>;
-}
-
-/**
  * Create or get existing PMO Standards workspace with all standard reference sheets
  * This workspace is shared across all project migrations
  *
+ * @deprecated Use WorkspaceFactory.createStandardsWorkspace() instead
  * @param client - Smartsheet client
  * @param existingWorkspaceId - Optional workspace ID to use instead of creating new
  * @param logger - Optional logger for debug output
@@ -53,59 +38,10 @@ export async function createPMOStandardsWorkspace(
   client: SmartsheetClient,
   existingWorkspaceId?: number,
   logger?: Logger
-): Promise<PMOStandardsWorkspaceInfo> {
-  let workspace;
-
-  if (existingWorkspaceId) {
-    // Use existing workspace
-    logger?.debug(`Using existing PMO Standards workspace ID: ${existingWorkspaceId}`);
-    if (!client.workspaces?.getWorkspace) {
-      throw new Error('SmartsheetClient does not support getWorkspace');
-    }
-    const workspaceResponse = await client.workspaces.getWorkspace({
-      workspaceId: existingWorkspaceId,
-    });
-    workspace = workspaceResponse.data || workspaceResponse.result;
-    if (!workspace) {
-      throw new Error(`Workspace ${existingWorkspaceId} not found`);
-    }
-  } else {
-    // Create new workspace
-    logger?.debug(`Creating new PMO Standards workspace`);
-    if (!client.workspaces?.createWorkspace) {
-      throw new Error('SmartsheetClient does not support createWorkspace');
-    }
-    const workspaceResponse = await client.workspaces.createWorkspace({
-      body: {
-        name: 'PMO Standards',
-      },
-    });
-    workspace = workspaceResponse.data || workspaceResponse.result;
-    if (!workspace) {
-      throw new Error('Failed to create PMO Standards workspace');
-    }
-  }
-
-  // Ensure all standard reference sheets exist (create if missing, reuse if existing)
-  const referenceSheets: Record<string, ReferenceSheetInfo> = {};
-
-  for (const [sheetName, values] of Object.entries(STANDARD_REFERENCE_SHEETS)) {
-    const sheetInfo = await ensureStandardReferenceSheet(
-      client,
-      workspace.id!,
-      sheetName,
-      values,
-      logger
-    );
-    referenceSheets[sheetName] = sheetInfo;
-  }
-
-  return {
-    workspaceId: workspace.id!,
-    workspaceName: workspace.name,
-    permalink: workspace.permalink || '',
-    referenceSheets,
-  };
+) {
+  // Delegate to factory implementation
+  const factory = WorkspaceFactoryProvider.getFactory();
+  return factory.createStandardsWorkspace(client, existingWorkspaceId, logger);
 }
 
 /**

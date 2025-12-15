@@ -15,6 +15,9 @@ export interface ETLConfig {
   pmoStandardsWorkspaceId?: number;
   templateWorkspaceId?: number;
 
+  // Solution Type Configuration
+  solutionType?: 'StandaloneWorkspaces' | 'Portfolio';
+
   // Project Online Configuration (future)
   projectOnlineUrl?: string;
   projectOnlineTenantId?: string;
@@ -67,6 +70,9 @@ export class ConfigManager {
 
       // Optional: Template Workspace ID (no default - creates blank workspace if not specified)
       templateWorkspaceId: this.getOptionalNumber('TEMPLATE_WORKSPACE_ID'),
+
+      // Optional: Solution Type (defaults to StandaloneWorkspaces)
+      solutionType: this.getSolutionType(),
 
       // Optional: Project Online Configuration (future use)
       projectOnlineUrl: this.getOptional('PROJECT_ONLINE_URL'),
@@ -130,6 +136,15 @@ export class ConfigManager {
     // Validate Template Workspace ID if provided
     if (this.config.templateWorkspaceId !== undefined && this.config.templateWorkspaceId <= 0) {
       throw ErrorHandler.configError('TEMPLATE_WORKSPACE_ID', 'must be a positive number');
+    }
+
+    // Validate Solution Type
+    const validSolutionTypes = ['StandaloneWorkspaces', 'Portfolio'];
+    if (this.config.solutionType && !validSolutionTypes.includes(this.config.solutionType)) {
+      throw ErrorHandler.configError(
+        'SOLUTION_TYPE',
+        `must be one of: ${validSolutionTypes.join(', ')} (got: "${this.config.solutionType}")`
+      );
     }
 
     // Validate batch size
@@ -202,6 +217,23 @@ export class ConfigManager {
   }
 
   /**
+   * Get solution type from environment with validation
+   */
+  private getSolutionType(): 'StandaloneWorkspaces' | 'Portfolio' {
+    const value = process.env.SOLUTION_TYPE;
+    if (!value) return 'StandaloneWorkspaces';
+
+    if (value === 'StandaloneWorkspaces' || value === 'Portfolio') {
+      return value;
+    }
+
+    throw ErrorHandler.configError(
+      'SOLUTION_TYPE',
+      `must be either 'StandaloneWorkspaces' or 'Portfolio' (got: "${value}")`
+    );
+  }
+
+  /**
    * Print configuration summary (with sensitive values masked)
    */
   printSummary(): void {
@@ -220,6 +252,8 @@ export class ConfigManager {
     if (this.config.templateWorkspaceId) {
       this.logger.info(`  Template Workspace ID: ${this.config.templateWorkspaceId}`);
     }
+
+    this.logger.info(`  Solution Type: ${this.config.solutionType || 'StandaloneWorkspaces'}`);
 
     if (this.config.projectOnlineUrl) {
       this.logger.info(`  Project Online URL: ${this.config.projectOnlineUrl}`);

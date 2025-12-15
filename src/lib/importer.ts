@@ -6,20 +6,16 @@ import {
   ProjectOnlineAssignment,
 } from '../types/ProjectOnline';
 import { ProjectOnlineClient, ProjectOnlineClientConfig } from './ProjectOnlineClient';
-import {
-  ProjectTransformer,
-  configureProjectPicklistColumns,
-} from '../transformers/ProjectTransformer';
+import { configureProjectPicklistColumns } from '../transformers/ProjectTransformer';
 import { TaskTransformer } from '../transformers/TaskTransformer';
 import { ResourceTransformer } from '../transformers/ResourceTransformer';
 import { AssignmentTransformer } from '../transformers/AssignmentTransformer';
-import {
-  createPMOStandardsWorkspace,
-  PMOStandardsWorkspaceInfo,
-} from '../transformers/PMOStandardsTransformer';
+import { PMOStandardsWorkspaceInfo } from '../transformers/PMOStandardsTransformer';
+import { WorkspaceFactory, WorkspaceFactoryProvider } from '../factories';
 import { Logger } from '../util/Logger';
 import { ErrorHandler } from '../util/ErrorHandler';
 import { MultiStageProgressReporter } from '../util/ProgressReporter';
+import { ConfigManager } from '../util/ConfigManager';
 
 export interface ImportOptions {
   source: string;
@@ -57,14 +53,23 @@ export class ProjectOnlineImporter {
   private pmoStandardsWorkspace?: PMOStandardsWorkspaceInfo;
   private logger: Logger;
   private errorHandler: ErrorHandler;
+  private workspaceFactory: WorkspaceFactory;
+  private configManager?: ConfigManager;
 
   /**
-   * Initialize importer with Smartsheet client
+   * Initialize importer with Smartsheet client and optional configuration
    */
-  constructor(client?: SmartsheetClient, logger?: Logger, errorHandler?: ErrorHandler) {
+  constructor(
+    client?: SmartsheetClient,
+    logger?: Logger,
+    errorHandler?: ErrorHandler,
+    configManager?: ConfigManager
+  ) {
     this.smartsheetClient = client;
     this.logger = logger ?? new Logger();
     this.errorHandler = errorHandler ?? new ErrorHandler(this.logger);
+    this.configManager = configManager;
+    this.workspaceFactory = WorkspaceFactoryProvider.getFactory(configManager);
   }
 
   /**
@@ -209,10 +214,13 @@ export class ProjectOnlineImporter {
       }
       progress.completeStage(`Workspace ID: ${this.pmoStandardsWorkspace.workspaceId}`);
 
-      // Step 2: Transform project and create workspace with 3 sheets
+      // Step 2: Transform project and create workspace with 3 sheets using factory
       progress.startStage('Project Workspace Creation');
-      const projectTransformer = new ProjectTransformer(this.smartsheetClient);
-      const projectResult = await projectTransformer.transformProject(data.project);
+      const projectResult = await this.workspaceFactory.createProjectWorkspace(
+        this.smartsheetClient!,
+        data.project,
+        this.configManager
+      );
       progress.completeStage(`${projectResult.workspace.name} (ID: ${projectResult.workspace.id})`);
 
       // Step 3: Configure project summary sheet picklists
@@ -319,7 +327,7 @@ export class ProjectOnlineImporter {
   }
 
   /**
-   * Get or create PMO Standards workspace
+   * Get or create PMO Standards workspace using factory
    * This workspace is created once and reused across all project imports
    *
    * Checks PMO_STANDARDS_WORKSPACE_ID environment variable first.
@@ -342,7 +350,8 @@ export class ProjectOnlineImporter {
       );
     }
 
-    const pmoWorkspace = await createPMOStandardsWorkspace(
+    // Use factory to create or get PMO Standards workspace
+    const pmoWorkspace = await this.workspaceFactory.createStandardsWorkspace(
       this.smartsheetClient,
       workspaceIdNum && !isNaN(workspaceIdNum) ? workspaceIdNum : undefined,
       this.logger

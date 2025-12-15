@@ -197,7 +197,7 @@ export async function getSheetFromWorkspace(
     // responseData could be the array directly, or an object containing .data
     const items: WorkspaceChildrenData[] = Array.isArray(responseData)
       ? responseData
-      : (responseData?.data || []);
+      : responseData?.data || [];
     const sheets = items.filter((item) => item.resourceType === 'sheet');
     const sheet = sheets.find((s) => s.name === sheetName);
 
@@ -237,7 +237,7 @@ export async function getAllSheetsFromWorkspace(
     // responseData could be the array directly, or an object containing .data
     const items: WorkspaceChildrenData[] = Array.isArray(responseData)
       ? responseData
-      : (responseData?.data || []);
+      : responseData?.data || [];
     const sheets = items.filter((item) => item.resourceType === 'sheet');
 
     return sheets.map((sheet) => ({

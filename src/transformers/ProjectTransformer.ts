@@ -54,7 +54,7 @@ export function createProjectSummarySheet(
  * Create columns for Project Summary sheet
  * Returns 15 columns for project metadata
  */
-function createProjectSummaryColumns(): SmartsheetColumn[] {
+export function createProjectSummaryColumns(): SmartsheetColumn[] {
   return [
     {
       title: 'Project Online Project ID',
