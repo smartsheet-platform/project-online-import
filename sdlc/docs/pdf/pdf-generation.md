@@ -48,10 +48,11 @@ choco install pandoc miktex
 
 **Generate PDF:**
 ```bash
-./scripts/generate-pdf-guide.sh
+cd sdlc/docs/pdf
+./generate-pdf-guide.sh
 ```
 
-Output: `sdlc/docs/output/Project-Online-Migration-Guide.pdf`
+Output: `sdlc/docs/pdf/Project-Online-Migration-Guide.pdf`
 
 ### Option 3: Online Converters (No Installation)
 
@@ -76,7 +77,7 @@ If you want to manually combine all 14 documents:
 mkdir -p sdlc/docs/output
 
 # Combine all files
-cat > sdlc/docs/output/Combined-Guide.md << 'HEADER'
+cat > sdlc/docs/pdf/Combined-Guide.md << 'HEADER'
 # Project Online to Smartsheet Migration Guide
 
 **Complete Documentation Series**
@@ -140,9 +141,9 @@ The PDF is organized into three main chapters:
 
 ## Customizing the PDF
 
-The PDF uses a custom LaTeX template (`sdlc/docs/output/custom-template.tex`) with Smartsheet branding. You can customize:
+The PDF uses a custom LaTeX header (`sdlc/docs/pdf/custom-header.tex`) with Smartsheet branding. You can customize:
 
-### Script Settings (`scripts/generate-pdf-guide.sh`)
+### Script Settings (`sdlc/docs/pdf/generate-pdf-guide.sh`)
 
 **Change PDF filename:**
 ```bash
@@ -153,7 +154,7 @@ OUTPUT_PDF="$OUTPUT_DIR/Your-Custom-Name.pdf"
 - `toc-depth=2` - Include up to heading level 2 (##)
 - Change to `3` for more detail, `1` for less
 
-### Template Settings (`sdlc/docs/output/custom-template.tex`)
+### Header Settings (`sdlc/docs/pdf/custom-header.tex`)
 
 **Brand Colors:**
 ```latex

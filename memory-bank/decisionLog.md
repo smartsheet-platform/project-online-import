@@ -350,8 +350,8 @@ module.exports = {
 **Git Commit**: `0e615b0` - "feat(docs): enhance PDF generation with Smartsheet branding and optimized typography"
 
 **References**:
-- PDF Generation Guide: [`sdlc/docs/PDF-GENERATION.md`](../sdlc/docs/PDF-GENERATION.md)
-- Generation Script: [`scripts/generate-pdf-guide.sh`](../scripts/generate-pdf-guide.sh)
+- PDF Generation Guide: [`sdlc/docs/pdf/pdf-generation.md`](../sdlc/docs/pdf/pdf-generation.md)
+- Generation Script: [`sdlc/docs/pdf/generate-pdf-guide.sh`](../sdlc/docs/pdf/generate-pdf-guide.sh)
 - LaTeX Template: [`sdlc/docs/output/custom-header.tex`](../sdlc/docs/output/custom-header.tex)
 - Output PDF: [`sdlc/docs/output/Project-Online-Migration-Guide.pdf`](../sdlc/docs/output/Project-Online-Migration-Guide.pdf)
 

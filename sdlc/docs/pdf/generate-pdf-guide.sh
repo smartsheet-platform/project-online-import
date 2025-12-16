@@ -22,15 +22,15 @@ if ! command -v pandoc &> /dev/null; then
     exit 1
 fi
 
-# Create output directory
-OUTPUT_DIR="sdlc/docs/output"
-mkdir -p "$OUTPUT_DIR"
+# All paths relative to this script's directory (sdlc/docs/pdf/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Output PDF filename
-OUTPUT_PDF="$OUTPUT_DIR/Project-Online-Migration-Guide.pdf"
+# Output PDF filename in current directory
+OUTPUT_PDF="./Project-Online-Migration-Guide.pdf"
 
-# Temporary concatenated markdown file
-TEMP_MD="$OUTPUT_DIR/temp-combined.md"
+# Temporary concatenated markdown file in current directory
+TEMP_MD="./temp-combined.md"
 
 echo "📝 Combining markdown files..."
 
@@ -88,27 +88,27 @@ add_document() {
 echo ""
 echo "🎯 Adding Chapter 1: Migrating to Smartsheet"
 add_chapter "Migrating to Smartsheet"
-add_document "sdlc/docs/architecture/project-online-migration-overview.md" "Migrating from Project Online to Smartsheet"
-add_document "sdlc/docs/architecture/etl-system-design.md" "System Design"
-add_document "sdlc/docs/architecture/data-transformation-guide.md" "How Your Data Transforms"
+add_document "../architecture/project-online-migration-overview.md" "Migrating from Project Online to Smartsheet"
+add_document "../architecture/etl-system-design.md" "System Design"
+add_document "../architecture/data-transformation-guide.md" "How Your Data Transforms"
 
 # CHAPTER 2: 🏗️ How it Works
 echo ""
 echo "🏗️ Adding Chapter 2: How it Works"
 add_chapter "How it Works"
-add_document "sdlc/docs/architecture/Factory-Pattern-Design.md" "Workspace Creation Options"
-add_document "sdlc/docs/project/Template-Based-Workspace-Creation.md" "Using Workspace Templates"
-add_document "sdlc/docs/project/Re-run-Resiliency.md" "Safe Re-runs"
-add_document "sdlc/docs/project/Sheet-References.md" "How Sheets Connect"
-add_document "sdlc/docs/project/Authentication-Setup.md" "Setting Up Authentication"
-add_document "sdlc/docs/project/CLI-Usage-Guide.md" "Using the Migration Tool"
-add_document "sdlc/docs/code/troubleshooting-playbook.md" "Troubleshooting Common Issues"
+add_document "../architecture/Factory-Pattern-Design.md" "Workspace Creation Options"
+add_document "../project/Template-Based-Workspace-Creation.md" "Using Workspace Templates"
+add_document "../project/Re-run-Resiliency.md" "Safe Re-runs"
+add_document "../project/Sheet-References.md" "How Sheets Connect"
+add_document "../project/Authentication-Setup.md" "Setting Up Authentication"
+add_document "../project/CLI-Usage-Guide.md" "Using the Migration Tool"
+add_document "../code/troubleshooting-playbook.md" "Troubleshooting Common Issues"
 
 echo ""
 echo "📄 Generating PDF with pandoc..."
 
-# Path to custom header includes
-HEADER_FILE="$OUTPUT_DIR/custom-header.tex"
+# Path to custom header includes in current directory
+HEADER_FILE="./custom-header.tex"
 
 # Generate PDF using pandoc with custom header includes
 # Font configuration is in custom-header.tex
