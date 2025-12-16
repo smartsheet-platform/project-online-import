@@ -1,5 +1,81 @@
 # Decision Log: Project Online to Smartsheet ETL
 
+## 2025-12-15: Azure AD Admin Consent Requirement for Project Online API Access
+
+### Decision: Document Both Admin and Non-Admin User Paths for API Permission Setup
+
+**Context**: Setting up integration testing infrastructure for Project Online API access via Azure AD app registration. Discovered that not all users have Azure AD admin privileges to grant API permissions consent.
+
+**Problem Identified**:
+- The "Grant admin consent" button in Azure Portal is only visible to users with appropriate administrative rights
+- Many enterprise users lack these privileges
+- Initial documentation assumed all users could self-grant consent
+- This created a blocker for non-admin users attempting setup
+
+**Rationale for Dual-Path Documentation**:
+- Enterprise environments commonly restrict Azure AD admin access
+- Professional Services teams may not have elevated privileges
+- Clear guidance needed for both scenarios
+- Reduces friction and support requests
+- Enables faster onboarding across diverse permission levels
+
+**Implementation**:
+1. **Updated Setup Guide** ([`test/INTEGRATION_TEST_SETUP_GUIDE.md`](../test/INTEGRATION_TEST_SETUP_GUIDE.md)):
+   - Path A: Self-service for users with admin privileges
+   - Path B: IT admin request workflow for users without privileges
+   - Complete email template for admin consent requests
+   - Template includes all necessary details (App Name, Client ID, Tenant ID, required permissions)
+   - Step-by-step instructions for IT admins to grant consent
+
+2. **Enhanced Diagnostic Script** ([`scripts/diagnose-project-online-permissions.ts`](../scripts/diagnose-project-online-permissions.ts)):
+   - Detects missing permissions (no roles/scopes in token)
+   - Provides clear guidance for both scenarios
+   - References setup guide for admin request template
+
+3. **Admin Request Email Template**:
+   ```
+   Subject: Azure AD Admin Consent Required for App Registration
+   
+   App Details:
+   - App Name: Project Online ETL Integration Tests
+   - Application (Client) ID: [CLIENT_ID]
+   - Tenant ID: [TENANT_ID]
+   
+   Required Permission:
+   - API: SharePoint
+   - Permission: Sites.ReadWrite.All (Application permission)
+   ```
+
+**Diagnostic Results Pattern**:
+```
+✅ Azure AD Authentication: Working
+✅ Token Acquisition: Successful
+❌ API Permissions: Not granted (no roles/scopes in token)
+❌ SharePoint Site Access: 401 Unauthorized
+❌ Project Online API Access: 401 Unauthorized
+```
+
+**Benefits**:
+- Inclusive documentation for all user permission levels
+- Clearer onboarding path for Professional Services teams
+- Reduced setup friction in enterprise environments
+- Template email expedites IT admin workflow
+- Better user experience for non-admin developers
+
+**Impact**:
+- Setup documentation now supports 100% of users (admin + non-admin)
+- Reduces support burden by providing clear self-service paths
+- Improves Professional Services team onboarding experience
+- Sets expectation that admin consent may require IT involvement
+
+**Status**: Approved - Documentation Updated (2025-12-15)
+
+**Reference**:
+- Setup Guide: [`test/INTEGRATION_TEST_SETUP_GUIDE.md`](../test/INTEGRATION_TEST_SETUP_GUIDE.md) (Section 1.5)
+- Diagnostic Script: [`scripts/diagnose-project-online-permissions.ts`](../scripts/diagnose-project-online-permissions.ts)
+
+---
+
 ## 2024-12-04: Language Change Decision
 
 ### Decision: TypeScript as Implementation Language

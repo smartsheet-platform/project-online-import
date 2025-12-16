@@ -34,11 +34,13 @@ To migrate your projects, the tool needs secure access to both your Project Onli
 
 ### Step 1: Create the Application Registration
 
-1. Go to the [Azure Portal](https://portal.azure.com)
+1. Go to: https://portal.azure.com/#allservices/category/All
 
-2. Navigate to **Azure Active Directory** → **App registrations**
+2. Navigate to **Identity** → **App registrations**
+   - In the left sidebar, click on the **Identity** category
+   - Click on **App registrations** (highlighted in orange)
 
-3. Click **New registration**
+3. Click **+ New registration**
 
 4. Fill in the form:
    - **Name**: `Project Online Migration Tool`
@@ -92,10 +94,43 @@ After registering, you'll see the application overview page.
 
 6. Click **Add permissions**
 
-7. **IMPORTANT**: Click **Grant admin consent for [Your Organization]**
-   - This requires administrator privileges
-   - The application won't work without this approval
-   - You should see a green checkmark after approval
+7. **CRITICAL**: Grant Admin Consent
+   
+   **If you see the "Grant admin consent" button:**
+   - Click **"Grant admin consent for [Your Organization]"**
+   - Click "Yes" to confirm
+   - Wait for the status to show "Granted for [Your Organization]" with a green checkmark
+   
+   **If you DO NOT see the "Grant admin consent" button:**
+   - You don't have Azure AD admin privileges (this is common)
+   - **Contact your IT administrator or Azure AD admin** with this request:
+     ```
+     Subject: Azure AD Admin Consent Required for App Registration
+     
+     Hi [Admin Name],
+     
+     I've created an Azure AD app registration for Project Online migration
+     and need admin consent granted for API permissions.
+     
+     App Details:
+     - App Name: Project Online Migration Tool
+     - Application (Client) ID: [your CLIENT_ID from Step 2]
+     - Tenant ID: [your TENANT_ID from Step 2]
+     
+     Required Permission:
+     - API: SharePoint
+     - Permission: Sites.ReadWrite.All (Application permission)
+     
+     Please grant admin consent for this permission in the Azure Portal:
+     1. Go to: Azure Portal → Identity → App registrations
+     2. Find the app by Client ID above
+     3. Click "API permissions"
+     4. Click "Grant admin consent for [Organization]"
+     
+     Thank you!
+     ```
+   - Wait for your admin to grant consent before proceeding
+   - You can verify consent was granted by checking the "Status" column shows "Granted for [Organization]" with a green checkmark
 
 ### Step 5: Verify the Setup
 
@@ -133,28 +168,42 @@ If you don't see the green checkmark, click "Grant admin consent" again.
 Test that everything is configured correctly:
 
 ```bash
+# Test Project Online API connection
+npm run test:connection
+```
+
+If successful, you'll see:
+```
+===========================================
+Project Online Connection Test
+===========================================
+
+Step 1: Initializing Project Online client...
+✓ Client initialized
+
+Step 2: Testing authentication with Azure AD...
+✓ Authentication successful
+
+✓ Connection to Project Online successful
+
+===========================================
+✅ SUCCESS - Connection Test Passed!
+===========================================
+
+Your Project Online configuration is working correctly.
+You can now run integration tests with:
+  npm run test:integration
+```
+
+**If you see errors**, check the diagnostic output or see the Troubleshooting section below.
+
+You can also validate with a specific project:
+
+```bash
 npm run dev validate -- --source [your-project-id]
 ```
 
 Replace `[your-project-id]` with one of your Project Online project identifiers.
-
-If successful, you'll see:
-```
-🔍 Validating Project Online data
-
-✓ Project ID format is valid
-✓ Azure Active Directory tenant ID is configured
-✓ Azure Active Directory client ID is configured
-✓ Azure Active Directory client secret is configured
-✓ Project Online URL is configured
-✓ Smartsheet access token is configured
-
-🔌 Testing Project Online connection...
-✓ Connection successful
-✓ Can access Project Online data
-
-✅ Validation passed
-```
 
 ## Troubleshooting
 
