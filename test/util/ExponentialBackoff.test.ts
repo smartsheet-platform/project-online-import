@@ -255,15 +255,35 @@ describe('ExponentialBackoff', () => {
         expect(operation).toHaveBeenCalledTimes(1); // No retry
       });
 
-      it('should NOT retry on 404 not found errors', async () => {
+      /**
+       * 404 errors ARE retryable in this system due to Smartsheet's eventual consistency.
+       *
+       * SMARTSHEET EVENTUAL CONSISTENCY:
+       * Smartsheet is an eventually consistent platform, which means that in read-after-write
+       * scenarios, a resource that was just created may temporarily return 404 if the read
+       * happens faster than the platform's consistency propagation. These are "valid" 404s
+       * that resolve after a brief delay.
+       *
+       * RETRY STRATEGY:
+       * To handle this, the ExponentialBackoff implementation treats 404 as a retryable error,
+       * allowing the system to wait and retry until the resource becomes available or the
+       * maximum retry attempts are exhausted.
+       *
+       * This test verifies that 404 errors trigger retry logic rather than failing immediately.
+       */
+      it('should retry on 404 not found errors (eventual consistency)', async () => {
         const error = {
           response: { status: 404 },
           message: 'Not found',
         };
-        const operation = jest.fn().mockRejectedValue(error);
+        const operation = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
 
-        await expect(tryWith(operation, 3, 100)).rejects.toEqual(error);
-        expect(operation).toHaveBeenCalledTimes(1); // No retry
+        const promise = tryWith(operation, 3, 100);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBe('success');
+        expect(operation).toHaveBeenCalledTimes(2); // Initial attempt + 1 retry
       });
 
       it('should NOT retry on 422 unprocessable entity errors', async () => {
