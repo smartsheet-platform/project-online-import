@@ -1,6 +1,0 @@
-  PMO Standards Integration Tests › PMO Standards Workspace Creation › should create PMO Standards workspace with all reference sheets
-  PMO Standards Integration Tests › PMO Standards Workspace Creation › should reuse PMO Standards workspace across multiple projects
-  PMO Standards Integration Tests › Picklist Configuration › should configure project summary sheet picklists
-  PMO Standards Integration Tests › Picklist Configuration › should configure task sheet picklists
-  PMO Standards Integration Tests › Picklist Configuration › should have picklist values from PMO Standards reference sheets
-  PMO Standards Integration Tests › Idempotent Creation › should reuse existing PMO Standards workspace when ID provided
