@@ -555,7 +555,7 @@ const response = await tryWithBackoff(
 - [SmartsheetHelpers Functions](../../../src/util/SmartsheetHelpers.ts)
 - [ConfigManager for Environment Variables](../../../src/util/ConfigManager.ts)
 - [API Services Catalog - Retry Logic](../api-reference/api-services-catalog.md#retry-logic)
-- [ETL System Design - Network Resilience](../architecture/02-etl-system-design.md#network-resilience)
+- [ETL System Design - Network Resilience](../architecture/etl-system-design.md#network-resilience)
 - [Smartsheet API Rate Limits](https://smartsheet.redoc.ly/#section/API-Basics/Rate-Limiting)
 
 ## Changelog

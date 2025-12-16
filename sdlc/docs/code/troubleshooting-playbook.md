@@ -1,17 +1,22 @@
-**📚 Implementation Guide Series**
+<div align="center" style="background-image: url('https://www.smartsheet.com/sites/default/files/styles/1300px/public/2024-10/features-header-product-illustrations-ursa.png?itok=AMMNS_FZ'); background-size: cover; background-position: center; padding: 40px 20px; border-radius: 8px; margin-bottom: 20px;">
+
+<img src="https://www.smartsheet.com/sites/default/files/smartsheet-logo-blue-new.svg" width="200" height="33" style="margin-bottom: 20px;">
+
+<h1 style="color: rgba(0, 15, 51, 0.75);">🎯 Migrating to Smartsheet</h1>
+
+🎯 Migrating · [🏗️ How it Works](../architecture/etl-system-design.md) · [🛠️ Contributing](./conventions.md)
+
+</div>
 
 <div align="center">
 
-| [← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
-|:---|:---:|---:|
+[← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Conventions →](./conventions.md)
 
 </div>
 
 ---
 
 # Troubleshooting Common Issues
-
-**Last Updated**: 2024-12-08
 
 This guide helps you diagnose and resolve common issues you might encounter when migrating from Project Online to Smartsheet.
 
@@ -274,7 +279,6 @@ When reporting an issue, please provide:
 
 <div align="center">
 
-| [← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Code Conventions →](./conventions.md) |
-|:---|:---:|---:|
+[← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Conventions →](./conventions.md)
 
 </div>

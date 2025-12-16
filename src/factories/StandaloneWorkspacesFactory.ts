@@ -20,6 +20,7 @@ import {
 import { sanitizeWorkspaceName, createSheetName } from '../transformers/utils';
 import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
 import { createProjectSummaryColumns, validateProject } from '../transformers/ProjectTransformer';
+import { tryWith as withBackoff } from '../util/ExponentialBackoff';
 
 /**
  * Standard reference sheets with predefined values
@@ -50,29 +51,35 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
     let workspace;
 
     if (existingWorkspaceId) {
-      // Use existing workspace
+      // Use existing workspace - wrap in retry logic for eventual consistency
       logger?.debug(`Using existing PMO Standards workspace ID: ${existingWorkspaceId}`);
       if (!client.workspaces?.getWorkspace) {
         throw new Error('SmartsheetClient does not support getWorkspace');
       }
-      const workspaceResponse = await client.workspaces.getWorkspace({
-        workspaceId: existingWorkspaceId,
-      });
+      const getWorkspace = client.workspaces.getWorkspace;
+      const workspaceResponse = await withBackoff(
+        () => getWorkspace({
+          workspaceId: existingWorkspaceId,
+        })
+      );
       workspace = workspaceResponse.data || workspaceResponse.result;
       if (!workspace) {
         throw new Error(`Workspace ${existingWorkspaceId} not found`);
       }
     } else {
-      // Create new workspace
+      // Create new workspace - wrap with retry for API resilience
       logger?.debug(`Creating new PMO Standards workspace`);
       if (!client.workspaces?.createWorkspace) {
         throw new Error('SmartsheetClient does not support createWorkspace');
       }
-      const workspaceResponse = await client.workspaces.createWorkspace({
-        body: {
-          name: 'PMO Standards',
-        },
-      });
+      const createWorkspace = client.workspaces.createWorkspace;
+      const workspaceResponse = await withBackoff(
+        () => createWorkspace({
+          body: {
+            name: 'PMO Standards',
+          },
+        })
+      );
       workspace = workspaceResponse.data || workspaceResponse.result;
       if (!workspace) {
         throw new Error('Failed to create PMO Standards workspace');
@@ -143,15 +150,18 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
           );
         }
       } else {
-        // Create blank workspace if no template configured
+        // Create blank workspace if no template configured - wrap with retry for API resilience
         if (!client.workspaces?.createWorkspace) {
           throw new Error('Smartsheet client does not support workspace creation');
         }
-        const created = await client.workspaces.createWorkspace({
-          body: {
-            name: workspace.name,
-          },
-        });
+        const createWorkspace = client.workspaces.createWorkspace;
+        const created = await withBackoff(
+          () => createWorkspace({
+            body: {
+              name: workspace.name,
+            },
+          })
+        );
         const createdData = created?.result || created?.data;
         if (!createdData?.id) {
           throw new Error('Failed to create workspace - no ID returned');
@@ -319,8 +329,14 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
         throw new Error(`Name column not found in existing sheet: ${sheetName}`);
       }
 
-      // Get existing rows to check which values are already present
-      const existingSheetResponse = await client.sheets?.getSheet?.({ id: existingSheet.id! });
+      // Get existing rows to check which values are already present - wrap in retry for eventual consistency
+      if (!client.sheets?.getSheet) {
+        throw new Error('SmartsheetClient does not support getSheet');
+      }
+      const getSheet = client.sheets.getSheet;
+      const existingSheetResponse = await withBackoff(
+        () => getSheet({ id: existingSheet.id! })
+      );
       const existingSheetData = existingSheetResponse?.data || existingSheetResponse?.result;
       const existingValues = new Set<string>();
       if (existingSheetData?.rows) {
@@ -351,10 +367,13 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
         if (!client.sheets?.addRows) {
           throw new Error('SmartsheetClient does not support addRows');
         }
-        await client.sheets.addRows({
-          sheetId: existingSheet.id!,
-          body: rows,
-        });
+        const addRows = client.sheets.addRows;
+        await withBackoff(
+          () => addRows({
+            sheetId: existingSheet.id!,
+            body: rows,
+          })
+        );
       } else {
         logger?.debug(`All ${predefinedValues.length} values already present in ${sheetName}`);
       }
@@ -386,10 +405,13 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
     if (!client.sheets?.createSheetInWorkspace) {
       throw new Error('SmartsheetClient does not support createSheetInWorkspace');
     }
-    const createSheetResponse = await client.sheets.createSheetInWorkspace({
-      workspaceId,
-      body: sheet,
-    });
+    const createSheetInWorkspace = client.sheets.createSheetInWorkspace;
+    const createSheetResponse = await withBackoff(
+      () => createSheetInWorkspace({
+        workspaceId,
+        body: sheet,
+      })
+    );
     const createdSheet = createSheetResponse.data || createSheetResponse.result;
     if (!createdSheet) {
       throw new Error(`Failed to create sheet: ${sheetName}`);
@@ -410,10 +432,13 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
     if (!client.sheets?.addRows) {
       throw new Error('SmartsheetClient does not support addRows');
     }
-    await client.sheets.addRows({
-      sheetId: createdSheet.id!,
-      body: rows,
-    });
+    const addRows = client.sheets.addRows;
+    await withBackoff(
+      () => addRows({
+        sheetId: createdSheet.id!,
+        body: rows,
+      })
+    );
 
     return {
       sheetId: createdSheet.id!,
@@ -426,6 +451,10 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
 
   /**
    * Find a sheet in a workspace by name
+   *
+   * IMPORTANT: Wrapped with retry logic to handle Smartsheet's eventual consistency.
+   * After workspace or sheet creation, there can be brief periods where getWorkspaceChildren
+   * returns 404 until the platform's consistency propagation completes.
    */
   private async findSheetInWorkspace(
     client: SmartsheetClient,
@@ -436,10 +465,13 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
       throw new Error('SmartsheetClient does not support getWorkspaceChildren');
     }
 
-    const childrenResponse = await client.workspaces.getWorkspaceChildren({
-      workspaceId,
-      queryParameters: { includeAll: true },
-    });
+    const getWorkspaceChildren = client.workspaces.getWorkspaceChildren;
+    const childrenResponse = await withBackoff(
+      () => getWorkspaceChildren({
+        workspaceId,
+        queryParameters: { includeAll: true },
+      })
+    );
     const children = childrenResponse?.data || [];
 
     // Filter for sheets and find by name

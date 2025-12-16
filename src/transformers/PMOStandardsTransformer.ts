@@ -8,6 +8,7 @@ import { SmartsheetSheet, SmartsheetRow } from '../types/Smartsheet';
 import { Logger } from '../util/Logger';
 import { WorkspaceFactoryProvider } from '../factories';
 import type { ReferenceSheetInfo, PMOStandardsWorkspaceInfo } from '../factories/WorkspaceFactory';
+import { tryWith as withBackoff } from '../util/ExponentialBackoff';
 
 // Re-export types from factory interface for backward compatibility
 export type { ReferenceSheetInfo, PMOStandardsWorkspaceInfo };
@@ -67,8 +68,14 @@ export async function ensureStandardReferenceSheet(
       throw new Error(`Name column not found in existing sheet: ${sheetName}`);
     }
 
-    // Get existing rows to check which values are already present
-    const existingSheet2Response = await client.sheets?.getSheet?.({ id: existingSheet.id! });
+    // Get existing rows to check which values are already present - wrap with retry for eventual consistency
+    if (!client.sheets?.getSheet) {
+      throw new Error('SmartsheetClient does not support getSheet');
+    }
+    const getSheet = client.sheets.getSheet;
+    const existingSheet2Response = await withBackoff(
+      () => getSheet({ id: existingSheet.id! })
+    );
     const existingSheet2 = existingSheet2Response?.data || existingSheet2Response?.result;
     const existingValues = new Set<string>();
     if (existingSheet2?.rows) {
@@ -99,10 +106,13 @@ export async function ensureStandardReferenceSheet(
       if (!client.sheets?.addRows) {
         throw new Error('SmartsheetClient does not support addRows');
       }
-      await client.sheets.addRows({
-        sheetId: existingSheet.id!,
-        body: rows,
-      });
+      const addRows = client.sheets.addRows;
+      await withBackoff(
+        () => addRows({
+          sheetId: existingSheet.id!,
+          body: rows,
+        })
+      );
     } else {
       logger?.debug(`All ${predefinedValues.length} values already present in ${sheetName}`);
     }
@@ -134,10 +144,13 @@ export async function ensureStandardReferenceSheet(
   if (!client.sheets?.createSheetInWorkspace) {
     throw new Error('SmartsheetClient does not support createSheetInWorkspace');
   }
-  const createSheetResponse = await client.sheets.createSheetInWorkspace({
-    workspaceId,
-    body: sheet,
-  });
+  const createSheetInWorkspace = client.sheets.createSheetInWorkspace;
+  const createSheetResponse = await withBackoff(
+    () => createSheetInWorkspace({
+      workspaceId,
+      body: sheet,
+    })
+  );
   const createdSheet = createSheetResponse.data || createSheetResponse.result;
   if (!createdSheet) {
     throw new Error(`Failed to create sheet: ${sheetName}`);
@@ -158,10 +171,13 @@ export async function ensureStandardReferenceSheet(
   if (!client.sheets?.addRows) {
     throw new Error('SmartsheetClient does not support addRows');
   }
-  await client.sheets.addRows({
-    sheetId: createdSheet.id!,
-    body: rows,
-  });
+  const addRows = client.sheets.addRows;
+  await withBackoff(
+    () => addRows({
+      sheetId: createdSheet.id!,
+      body: rows,
+    })
+  );
 
   return {
     sheetId: createdSheet.id!,
@@ -181,14 +197,18 @@ async function findSheetInWorkspace(
   sheetName: string
 ): Promise<SmartsheetSheet | undefined> {
   // Use getWorkspaceChildren to get sheets (getWorkspace is deprecated and doesn't include sheets in response)
+  // Wrap with retry for eventual consistency
   if (!client.workspaces?.getWorkspaceChildren) {
     throw new Error('SmartsheetClient does not support getWorkspaceChildren');
   }
 
-  const childrenResponse = await client.workspaces.getWorkspaceChildren({
-    workspaceId,
-    queryParameters: { includeAll: true },
-  });
+  const getWorkspaceChildren = client.workspaces.getWorkspaceChildren;
+  const childrenResponse = await withBackoff(
+    () => getWorkspaceChildren({
+      workspaceId,
+      queryParameters: { includeAll: true },
+    })
+  );
   const children = childrenResponse?.data || [];
 
   // Filter for sheets and find by name

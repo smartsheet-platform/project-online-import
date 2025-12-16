@@ -1,9 +1,16 @@
-**📚 Implementation Guide Series**
+<div align="center" style="background-image: url('https://www.smartsheet.com/sites/default/files/styles/1300px/public/2024-10/features-header-product-illustrations-ursa.png?itok=AMMNS_FZ'); background-size: cover; background-position: center; padding: 40px 20px; border-radius: 8px; margin-bottom: 20px;">
+
+<img src="https://www.smartsheet.com/sites/default/files/smartsheet-logo-blue-new.svg" width="200" height="33" style="margin-bottom: 20px;">
+
+<h1 style="color: rgba(0, 15, 51, 0.75);">🛠️ Contributing</h1>
+
+[🎯 Migrating](../architecture/project-online-migration-overview.md) · [🏗️ How it Works](../architecture/etl-system-design.md) · 🛠️ Contributing
+
+</div>
 
 <div align="center">
 
-| [← Previous: Anti-Patterns](../code/anti-patterns.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Test Suite Guide →](../../test/README.md) |
-|:---|:---:|---:|
+[← Previous: Anti-Patterns](../code/anti-patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Test Suite Guide →](../../test/README.md)
 
 </div>
 
@@ -491,7 +498,6 @@ const resources = await client.getResources();
 
 <div align="center">
 
-| [← Previous: Anti-Patterns](../code/anti-patterns.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Test Suite Guide →](../../test/README.md) |
-|:---|:---:|---:|
+[← Previous: Anti-Patterns](../code/anti-patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Test Suite Guide →](../../test/README.md)
 
 </div>

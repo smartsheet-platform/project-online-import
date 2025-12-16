@@ -1,17 +1,22 @@
-**📚 Implementation Guide Series**
+<div align="center" style="background-image: url('https://www.smartsheet.com/sites/default/files/styles/1300px/public/2024-10/features-header-product-illustrations-ursa.png?itok=AMMNS_FZ'); background-size: cover; background-position: center; padding: 40px 20px; border-radius: 8px; margin-bottom: 20px;">
+
+<img src="https://www.smartsheet.com/sites/default/files/smartsheet-logo-blue-new.svg" width="200" height="33" style="margin-bottom: 20px;">
+
+<h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
+
+[🎯 Migrating](../architecture/project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+
+</div>
 
 <div align="center">
 
-| [← Previous: Using Workspace Templates](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet Connections →](./Sheet-References.md) |
-|:---|:---:|---:|
+[← Previous: Using Workspace Templates](./Template-Based-Workspace-Creation.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Sheet Connections →](./Sheet-References.md)
 
 </div>
 
 ---
 
 # Safe Re-runs
-
-**Last Updated**: 2025-12-05
 
 ## What This Means
 
@@ -110,7 +115,6 @@ Results:
 
 <div align="center">
 
-| [← Previous: Using Workspace Templates](./Template-Based-Workspace-Creation.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Sheet Connections →](./Sheet-References.md) |
-|:---|:---:|---:|
+[← Previous: Using Workspace Templates](./Template-Based-Workspace-Creation.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Sheet Connections →](./Sheet-References.md)
 
 </div>

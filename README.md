@@ -142,23 +142,50 @@ See `.env.sample` for all available configuration options including:
 
 ## Documentation
 
-Comprehensive documentation is organized in a guided reading series. Follow this recommended order:
+### Choose Your Path
 
-1. **[Project Online Migration Overview](sdlc/docs/architecture/01-project-online-migration-overview.md)** - Business context, high-level approach, and system overview
-2. **[ETL System Design](sdlc/docs/architecture/02-etl-system-design.md)** - Component architecture and implementation details
-3. **[Data Transformation Guide](sdlc/docs/architecture/03-data-transformation-guide.md)** - Data mappings, output structure, and transformation specifications
-4. **[Factory Pattern Design](sdlc/docs/architecture/Factory-Pattern-Design.md)** - Workspace creation strategies and extensibility
-5. **[Template-Based Workspace Creation](sdlc/docs/project/Template-Based-Workspace-Creation.md)** - Efficient workspace creation using templates
-6. **[Re-run Resiliency](sdlc/docs/project/Re-run-Resiliency.md)** - Idempotent operations and multi-run support
-7. **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references, picklist configurations, and relationship patterns
-8. **[Authentication Setup](sdlc/docs/project/Authentication-Setup.md)** - Credential configuration for Project Online and Smartsheet
-9. **[CLI Usage Guide](sdlc/docs/project/CLI-Usage-Guide.md)** - Complete CLI command reference and examples
-10. **[Troubleshooting Playbook](sdlc/docs/code/troubleshooting-playbook.md)** - Common issues and solutions
-11. **[Code Conventions](sdlc/docs/code/conventions.md)** - Naming, formatting, and style standards
+Documentation is organized into three sections based on your needs:
+
+#### 🎯 [Migrating to Smartsheet](sdlc/docs/architecture/project-online-migration-overview.md)
+**Start here if you're migrating from Project Online to Smartsheet**
+
+For: Project managers, administrators, end users
+
+1. **[Migration Overview](sdlc/docs/architecture/project-online-migration-overview.md)** ⭐ **START HERE** - Business context, what the tool does, migration structure
+2. **[Authentication Setup](sdlc/docs/project/Authentication-Setup.md)** - Credential configuration
+3. **[CLI Usage Guide](sdlc/docs/project/CLI-Usage-Guide.md)** - Complete command reference and examples
+4. **[Troubleshooting](sdlc/docs/code/troubleshooting-playbook.md)** - Common issues and solutions
+
+#### 🏗️ [How it Works](sdlc/docs/architecture/etl-system-design.md)
+**Start here to understand the technical architecture and design**
+
+For: Technical leads, architects, evaluators
+
+5. **[ETL System Design](sdlc/docs/architecture/etl-system-design.md)** ⭐ **START HERE** - Component architecture and implementation
+6. **[Data Transformation Guide](sdlc/docs/architecture/data-transformation-guide.md)** - Data mappings and transformation specs
+7. **[Factory Pattern Design](sdlc/docs/architecture/Factory-Pattern-Design.md)** - Workspace creation strategies
+8. **[Template-Based Workspace Creation](sdlc/docs/project/Template-Based-Workspace-Creation.md)** - Efficient workspace creation
+9. **[Re-run Resiliency](sdlc/docs/project/Re-run-Resiliency.md)** - Idempotent operations and multi-run support
+10. **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references and relationships
+
+#### 🛠️ [Contributing](sdlc/docs/code/conventions.md)
+**Start here if you're developing or extending the codebase**
+
+For: Developers, contributors, maintainers
+
+11. **[Code Conventions](sdlc/docs/code/conventions.md)** ⭐ **START HERE** - Naming, formatting, and style standards
 12. **[Code Patterns](sdlc/docs/code/patterns.md)** - Recommended implementation patterns
 13. **[Anti-Patterns](sdlc/docs/code/anti-patterns.md)** - Common mistakes to avoid
 14. **[API Services Catalog](sdlc/docs/api-reference/api-services-catalog.md)** - External API integration reference
-15. **[Test Suite Guide](test/README.md)** - Testing strategy, scenarios, and implementation
+15. **[Test Suite Guide](test/README.md)** - Testing strategy and implementation
+
+---
+
+### Navigation Tips
+
+- Each document has **Previous/Next** links for sequential reading
+- Each document has **section badges** showing which section you're in
+- **Quick Access:** Jump directly to any section's starting point above
 
 ## Project Structure
 
@@ -167,9 +194,9 @@ Comprehensive documentation is organized in a guided reading series. Follow this
 ├── sdlc/                      # SDLC documentation and configuration
 │   ├── docs/
 │   │   ├── architecture/      # System architecture documentation
-│   │   │   ├── 01-project-online-migration-overview.md
-│   │   │   ├── 02-etl-system-design.md
-│   │   │   ├── 03-data-transformation-guide.md
+│   │   │   ├── project-online-migration-overview.md
+│   │   │   ├── etl-system-design.md
+│   │   │   ├── data-transformation-guide.md
 │   │   │   ├── claude-agent-system.md
 │   │   │   └── ultra-dry-architecture.md
 │   │   ├── project/           # Implementation guides
@@ -257,7 +284,7 @@ This tool implements an Extract-Transform-Load (ETL) pattern:
 - **Factory Pattern** - Extensible workspace creation supporting multiple strategies
 - **Type Safety** - Full TypeScript implementation with comprehensive type definitions
 
-See [Project Online Migration Overview](sdlc/docs/architecture/01-project-online-migration-overview.md) and [ETL System Design](sdlc/docs/architecture/02-etl-system-design.md) for complete details.
+See [Project Online Migration Overview](sdlc/docs/architecture/project-online-migration-overview.md) and [ETL System Design](sdlc/docs/architecture/etl-system-design.md) for complete details.
 
 ## Contributing
 

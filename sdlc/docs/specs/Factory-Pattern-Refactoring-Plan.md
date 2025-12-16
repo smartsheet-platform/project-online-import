@@ -365,7 +365,7 @@ export class ProjectOnlineImporter {
 
 **Files to Modify:**
 - `README.md` - Add SOLUTION_TYPE configuration
-- `sdlc/docs/architecture/02-etl-system-design.md` - Document factory pattern
+- `sdlc/docs/architecture/etl-system-design.md` - Document factory pattern
 
 **Tasks:**
 

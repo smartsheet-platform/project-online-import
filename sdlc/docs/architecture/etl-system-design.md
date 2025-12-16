@@ -1,17 +1,22 @@
-**📚 Implementation Guide Series**
+<div align="center" style="background-image: url('https://www.smartsheet.com/sites/default/files/styles/1300px/public/2024-10/features-header-product-illustrations-ursa.png?itok=AMMNS_FZ'); background-size: cover; background-position: center; padding: 40px 20px; border-radius: 8px; margin-bottom: 20px;">
+
+<img src="https://www.smartsheet.com/sites/default/files/smartsheet-logo-blue-new.svg" width="200" height="33" style="margin-bottom: 20px;">
+
+<h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
+
+[🎯 Migrating](./project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+
+</div>
 
 <div align="center">
 
-| [← Previous: Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
-|:---|:---:|---:|
+[← Previous: Migration Overview](./project-online-migration-overview.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Data Transformation Guide →](./data-transformation-guide.md)
 
 </div>
 
 ---
 
 # System Design
-
-**Last Updated**: 2024-12-08
 
 ## How the Migration Tool Works
 
@@ -380,7 +385,6 @@ The next guide provides detailed information about how your data is converted fr
 
 <div align="center">
 
-| [← Previous: Migration Overview](./01-project-online-migration-overview.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Data Transformation Guide →](./03-data-transformation-guide.md) |
-|:---|:---:|---:|
+[← Previous: Migration Overview](./project-online-migration-overview.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Data Transformation Guide →](./data-transformation-guide.md)
 
 </div>

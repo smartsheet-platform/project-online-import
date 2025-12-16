@@ -6,7 +6,7 @@
 - **Related Specs**: 
   - [`sdlc/docs/specs/Project-Online-Test-Data-Population-Script.md`](./Project-Online-Test-Data-Population-Script.md) - Test data population
   - [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md) - 31 integration test scenarios
-  - [`sdlc/docs/architecture/02-etl-system-design.md`](../architecture/02-etl-system-design.md) - ETL architecture
+  - [`sdlc/docs/architecture/etl-system-design.md`](../architecture/etl-system-design.md) - ETL architecture
 
 ## Executive Summary
 
@@ -1051,5 +1051,5 @@ jobs:
 
 - **Test Data Population**: [`sdlc/docs/specs/Project-Online-Test-Data-Population-Script.md`](./Project-Online-Test-Data-Population-Script.md)
 - **Integration Test Spec**: [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md)
-- **ETL Architecture**: [`sdlc/docs/architecture/02-etl-system-design.md`](../architecture/02-etl-system-design.md)
+- **ETL Architecture**: [`sdlc/docs/architecture/etl-system-design.md`](../architecture/etl-system-design.md)
 - **Project Online Client**: [`src/lib/ProjectOnlineClient.ts`](../../../src/lib/ProjectOnlineClient.ts)

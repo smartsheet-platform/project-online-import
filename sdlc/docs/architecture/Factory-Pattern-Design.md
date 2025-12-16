@@ -1,335 +1,116 @@
-# Factory Pattern Design - Workspace Creation
+<div align="center" style="background-image: url('https://www.smartsheet.com/sites/default/files/styles/1300px/public/2024-10/features-header-product-illustrations-ursa.png?itok=AMMNS_FZ'); background-size: cover; background-position: center; padding: 40px 20px; border-radius: 8px; margin-bottom: 20px;">
 
-## Overview
+<img src="https://www.smartsheet.com/sites/default/files/smartsheet-logo-blue-new.svg" width="200" height="33" style="margin-bottom: 20px;">
 
-The Smartsheet workspace creation functionality has been refactored to use the Factory design pattern, enabling support for multiple workspace creation strategies while maintaining clean, testable code.
+<h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
 
-## Architecture
+[🎯 Migrating](./project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
 
-### Factory Pattern Implementation
+</div>
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  WorkspaceFactoryProvider                    │
-│                    (Factory Selector)                        │
-│                                                              │
-│  getFactory(configManager?) → WorkspaceFactory              │
-│                                                              │
-│  Based on SOLUTION_TYPE configuration:                      │
-│  - "StandaloneWorkspaces" → StandaloneWorkspacesFactory    │
-│  - "Portfolio" → PortfolioFactory                           │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-              ┌───────────────────────────────┐
-              │    WorkspaceFactory          │
-              │      (Interface)             │
-              │                              │
-              │  + createStandardsWorkspace()│
-              │  + createProjectWorkspace()  │
-              └───────────────────────────────┘
-                      │              │
-           ┌──────────┴──────────┐   │
-           ▼                     ▼   │
-┌──────────────────────┐  ┌──────────────────────┐
-│StandaloneWorkspaces  │  │  PortfolioFactory    │
-│      Factory         │  │   (Future Impl)      │
-│                      │  │                      │
-│ Current              │  │ Creates workspaces   │
-│ implementation:      │  │ within portfolio     │
-│                      │  │ structure            │
-│ - Creates PMO        │  │                      │
-│   Standards          │  │ NOT YET IMPLEMENTED  │
-│   workspace          │  │                      │
-│ - Creates project    │  │                      │
-│   workspaces         │  │                      │
-│ - Idempotent         │  │                      │
-│   operations         │  │                      │
-└──────────────────────┘  └──────────────────────┘
-```
+<div align="center">
 
-### Component Responsibilities
+[← Previous: Data Transformation Guide](./data-transformation-guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md)
 
-#### WorkspaceFactory Interface
-- **Location**: `src/factories/WorkspaceFactory.ts`
-- **Purpose**: Defines the contract for workspace creation strategies
-- **Methods**:
-  - `createStandardsWorkspace()`: Create or retrieve PMO Standards workspace
-  - `createProjectWorkspace()`: Create project workspace with required sheets
-
-#### WorkspaceFactoryProvider
-- **Location**: `src/factories/WorkspaceFactoryProvider.ts`
-- **Purpose**: Selects and caches appropriate factory based on configuration
-- **Features**:
-  - Singleton pattern for factory instances
-  - Configuration-driven factory selection
-  - Cache management for performance
-
-#### StandaloneWorkspacesFactory
-- **Location**: `src/factories/StandaloneWorkspacesFactory.ts`
-- **Purpose**: Default implementation for standalone workspace creation
-- **Behavior**:
-  - Creates independent PMO Standards workspace
-  - Creates individual project workspaces
-  - Handles template workspace copying (if configured)
-  - Idempotent sheet and value creation
-
-#### PortfolioFactory
-- **Location**: `src/factories/PortfolioFactory.ts`
-- **Status**: Stub implementation (not yet functional)
-- **Future Purpose**: Create workspaces within portfolio structure
-
-## Configuration
-
-### Environment Variables
-
-```bash
-# Solution Type (optional, defaults to StandaloneWorkspaces)
-SOLUTION_TYPE=StandaloneWorkspaces  # or Portfolio
-
-# PMO Standards Workspace ID (optional)
-PMO_STANDARDS_WORKSPACE_ID=1234567890
-
-# Template Workspace ID (optional, for StandaloneWorkspaces)
-TEMPLATE_WORKSPACE_ID=9876543210
-```
-
-### Configuration Flow
-
-1. User sets `SOLUTION_TYPE` in `.env` file (or defaults to `StandaloneWorkspaces`)
-2. `ConfigManager` loads and validates the configuration
-3. `ProjectOnlineImporter` initializes with `ConfigManager`
-4. `WorkspaceFactoryProvider.getFactory()` selects appropriate factory
-5. Factory creates workspaces according to its strategy
-
-## Integration Points
-
-### ProjectOnlineImporter
-
-The importer integrates with the factory pattern through:
-
-```typescript
-export class ProjectOnlineImporter {
-  private workspaceFactory: WorkspaceFactory;
-  
-  constructor(
-    client?: SmartsheetClient,
-    logger?: Logger,
-    errorHandler?: ErrorHandler,
-    configManager?: ConfigManager
-  ) {
-    // ... other initialization
-    this.workspaceFactory = WorkspaceFactoryProvider.getFactory(configManager);
-  }
-  
-  private async getOrCreatePMOStandardsWorkspace() {
-    return this.workspaceFactory.createStandardsWorkspace(
-      this.smartsheetClient!,
-      workspaceIdNum,
-      this.logger
-    );
-  }
-  
-  async importProject(data: ProjectImportData) {
-    const projectResult = await this.workspaceFactory.createProjectWorkspace(
-      this.smartsheetClient!,
-      data.project,
-      this.configManager
-    );
-  }
-}
-```
-
-## Extension Guide
-
-### Adding a New Factory Implementation
-
-To implement a new workspace creation strategy (e.g., Portfolio):
-
-1. **Implement the WorkspaceFactory interface**:
-
-```typescript
-// src/factories/PortfolioFactory.ts
-export class PortfolioFactory implements WorkspaceFactory {
-  async createStandardsWorkspace(
-    client: SmartsheetClient,
-    existingWorkspaceId?: number,
-    logger?: Logger
-  ): Promise<PMOStandardsWorkspaceInfo> {
-    // Your portfolio-specific PMO Standards creation logic
-  }
-  
-  async createProjectWorkspace(
-    client: SmartsheetClient,
-    project: ProjectOnlineProject,
-    configManager?: ConfigManager,
-    workspaceId?: number
-  ): Promise<ProjectWorkspaceResult> {
-    // Your portfolio-specific project workspace creation logic
-  }
-}
-```
-
-2. **Update WorkspaceFactoryProvider**:
-
-```typescript
-private static createFactory(solutionType: string): WorkspaceFactory {
-  switch (solutionType) {
-    case 'StandaloneWorkspaces':
-      return new StandaloneWorkspacesFactory();
-    case 'Portfolio':
-      return new PortfolioFactory(); // Already done!
-    // Add new cases here
-    default:
-      throw new Error(`Unknown SOLUTION_TYPE: "${solutionType}"`);
-  }
-}
-```
-
-3. **Update ConfigManager validation** (if needed):
-
-```typescript
-const validSolutionTypes = ['StandaloneWorkspaces', 'Portfolio', 'YourNewType'];
-```
-
-4. **Add configuration support** in `.env.sample`
-
-5. **Create tests** for your factory implementation
-
-## Testing Strategy
-
-### Unit Tests
-
-- Factory selection logic: `WorkspaceFactoryProvider.getFactory()`
-- Configuration validation: `ConfigManager.getSolutionType()`
-- Individual factory methods (mock Smartsheet client)
-
-### Integration Tests
-
-- End-to-end workspace creation with StandaloneWorkspacesFactory
-- PMO Standards reuse across multiple projects
-- Template workspace copying (if configured)
-
-### Testing Example
-
-```typescript
-describe('WorkspaceFactoryProvider', () => {
-  it('should return StandaloneWorkspacesFactory by default', () => {
-    const factory = WorkspaceFactoryProvider.getFactory();
-    expect(factory).toBeInstanceOf(StandaloneWorkspacesFactory);
-  });
-  
-  it('should cache factory instances', () => {
-    const factory1 = WorkspaceFactoryProvider.getFactory();
-    const factory2 = WorkspaceFactoryProvider.getFactory();
-    expect(factory1).toBe(factory2); // Same instance
-  });
-});
-```
-
-## Migration Guide
-
-### From Direct Function Calls to Factory
-
-**Before (deprecated):**
-```typescript
-import { createPMOStandardsWorkspace } from '../transformers/PMOStandardsTransformer';
-
-const pmoWorkspace = await createPMOStandardsWorkspace(client, workspaceId, logger);
-```
-
-**After (current):**
-```typescript
-import { WorkspaceFactoryProvider } from '../factories';
-
-const factory = WorkspaceFactoryProvider.getFactory(configManager);
-const pmoWorkspace = await factory.createStandardsWorkspace(client, workspaceId, logger);
-```
-
-### Configuration Migration
-
-No configuration changes required. The factory pattern is fully backward compatible:
-- Defaults to `StandaloneWorkspaces` if `SOLUTION_TYPE` not specified
-- Respects existing `PMO_STANDARDS_WORKSPACE_ID` and `TEMPLATE_WORKSPACE_ID`
-
-## Benefits
-
-### Extensibility
-- Easy to add new workspace creation strategies
-- No changes to calling code when adding new strategies
-
-### Testability
-- Factory interface enables easy mocking
-- Individual factories can be tested in isolation
-
-### Maintainability
-- Clear separation of concerns
-- Single Responsibility Principle
-- Each factory handles one strategy
-
-### Flexibility
-- Configuration-driven strategy selection
-- Runtime factory switching (if needed)
-
-## Performance Considerations
-
-### Factory Caching
-The `WorkspaceFactoryProvider` caches factory instances to avoid repeated object creation:
-
-```typescript
-private static instances: Map<string, WorkspaceFactory> = new Map();
-```
-
-### Workspace Reuse
-Factories implement idempotent operations:
-- PMO Standards workspace checked before creation
-- Sheets checked before creation
-- Values checked before addition
-
-## Future Enhancements
-
-### Portfolio Implementation
-The Portfolio factory stub provides a starting point for:
-- Portfolio-level workspace hierarchy
-- Cross-project references and dependencies
-- Portfolio-level reporting and rollup sheets
-- Shared PMO Standards within portfolio context
-
-See `src/factories/PortfolioFactory.ts` for detailed implementation notes.
-
-### Additional Strategies
-The pattern supports additional strategies such as:
-- **TemplateBasedFactory**: Always use templates (no blank workspaces)
-- **SharedResourceFactory**: Shared resource pools across projects
-- **HierarchicalFactory**: Parent-child project relationships
-
-## Troubleshooting
-
-### Factory Selection Issues
-
-**Problem**: Wrong factory selected
-**Solution**: Check `SOLUTION_TYPE` in `.env` file. Verify `ConfigManager` loading.
-
-**Problem**: Factory not found error
-**Solution**: Ensure `SOLUTION_TYPE` value is valid. Check `WorkspaceFactoryProvider` switch statement.
-
-### Implementation Issues
-
-**Problem**: Portfolio not implemented error
-**Solution**: Expected - Portfolio is a stub. Use `SOLUTION_TYPE=StandaloneWorkspaces`
-
-**Problem**: Type errors with factory interface
-**Solution**: Ensure factory implements all `WorkspaceFactory` methods with correct signatures
-
-## References
-
-- [Project Plan](../specs/Factory-Pattern-Refactoring-Plan.md)
-- [ETL System Design](./02-etl-system-design.md)
-- [WorkspaceFactory Interface](../../src/factories/WorkspaceFactory.ts)
-- [StandaloneWorkspacesFactory](../../src/factories/StandaloneWorkspacesFactory.ts)
+</div>
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-12-15  
-**Status**: Complete - Refactoring Implemented
+# Workspace Creation Options
+
+## Overview
+
+When you migrate your projects, the tool creates your Smartsheet workspaces in an organized structure. You have options for how this organization works, allowing you to choose what makes sense for your team.
+
+## Default Approach: Independent Workspaces
+
+The tool creates each project as its own independent workspace. This approach keeps your projects clearly separated and easy to manage.
+
+**What you get:**
+- One workspace for each Project Online project
+- A central Standards workspace that all projects reference for consistent values
+- Each workspace is self-contained with its own sheets
+
+**Why this works well:**
+- Clear boundaries between projects
+- Each workspace can have different access permissions
+- Easy to share specific projects with team members
+- Straightforward structure that's familiar from Project Online
+
+## Configuration
+
+You can control how workspaces are created through your configuration file:
+
+```bash
+# In your .env file
+SOLUTION_TYPE=StandaloneWorkspaces  # Default - creates independent workspaces
+```
+
+If you don't specify this setting, the tool automatically uses the default approach.
+
+### Optional Settings
+
+**Reuse existing Standards workspace:**
+```bash
+PMO_STANDARDS_WORKSPACE_ID=your_workspace_id
+```
+
+If you've already run a migration and want to reuse the same Standards workspace for new projects, you can provide its identifier here.
+
+**Use a template workspace:**
+```bash
+TEMPLATE_WORKSPACE_ID=your_template_id
+```
+
+If you've created a template workspace with your preferred structure and formatting, the tool can copy from that template for each project migration.
+
+## Future Option: Portfolio Structure
+
+A portfolio-based approach is planned for future releases. This would organize your projects within a hierarchical portfolio structure, similar to how you might organize projects in Project Online.
+
+**What it would provide:**
+- Grouped projects under portfolios
+- Cross-project reporting and dependencies
+- Portfolio-level roll-ups
+
+**Status:** Not yet available - the default independent workspace approach is currently supported
+
+## How It Helps You
+
+### Consistency Across Projects
+
+All your migrated projects reference the same Standards workspace. This means:
+- Status values are consistent across all projects
+- Priority levels use the same definitions everywhere
+- You manage standard values in one place
+
+### Flexibility
+
+Different workspace structures suit different organizational needs:
+- **Independent workspaces** work well for distinct projects with different teams
+- **Portfolio structure** (future) would work well for related projects that need to share information
+
+### Safe Migrations
+
+The workspace creation process is designed to handle interruptions:
+- Can safely re-run if the migration stops partway through
+- Checks if workspaces already exist before creating new ones
+- Reuses existing resources when appropriate
+
+## What Happens During Migration
+
+When you run a migration, the tool:
+
+1. **Sets up or verifies** your Standards workspace exists (done once for all projects)
+2. **Creates your project workspace** with the name matching your Project Online project
+3. **Creates three sheets** within the workspace (Summary, Tasks, Resources)
+4. **Connects dropdown lists** to your Standards workspace for consistency
+5. **Loads your data** into the sheets
+
+This process repeats for each project you migrate, with all projects sharing the same Standards workspace.
+
+<div align="center">
+
+[← Previous: Data Transformation Guide](./data-transformation-guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md)
+
+</div>

@@ -480,7 +480,7 @@ The Smartsheet SDK handles rate limiting automatically. If tests consistently hi
 - **Project Documentation**: `sdlc/docs/project/`
 - **Architecture**: `sdlc/docs/architecture/`
 - **Test Scenarios**: `test/integration/load-phase-test-scenarios.md`
-- **Transformation Spec**: `sdlc/docs/architecture/03-data-transformation-guide.md`
+- **Transformation Spec**: `sdlc/docs/architecture/data-transformation-guide.md`
 - **Smartsheet API**: https://smartsheet-platform.github.io/api-docs/
 
 ---

@@ -1,17 +1,22 @@
-**📚 Implementation Guide Series**
+<div align="center" style="background-image: url('https://www.smartsheet.com/sites/default/files/styles/1300px/public/2024-10/features-header-product-illustrations-ursa.png?itok=AMMNS_FZ'); background-size: cover; background-position: center; padding: 40px 20px; border-radius: 8px; margin-bottom: 20px;">
+
+<img src="https://www.smartsheet.com/sites/default/files/smartsheet-logo-blue-new.svg" width="200" height="33" style="margin-bottom: 20px;">
+
+<h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
+
+[🎯 Migrating](./project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+
+</div>
 
 <div align="center">
 
-| [← Previous: System Design](./02-etl-system-design.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md) |
-|:---|:---:|---:|
+[← Previous: System Design](./etl-system-design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Workspace Creation Strategies →](./Factory-Pattern-Design.md)
 
 </div>
 
 ---
 
 # How Your Data Transforms
-
-**Last Updated**: 2024-12-08
 
 This guide explains how your Project Online data converts to Smartsheet format, including field mappings, data type conversions, and naming patterns.
 
@@ -521,7 +526,6 @@ Your project sheets reference the standards workspace for dropdown values:
 
 <div align="center">
 
-| [← Previous: System Design](./02-etl-system-design.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md) |
-|:---|:---:|---:|
+[← Previous: System Design](./etl-system-design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Workspace Creation Strategies →](./Factory-Pattern-Design.md)
 
 </div>

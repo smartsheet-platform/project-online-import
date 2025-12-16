@@ -16,6 +16,7 @@ import { Logger } from '../util/Logger';
 import { ErrorHandler } from '../util/ErrorHandler';
 import { MultiStageProgressReporter } from '../util/ProgressReporter';
 import { ConfigManager } from '../util/ConfigManager';
+import { tryWith as withBackoff } from '../util/ExponentialBackoff';
 
 export interface ImportOptions {
   source: string;
@@ -334,6 +335,15 @@ export class ProjectOnlineImporter {
    * If provided, uses existing workspace. Otherwise creates new one.
    */
   private async getOrCreatePMOStandardsWorkspace(): Promise<PMOStandardsWorkspaceInfo> {
+    const startTime = Date.now();
+    const testDiagnostics = process.env.TEST_DIAGNOSTICS === 'true';
+    
+    if (testDiagnostics) {
+      console.log(`\n[PMO DIAG] getOrCreatePMOStandardsWorkspace called at ${new Date().toISOString()}`);
+      console.log(`[PMO DIAG] Current cached workspace: ${this.pmoStandardsWorkspace?.workspaceId || 'NONE'}`);
+      console.log(`[PMO DIAG] ENV PMO_STANDARDS_WORKSPACE_ID: ${process.env.PMO_STANDARDS_WORKSPACE_ID || 'NOT SET'}`);
+    }
+    
     if (!this.smartsheetClient) {
       throw ErrorHandler.configError('Smartsheet client', 'not initialized');
     }
@@ -344,25 +354,54 @@ export class ProjectOnlineImporter {
 
     if (workspaceIdNum && !isNaN(workspaceIdNum)) {
       this.logger.debug(`Using existing PMO Standards workspace: ${workspaceIdNum}`);
+      if (testDiagnostics) {
+        console.log(`[PMO DIAG] Using existing workspace ID: ${workspaceIdNum}`);
+      }
     } else if (existingWorkspaceId) {
       this.logger.warn(
         `Invalid PMO_STANDARDS_WORKSPACE_ID: "${existingWorkspaceId}". Creating new workspace.`
       );
+      if (testDiagnostics) {
+        console.log(`[PMO DIAG] Invalid workspace ID, will create new`);
+      }
+    } else if (testDiagnostics) {
+      console.log(`[PMO DIAG] No workspace ID provided, will create new`);
     }
 
-    // Use factory to create or get PMO Standards workspace
-    const pmoWorkspace = await this.workspaceFactory.createStandardsWorkspace(
-      this.smartsheetClient,
-      workspaceIdNum && !isNaN(workspaceIdNum) ? workspaceIdNum : undefined,
-      this.logger
-    );
+    try {
+      // Use factory to create or get PMO Standards workspace
+      if (testDiagnostics) {
+        console.log(`[PMO DIAG] Calling factory.createStandardsWorkspace...`);
+      }
+      
+      const pmoWorkspace = await this.workspaceFactory.createStandardsWorkspace(
+        this.smartsheetClient,
+        workspaceIdNum && !isNaN(workspaceIdNum) ? workspaceIdNum : undefined,
+        this.logger
+      );
 
-    this.logger.debug(
-      `PMO Standards workspace ready (ID: ${pmoWorkspace.workspaceId}) ` +
-        `with ${Object.keys(pmoWorkspace.referenceSheets).length} reference sheets`
-    );
+      const elapsedMs = Date.now() - startTime;
+      this.logger.debug(
+        `PMO Standards workspace ready (ID: ${pmoWorkspace.workspaceId}) ` +
+          `with ${Object.keys(pmoWorkspace.referenceSheets).length} reference sheets`
+      );
+      
+      if (testDiagnostics) {
+        console.log(`[PMO DIAG] ✅ Workspace ready in ${elapsedMs}ms`);
+        console.log(`[PMO DIAG] Workspace ID: ${pmoWorkspace.workspaceId}`);
+        console.log(`[PMO DIAG] Reference sheets: ${Object.keys(pmoWorkspace.referenceSheets).length}`);
+        console.log(`[PMO DIAG] Sheets: ${Object.keys(pmoWorkspace.referenceSheets).join(', ')}\n`);
+      }
 
-    return pmoWorkspace;
+      return pmoWorkspace;
+    } catch (error) {
+      const elapsedMs = Date.now() - startTime;
+      if (testDiagnostics) {
+        console.error(`[PMO DIAG] ❌ Failed after ${elapsedMs}ms`);
+        console.error(`[PMO DIAG] Error:`, error);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -376,11 +415,15 @@ export class ProjectOnlineImporter {
       throw ErrorHandler.configError('Smartsheet client', 'not initialized');
     }
 
-    // Get sheet to find Status and Priority column IDs
+    // Get sheet to find Status and Priority column IDs - wrap with retry for eventual consistency
     console.log(`[DEBUG] Querying sheet ID ${summarySheetId} for Status and Priority columns`);
-    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({
-      id: summarySheetId,
-    });
+    if (!this.smartsheetClient.sheets?.getSheet) {
+      throw new Error('SmartsheetClient does not support getSheet');
+    }
+    const getSheet = this.smartsheetClient.sheets.getSheet;
+    const sheetResponse = await withBackoff(
+      () => getSheet({ id: summarySheetId })
+    );
     console.log(`[DEBUG] Raw API response keys:`, Object.keys(sheetResponse || {}));
     console.log(
       `[DEBUG] Response structure:`,
@@ -441,8 +484,14 @@ export class ProjectOnlineImporter {
       throw ErrorHandler.configError('Smartsheet client', 'not initialized');
     }
 
-    // Get sheet to find column IDs
-    const sheetResponse = await this.smartsheetClient.sheets?.getSheet?.({ id: taskSheetId });
+    // Get sheet to find column IDs - wrap with retry for eventual consistency
+    if (!this.smartsheetClient.sheets?.getSheet) {
+      throw new Error('SmartsheetClient does not support getSheet');
+    }
+    const getSheet = this.smartsheetClient.sheets.getSheet;
+    const sheetResponse = await withBackoff(
+      () => getSheet({ id: taskSheetId })
+    );
     const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
     if (!sheet) {
       throw ErrorHandler.dataError(

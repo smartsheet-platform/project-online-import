@@ -1,0 +1,33 @@
+PMO Standards Test Diagnostics
+===============================
+Started: Tue Dec 16 11:50:51 PST 2025
+Number of runs: 10
+Test command: npm test -- test/integration/pmo-standards-integration.test.ts
+
+Run 1: PASS
+Run 2: FAIL
+  Failed tests:
+    -   PMO Standards Integration Tests › PMO Standards Workspace Creation › should create PMO Standards workspace with all reference sheets
+    -   PMO Standards Integration Tests › PMO Standards Workspace Creation › should reuse PMO Standards workspace across multiple projects
+    -   PMO Standards Integration Tests › Picklist Configuration › should configure project summary sheet picklists
+    -   PMO Standards Integration Tests › Picklist Configuration › should configure task sheet picklists
+    -   PMO Standards Integration Tests › Picklist Configuration › should have picklist values from PMO Standards reference sheets
+    -   PMO Standards Integration Tests › Idempotent Creation › should reuse existing PMO Standards workspace when ID provided
+  Error:
+          401 |         console.error(`[PMO DIAG] Error:`, error);
+          402 |       }
+          403 |       throw error;
+    
+          at ProjectOnlineImporter.getOrCreatePMOStandardsWorkspace (src/lib/importer.ts:400:17)
+          at ProjectOnlineImporter.importProject (src/lib/importer.ts:214:38)
+
+Run 3: FAIL
+  Failed tests:
+  Error:
+    
+
+Run 4: FAIL
+  Failed tests:
+  Error:
+    
+
