@@ -34,76 +34,99 @@ TEMP_MD="$OUTPUT_DIR/temp-combined.md"
 
 echo "📝 Combining markdown files..."
 
-# Start with title page
+# Start with YAML metadata - disable default title to use custom title page
 cat > "$TEMP_MD" << 'EOF'
 ---
-title: "Project Online to Smartsheet Migration Guide"
-author: "Migration Tool Documentation"
-date: "December 2024"
+title: ""
+author: ""
+date: ""
 toc: true
 toc-depth: 2
 numbersections: true
-geometry: margin=1in
-fontsize: 11pt
 ---
-
-\newpage
 
 EOF
 
-# Function to add a document with page break
-add_document() {
-    local file=$1
-    local title=$2
-    
-    echo "  Adding: $title"
-    
-    # Add section header
+# Function to add a chapter header
+add_chapter() {
+    local title=$1
+    echo "  Adding chapter: $title"
     echo "" >> "$TEMP_MD"
     echo "\\newpage" >> "$TEMP_MD"
     echo "" >> "$TEMP_MD"
     echo "# $title" >> "$TEMP_MD"
     echo "" >> "$TEMP_MD"
+}
+
+# Function to add a document section
+add_document() {
+    local file=$1
+    local title=$2
     
-    # Add file content, removing the navigation tables and horizontal rules at start/end
-    sed -e '1,/^---$/d' -e '/^---$/,/^<div align="center">$/d' "$file" | \
-    sed '/^<div align="center">$/,/^<\/div>$/d' >> "$TEMP_MD"
+    echo "    Adding: $title"
+    
+    # Add section header
+    echo "" >> "$TEMP_MD"
+    echo "## $title" >> "$TEMP_MD"
+    echo "" >> "$TEMP_MD"
+    
+    # Add file content - remove ALL H1 and H2 headings, demote H3+ headings
+    # This prevents duplicate entries in TOC - only our section title appears
+    sed -e '1,/^---$/d' \
+        -e '/^<div align="center".*style=/,/^<\/div>$/d' \
+        -e '/^<div align="center">$/,/^<\/div>$/d' \
+        -e '/^---$/,/^<div align="center">$/d' \
+        "$file" | \
+    # Remove ALL H1 and H2 headings completely, demote H3→H3, H4→H4, etc.
+    sed -e '/^# /d' \
+        -e '/^## /d' >> "$TEMP_MD"
     
     echo "" >> "$TEMP_MD"
 }
 
-# Add all documents in order
-add_document "sdlc/docs/architecture/01-project-online-migration-overview.md" "Migrating from Project Online to Smartsheet"
-add_document "sdlc/docs/architecture/02-etl-system-design.md" "System Design"
-add_document "sdlc/docs/architecture/03-data-transformation-guide.md" "How Your Data Transforms"
+# CHAPTER 1: 🎯 Migrating to Smartsheet
+echo ""
+echo "🎯 Adding Chapter 1: Migrating to Smartsheet"
+add_chapter "Migrating to Smartsheet"
+add_document "sdlc/docs/architecture/project-online-migration-overview.md" "Migrating from Project Online to Smartsheet"
+add_document "sdlc/docs/architecture/etl-system-design.md" "System Design"
+add_document "sdlc/docs/architecture/data-transformation-guide.md" "How Your Data Transforms"
+
+# CHAPTER 2: 🏗️ How it Works
+echo ""
+echo "🏗️ Adding Chapter 2: How it Works"
+add_chapter "How it Works"
+add_document "sdlc/docs/architecture/Factory-Pattern-Design.md" "Workspace Creation Options"
 add_document "sdlc/docs/project/Template-Based-Workspace-Creation.md" "Using Workspace Templates"
 add_document "sdlc/docs/project/Re-run-Resiliency.md" "Safe Re-runs"
-add_document "sdlc/docs/project/Sheet-References.md" "How Sheets Connect to Each Other"
+add_document "sdlc/docs/project/Sheet-References.md" "How Sheets Connect"
 add_document "sdlc/docs/project/Authentication-Setup.md" "Setting Up Authentication"
 add_document "sdlc/docs/project/CLI-Usage-Guide.md" "Using the Migration Tool"
 add_document "sdlc/docs/code/troubleshooting-playbook.md" "Troubleshooting Common Issues"
-add_document "sdlc/docs/code/conventions.md" "Code Conventions (Developer Documentation)"
-add_document "sdlc/docs/code/patterns.md" "Code Patterns (Developer Documentation)"
-add_document "sdlc/docs/code/anti-patterns.md" "Anti-Patterns (Developer Documentation)"
-add_document "sdlc/docs/api-reference/api-services-catalog.md" "API Services Reference (Developer Documentation)"
-add_document "test/README.md" "Test Suite (Developer Documentation)"
 
 echo ""
 echo "📄 Generating PDF with pandoc..."
 
-# Generate PDF using pandoc
+# Path to custom header includes
+HEADER_FILE="$OUTPUT_DIR/custom-header.tex"
+
+# Generate PDF using pandoc with custom header includes
+# Font configuration is in custom-header.tex
 pandoc "$TEMP_MD" \
     -o "$OUTPUT_PDF" \
     --pdf-engine=xelatex \
+    --include-in-header="$HEADER_FILE" \
     --toc \
     --toc-depth=2 \
     --number-sections \
     --highlight-style=tango \
-    -V linkcolor:blue \
-    -V geometry:margin=1in \
-    -V fontsize=11pt \
-    -V mainfont="Arial" \
+    -V documentclass=report \
+    -V fontsize=9pt \
     -V monofont="Courier New" \
+    -V geometry:margin=1in \
+    -V colorlinks=true \
+    -V linkcolor=blue \
+    --listings \
     2>/dev/null
 
 # Check if PDF was created successfully
