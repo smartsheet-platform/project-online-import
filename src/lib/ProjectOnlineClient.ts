@@ -13,7 +13,7 @@ import {
   ODataQueryOptions,
   ODataCollectionResponse,
 } from '../types/ProjectOnline';
-import { MSALAuthHandler, AuthConfig } from './auth/MSALAuthHandler';
+import { MSALAuthHandler, AuthConfig } from './MSALAuthHandler';
 import { Logger } from '../util/Logger';
 import { ErrorHandler } from '../util/ErrorHandler';
 import { tryWith as withBackoff } from '../util/ExponentialBackoff';

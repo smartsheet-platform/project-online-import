@@ -6,7 +6,7 @@
 
 import * as dotenv from 'dotenv';
 import axios from 'axios';
-import { MSALAuthHandler } from '../src/lib/auth/MSALAuthHandler';
+import { MSALAuthHandler } from '../src/lib/MSALAuthHandler';
 import { Logger } from '../src/util/Logger';
 import * as path from 'path';
 

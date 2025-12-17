@@ -4,8 +4,8 @@
  */
 
 import * as msal from '@azure/msal-node';
-import { Logger } from '../../util/Logger';
-import { ErrorHandler } from '../../util/ErrorHandler';
+import { Logger } from '../util/Logger';
+import { ErrorHandler } from '../util/ErrorHandler';
 
 export interface AuthConfig {
   tenantId: string;
