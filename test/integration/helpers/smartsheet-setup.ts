@@ -4,6 +4,7 @@
  */
 
 import { SmartsheetClient, WorkspaceChildrenData } from '../../../src/types/SmartsheetClient';
+import { SmartsheetWorkspace } from '../../../src/types/Smartsheet';
 
 export interface TestWorkspaceConfig {
   prefix: string;
@@ -117,11 +118,11 @@ export async function cleanupOldTestWorkspaces(
 ): Promise<number> {
   try {
     // Get ALL workspaces with token-based pagination
-    let allWorkspaces: any[] = [];
+    let allWorkspaces: SmartsheetWorkspace[] = [];
     let lastKey: string | undefined = undefined;
 
     do {
-      const queryParams: any = {
+      const queryParams: Record<string, unknown> = {
         paginationType: 'token',
       };
       if (lastKey) {
@@ -141,8 +142,7 @@ export async function cleanupOldTestWorkspaces(
 
     // Filter to only owned workspaces with matching prefix
     const ownedWorkspaces = allWorkspaces.filter(
-      (ws: any) =>
-        ws.accessLevel === 'OWNER' && (!config.prefix || ws.name?.startsWith(config.prefix))
+      (ws) => ws.accessLevel === 'OWNER' && (!config.prefix || ws.name?.startsWith(config.prefix))
     );
 
     const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;

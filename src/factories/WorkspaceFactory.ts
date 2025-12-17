@@ -11,6 +11,7 @@ import { SmartsheetClient } from '../types/SmartsheetClient';
 import { SmartsheetWorkspace } from '../types/Smartsheet';
 import { ProjectOnlineProject } from '../types/ProjectOnline';
 import { Logger } from '../util/Logger';
+import { ConfigManager } from '../util/ConfigManager';
 
 /**
  * Reference sheet metadata returned after creation
@@ -93,7 +94,7 @@ export interface WorkspaceFactory {
   createProjectWorkspace(
     client: SmartsheetClient,
     project: ProjectOnlineProject,
-    configManager?: any, // ConfigManager - avoiding circular dependency
+    configManager?: ConfigManager,
     workspaceId?: number
   ): Promise<ProjectWorkspaceResult>;
 }

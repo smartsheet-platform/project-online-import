@@ -57,8 +57,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
         throw new Error('SmartsheetClient does not support getWorkspace');
       }
       const getWorkspace = client.workspaces.getWorkspace;
-      const workspaceResponse = await withBackoff(
-        () => getWorkspace({
+      const workspaceResponse = await withBackoff(() =>
+        getWorkspace({
           workspaceId: existingWorkspaceId,
         })
       );
@@ -73,8 +73,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
         throw new Error('SmartsheetClient does not support createWorkspace');
       }
       const createWorkspace = client.workspaces.createWorkspace;
-      const workspaceResponse = await withBackoff(
-        () => createWorkspace({
+      const workspaceResponse = await withBackoff(() =>
+        createWorkspace({
           body: {
             name: 'PMO Standards',
           },
@@ -155,8 +155,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
           throw new Error('Smartsheet client does not support workspace creation');
         }
         const createWorkspace = client.workspaces.createWorkspace;
-        const created = await withBackoff(
-          () => createWorkspace({
+        const created = await withBackoff(() =>
+          createWorkspace({
             body: {
               name: workspace.name,
             },
@@ -334,14 +334,12 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
         throw new Error('SmartsheetClient does not support getSheet');
       }
       const getSheet = client.sheets.getSheet;
-      const existingSheetResponse = await withBackoff(
-        () => getSheet({ id: existingSheet.id! })
-      );
+      const existingSheetResponse = await withBackoff(() => getSheet({ id: existingSheet.id! }));
       const existingSheetData = existingSheetResponse?.data || existingSheetResponse?.result;
       const existingValues = new Set<string>();
       if (existingSheetData?.rows) {
         for (const row of existingSheetData.rows) {
-          const nameCell = row.cells?.find((c: any) => c.columnId === nameColumn.id);
+          const nameCell = row.cells?.find((c) => c.columnId === nameColumn.id);
           if (nameCell?.value) {
             existingValues.add(String(nameCell.value));
           }
@@ -368,8 +366,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
           throw new Error('SmartsheetClient does not support addRows');
         }
         const addRows = client.sheets.addRows;
-        await withBackoff(
-          () => addRows({
+        await withBackoff(() =>
+          addRows({
             sheetId: existingSheet.id!,
             body: rows,
           })
@@ -406,8 +404,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
       throw new Error('SmartsheetClient does not support createSheetInWorkspace');
     }
     const createSheetInWorkspace = client.sheets.createSheetInWorkspace;
-    const createSheetResponse = await withBackoff(
-      () => createSheetInWorkspace({
+    const createSheetResponse = await withBackoff(() =>
+      createSheetInWorkspace({
         workspaceId,
         body: sheet,
       })
@@ -433,8 +431,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
       throw new Error('SmartsheetClient does not support addRows');
     }
     const addRows = client.sheets.addRows;
-    await withBackoff(
-      () => addRows({
+    await withBackoff(() =>
+      addRows({
         sheetId: createdSheet.id!,
         body: rows,
       })
@@ -466,8 +464,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
     }
 
     const getWorkspaceChildren = client.workspaces.getWorkspaceChildren;
-    const childrenResponse = await withBackoff(
-      () => getWorkspaceChildren({
+    const childrenResponse = await withBackoff(() =>
+      getWorkspaceChildren({
         workspaceId,
         queryParameters: { includeAll: true },
       })
@@ -475,8 +473,8 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
     const children = childrenResponse?.data || [];
 
     // Filter for sheets and find by name
-    const sheets = children.filter((item: any) => item.resourceType === 'sheet');
-    const sheet = sheets.find((s: any) => s.name === sheetName);
+    const sheets = children.filter((item) => item.resourceType === 'sheet');
+    const sheet = sheets.find((s) => s.name === sheetName);
 
     return sheet as SmartsheetSheet | undefined;
   }

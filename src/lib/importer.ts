@@ -1,4 +1,5 @@
 import { SmartsheetClient } from '../types/SmartsheetClient';
+import { SmartsheetSheet, SmartsheetColumn } from '../types/Smartsheet';
 import {
   ProjectOnlineProject,
   ProjectOnlineTask,
@@ -337,13 +338,19 @@ export class ProjectOnlineImporter {
   private async getOrCreatePMOStandardsWorkspace(): Promise<PMOStandardsWorkspaceInfo> {
     const startTime = Date.now();
     const testDiagnostics = process.env.TEST_DIAGNOSTICS === 'true';
-    
+
     if (testDiagnostics) {
-      console.log(`\n[PMO DIAG] getOrCreatePMOStandardsWorkspace called at ${new Date().toISOString()}`);
-      console.log(`[PMO DIAG] Current cached workspace: ${this.pmoStandardsWorkspace?.workspaceId || 'NONE'}`);
-      console.log(`[PMO DIAG] ENV PMO_STANDARDS_WORKSPACE_ID: ${process.env.PMO_STANDARDS_WORKSPACE_ID || 'NOT SET'}`);
+      console.log(
+        `\n[PMO DIAG] getOrCreatePMOStandardsWorkspace called at ${new Date().toISOString()}`
+      );
+      console.log(
+        `[PMO DIAG] Current cached workspace: ${this.pmoStandardsWorkspace?.workspaceId || 'NONE'}`
+      );
+      console.log(
+        `[PMO DIAG] ENV PMO_STANDARDS_WORKSPACE_ID: ${process.env.PMO_STANDARDS_WORKSPACE_ID || 'NOT SET'}`
+      );
     }
-    
+
     if (!this.smartsheetClient) {
       throw ErrorHandler.configError('Smartsheet client', 'not initialized');
     }
@@ -373,7 +380,7 @@ export class ProjectOnlineImporter {
       if (testDiagnostics) {
         console.log(`[PMO DIAG] Calling factory.createStandardsWorkspace...`);
       }
-      
+
       const pmoWorkspace = await this.workspaceFactory.createStandardsWorkspace(
         this.smartsheetClient,
         workspaceIdNum && !isNaN(workspaceIdNum) ? workspaceIdNum : undefined,
@@ -385,11 +392,13 @@ export class ProjectOnlineImporter {
         `PMO Standards workspace ready (ID: ${pmoWorkspace.workspaceId}) ` +
           `with ${Object.keys(pmoWorkspace.referenceSheets).length} reference sheets`
       );
-      
+
       if (testDiagnostics) {
         console.log(`[PMO DIAG] ✅ Workspace ready in ${elapsedMs}ms`);
         console.log(`[PMO DIAG] Workspace ID: ${pmoWorkspace.workspaceId}`);
-        console.log(`[PMO DIAG] Reference sheets: ${Object.keys(pmoWorkspace.referenceSheets).length}`);
+        console.log(
+          `[PMO DIAG] Reference sheets: ${Object.keys(pmoWorkspace.referenceSheets).length}`
+        );
         console.log(`[PMO DIAG] Sheets: ${Object.keys(pmoWorkspace.referenceSheets).join(', ')}\n`);
       }
 
@@ -421,16 +430,16 @@ export class ProjectOnlineImporter {
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = this.smartsheetClient.sheets.getSheet;
-    const sheetResponse = await withBackoff(
-      () => getSheet({ id: summarySheetId })
-    );
+    const sheetResponse = await withBackoff(() => getSheet({ id: summarySheetId }));
     console.log(`[DEBUG] Raw API response keys:`, Object.keys(sheetResponse || {}));
     console.log(
       `[DEBUG] Response structure:`,
       JSON.stringify(sheetResponse, null, 2).substring(0, 500)
     );
 
-    const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
+    const sheet = (sheetResponse?.data ||
+      sheetResponse?.result ||
+      sheetResponse) as SmartsheetSheet;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get summary sheet ${summarySheetId}`,
@@ -441,11 +450,11 @@ export class ProjectOnlineImporter {
     console.log(`[DEBUG] Sheet object keys:`, Object.keys(sheet || {}));
     console.log(
       `[DEBUG] Sheet has ${sheet.columns?.length || 0} columns:`,
-      sheet.columns?.map((c: any) => c.title).join(', ')
+      sheet.columns?.map((c: SmartsheetColumn) => c.title).join(', ')
     );
 
-    const statusColumn = sheet.columns?.find((c: any) => c.title === 'Status');
-    const priorityColumn = sheet.columns?.find((c: any) => c.title === 'Priority');
+    const statusColumn = sheet.columns?.find((c: SmartsheetColumn) => c.title === 'Status');
+    const priorityColumn = sheet.columns?.find((c: SmartsheetColumn) => c.title === 'Priority');
 
     console.log(
       `[DEBUG] Status column found:`,
@@ -489,10 +498,10 @@ export class ProjectOnlineImporter {
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = this.smartsheetClient.sheets.getSheet;
-    const sheetResponse = await withBackoff(
-      () => getSheet({ id: taskSheetId })
-    );
-    const sheet = (sheetResponse?.data || sheetResponse?.result || sheetResponse) as any;
+    const sheetResponse = await withBackoff(() => getSheet({ id: taskSheetId }));
+    const sheet = (sheetResponse?.data ||
+      sheetResponse?.result ||
+      sheetResponse) as SmartsheetSheet;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get task sheet ${taskSheetId}`,
@@ -500,9 +509,11 @@ export class ProjectOnlineImporter {
       );
     }
 
-    const statusColumn = sheet.columns?.find((c: any) => c.title === 'Status');
-    const priorityColumn = sheet.columns?.find((c: any) => c.title === 'Priority');
-    const constraintColumn = sheet.columns?.find((c: any) => c.title === 'Constraint Type');
+    const statusColumn = sheet.columns?.find((c: SmartsheetColumn) => c.title === 'Status');
+    const priorityColumn = sheet.columns?.find((c: SmartsheetColumn) => c.title === 'Priority');
+    const constraintColumn = sheet.columns?.find(
+      (c: SmartsheetColumn) => c.title === 'Constraint Type'
+    );
 
     if (!statusColumn?.id || !priorityColumn?.id || !constraintColumn?.id) {
       throw ErrorHandler.dataError(

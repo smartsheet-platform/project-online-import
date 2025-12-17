@@ -129,9 +129,29 @@ export class ExponentialBackoff {
  * @param error - The error to classify
  * @returns true if error should be retried, false otherwise
  */
-function isRetryableError(error: any): boolean {
+function isRetryableError(error: unknown): boolean {
+  // Type guard to check if error has properties we need
+  const hasStatusCode = (err: unknown): err is { statusCode: number } => {
+    return typeof err === 'object' && err !== null && 'statusCode' in err;
+  };
+
+  const hasResponseStatus = (err: unknown): err is { response: { status: number } } => {
+    return (
+      typeof err === 'object' &&
+      err !== null &&
+      'response' in err &&
+      typeof (err as any).response === 'object' &&
+      (err as any).response !== null &&
+      'status' in (err as any).response
+    );
+  };
+
+  const hasCode = (err: unknown): err is { code: string } => {
+    return typeof err === 'object' && err !== null && 'code' in err;
+  };
+
   // Check for Smartsheet API errors with statusCode property
-  if (error.statusCode) {
+  if (hasStatusCode(error)) {
     const status = error.statusCode;
 
     // Retryable: 404 (eventual consistency), 429 (rate limit), or 5xx (server errors)
@@ -144,7 +164,7 @@ function isRetryableError(error: any): boolean {
   }
 
   // Check for Axios errors with response status
-  if (error.response?.status) {
+  if (hasResponseStatus(error)) {
     const status = error.response.status;
 
     // Retryable: 404 (eventual consistency), 429 (rate limit), or 5xx (server errors)
@@ -157,7 +177,7 @@ function isRetryableError(error: any): boolean {
   }
 
   // Check for Node.js network errors (transient errors)
-  if (error.code) {
+  if (hasCode(error)) {
     const retryableCodes = [
       'ETIMEDOUT',
       'ECONNABORTED',

@@ -73,14 +73,12 @@ export async function ensureStandardReferenceSheet(
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = client.sheets.getSheet;
-    const existingSheet2Response = await withBackoff(
-      () => getSheet({ id: existingSheet.id! })
-    );
+    const existingSheet2Response = await withBackoff(() => getSheet({ id: existingSheet.id! }));
     const existingSheet2 = existingSheet2Response?.data || existingSheet2Response?.result;
     const existingValues = new Set<string>();
     if (existingSheet2?.rows) {
       for (const row of existingSheet2.rows) {
-        const nameCell = row.cells?.find((c: any) => c.columnId === nameColumn.id);
+        const nameCell = row.cells?.find((c) => c.columnId === nameColumn.id);
         if (nameCell?.value) {
           existingValues.add(String(nameCell.value));
         }
@@ -107,8 +105,8 @@ export async function ensureStandardReferenceSheet(
         throw new Error('SmartsheetClient does not support addRows');
       }
       const addRows = client.sheets.addRows;
-      await withBackoff(
-        () => addRows({
+      await withBackoff(() =>
+        addRows({
           sheetId: existingSheet.id!,
           body: rows,
         })
@@ -145,8 +143,8 @@ export async function ensureStandardReferenceSheet(
     throw new Error('SmartsheetClient does not support createSheetInWorkspace');
   }
   const createSheetInWorkspace = client.sheets.createSheetInWorkspace;
-  const createSheetResponse = await withBackoff(
-    () => createSheetInWorkspace({
+  const createSheetResponse = await withBackoff(() =>
+    createSheetInWorkspace({
       workspaceId,
       body: sheet,
     })
@@ -172,8 +170,8 @@ export async function ensureStandardReferenceSheet(
     throw new Error('SmartsheetClient does not support addRows');
   }
   const addRows = client.sheets.addRows;
-  await withBackoff(
-    () => addRows({
+  await withBackoff(() =>
+    addRows({
       sheetId: createdSheet.id!,
       body: rows,
     })
@@ -203,8 +201,8 @@ async function findSheetInWorkspace(
   }
 
   const getWorkspaceChildren = client.workspaces.getWorkspaceChildren;
-  const childrenResponse = await withBackoff(
-    () => getWorkspaceChildren({
+  const childrenResponse = await withBackoff(() =>
+    getWorkspaceChildren({
       workspaceId,
       queryParameters: { includeAll: true },
     })
@@ -212,8 +210,8 @@ async function findSheetInWorkspace(
   const children = childrenResponse?.data || [];
 
   // Filter for sheets and find by name
-  const sheets = children.filter((item: any) => item.resourceType === 'sheet');
-  const sheet = sheets.find((s: any) => s.name === sheetName);
+  const sheets = children.filter((item) => item.resourceType === 'sheet');
+  const sheet = sheets.find((s) => s.name === sheetName);
 
   return sheet as SmartsheetSheet | undefined;
 }
