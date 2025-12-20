@@ -1,10 +1,10 @@
 # Active Context: Project Online to Smartsheet ETL
 
 ## Current Focus
-PMO Standards test stability investigation and fixes (2025-12-16). Root cause identified: Factory pattern refactoring accidentally omitted retry wrappers from 3 critical API operations. Fix implemented: Added withBackoff() to operations at lines 370, 405, 429 in StandaloneWorkspacesFactory. Test improvements: 66% failure rate → 75% pass rate. Remaining work: Address test timeouts and gather error details from remaining failures. Tests now use production retry settings (no test-specific overrides).
+Device Code Flow authentication implementation complete (2025-12-17). Successfully resolved "Unsupported app only token" error by implementing OAuth 2.0 Device Code Flow for user authentication. Authentication working perfectly with token caching and reuse. Current blocker: User account needs access to Project Online PWA site (`/sites/pwa`) - authentication mechanism is fully functional.
 
 ## Current Phase
-Architecture & Design Complete - Awaiting Project Online API Access
+Architecture & Design Complete - Authentication Implemented - Awaiting PWA Site Access
 
 ## Recent Completion: PMO Standards Test Stability Improvements (2025-12-16)
 - ✅ Systematic diagnostic approach with empirical failure data collection
@@ -71,29 +71,100 @@ Architecture & Design Complete - Awaiting Project Online API Access
 - **Comprehensive transformation**: 50+ property mappings with detailed conversion rules
 - **Robust error handling**: Eventual consistency handling with automatic retries across all API calls
 
-## Integration Test Setup Status (2025-12-16)
+## Device Code Flow Authentication Implementation (2025-12-17)
+
+### Problem Solved
+**Root Cause**: SharePoint tenant (mbfcorp.sharepoint.com) has app-only authentication disabled at tenant level, causing all REST API endpoints to reject tokens with "Unsupported app only token" error.
+
+**Solution**: Implemented OAuth 2.0 Device Code Flow for user-based authentication with delegated permissions.
+
+### Implementation Complete ✅
+1. **TokenCacheManager** ([`src/lib/TokenCacheManager.ts`](../src/lib/TokenCacheManager.ts))
+   - Secure token storage in `~/.project-online-tokens/`
+   - File permissions: 0600 (owner read/write only)
+   - Automatic token validation and expiry checking
+   - Token refresh support
+
+2. **DeviceCodeDisplay** ([`src/util/DeviceCodeDisplay.ts`](../src/util/DeviceCodeDisplay.ts))
+   - Clear user authentication prompts
+   - Device code display with formatting
+   - Status updates and error messages
+   - Help text and troubleshooting guidance
+
+3. **MSALAuthHandler Enhanced** ([`src/lib/MSALAuthHandler.ts`](../src/lib/MSALAuthHandler.ts))
+   - Dual authentication support (Client Credentials + Device Code)
+   - Auto-detection based on CLIENT_SECRET presence
+   - Token caching and automatic refresh
+   - Backward compatible with existing code
+
+4. **ConfigManager Updated** ([`src/util/ConfigManager.ts`](../src/util/ConfigManager.ts))
+   - New fields: `useDeviceCodeFlow`, `tokenCacheDir`
+   - Support for both TENANT_ID and PROJECT_ONLINE_TENANT_ID
+   - Authentication flow detection and display
+
+5. **Connection Test Enhanced** ([`scripts/test-project-online-connection.ts`](../scripts/test-project-online-connection.ts))
+   - Detects authentication flow automatically
+   - Clear error messages for Azure AD configuration
+   - Troubleshooting guidance for common issues
+
+6. **Specification Document** ([`sdlc/docs/specs/Device-Code-Flow-Authentication.md`](../sdlc/docs/specs/Device-Code-Flow-Authentication.md))
+   - Complete implementation specification
+   - Architecture diagrams and sequence flows
+   - Security considerations and token management
+   - Migration path and testing strategy
+
+### Test Results ✅
+```
+Authentication: SUCCESS
+✓ Device Code generated: A8L52SMQ9
+✓ User authenticated in browser
+✓ Token cached to ~/.project-online-tokens/
+✓ Token reused on subsequent calls (no re-authentication)
+✓ 5 API calls using cached token
+```
+
+### Azure AD Configuration Applied
+- ✅ Public client flows enabled ("Allow public client flows" = Yes)
+- ✅ Delegated permissions added (AllSites.Read, AllSites.Write)
+- ✅ Device Code authentication working perfectly
+
+### Current Blocker
+**User Account Access**: Authenticated user doesn't have permission to Project Online PWA site (`/sites/pwa`). Authentication mechanism is fully functional - only site-level access permission needed.
+
+### Usage
+```bash
+# Remove CLIENT_SECRET from .env.test to use Device Code Flow
+# Or set: USE_DEVICE_CODE_FLOW=true
+
+npm run test:connection
+# Follow browser prompts to authenticate
+# Token cached for future use
+```
+
+## Integration Test Setup Status (2025-12-17)
 
 ### Completed
-- ✅ Azure AD app registration created
-  - App Name: `Project Online ETL Integration Tests`
-  - Tenant ID: `3836f4a1-67af-43f2-a675-f9f54899abe0`
-  - Client ID: `3ea53d9f-c9bb-462e-aace-ab32982b693a`
-- ✅ Client secret generated and configured
-- ✅ `.env.test` file configured with all credentials
-- ✅ Project Online URL configured: `https://smartsheet365.sharepoint.com/sites/pwa`
+- ✅ Azure AD app registration created (mbfcorp.sharepoint.com tenant)
+  - Tenant ID: `14457e5c-136e-41e3-b269-2c4033f43f45`
+  - Client ID: `4114b136-fb49-42f3-884f-bcf36d3fd8c6`
+- ✅ **Device Code Flow authentication implemented and working**
+- ✅ Public client flows enabled in Azure AD
+- ✅ Delegated permissions configured (AllSites.Read, AllSites.Write)
+- ✅ Token caching system implemented
+- ✅ `.env.test` file configured for Device Code Flow
+- ✅ Project Online URL configured: `https://mbfcorp.sharepoint.com/sites/pwa`
 - ✅ Smartsheet API token configured
-- ✅ Connection test script created (`npm run test:connection`)
+- ✅ Connection test script supports both auth flows
 - ✅ Permissions diagnostic script created
-- ✅ Setup documentation created (`test/INTEGRATION_TEST_SETUP_GUIDE.md`)
-- ✅ Documentation updated for non-admin users (admin consent workflow)
 - ✅ **Retry logic comprehensive implementation** (2025-12-16)
 - ✅ **Test stability fixes** (2025-12-16)
 
 ### Pending
-- ⏳ **BLOCKED**: Waiting for Azure AD admin to grant consent for SharePoint API permission
-  - Required permission: `Sites.ReadWrite.All` (Application permission)
-  - Status: Admin request sent to IT department
-  - Diagnostic shows: No roles/scopes in token (confirmation of missing consent)
+- ⏳ **BLOCKED**: User account needs access to Project Online PWA site
+  - Site: `https://mbfcorp.sharepoint.com/sites/pwa`
+  - Issue: "You need permission to access this site"
+  - Authentication working - only site access permission needed
+  - Action: Request site access from SharePoint administrator
 
 ### Test Infrastructure Status
 - ✅ Integration test suite: 38/39 passing (97.4% success rate)

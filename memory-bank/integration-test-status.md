@@ -1,8 +1,66 @@
 # Integration Test Suite Status
 
+## Overall Status: ⚠️ BLOCKED - PWA Instance Not Configured
+
+**Last Updated:** 2025-12-17
+
+## CRITICAL BLOCKER: PWA Instance Missing
+
+### Issue Identified
+The SharePoint site at `https://mbfcorp.sharepoint.com/sites/pwa` exists and is accessible, but **does not have a Project Web App (PWA) instance configured**. This prevents all Project Online API access.
+
+### Symptoms
+- Connection test fails with HTTP 404 error
+- Browser shows: "No Project Web App instances found. Create at least one PWA instance before accessing this page."
+- Authentication works correctly
+- SharePoint site is accessible
+- But `/_api/ProjectData` endpoint returns 404
+
+### Diagnostic Tools Created
+
+**New Diagnostic Script:** [`diagnose-pwa-instance.ts`](../scripts/diagnose-pwa-instance.ts)
+- Run with: `npm run diagnose:pwa`
+- Verifies authentication works
+- Confirms SharePoint site exists
+- Detects missing PWA instance configuration
+- Provides clear guidance on next steps
+
+### Solution Required
+
+**Option 1:** Enable PWA on `https://mbfcorp.sharepoint.com/sites/pwa`
+- Requires SharePoint Administrator
+- See [`PWA_INSTANCE_TROUBLESHOOTING.md`](../test/PWA_INSTANCE_TROUBLESHOOTING.md) for detailed steps
+
+**Option 2:** Update to correct PWA site URL
+- Find actual PWA site URL from Project Online web interface
+- Update `PROJECT_ONLINE_URL` in `.env.test`
+- Verify with `npm run diagnose:pwa`
+
+### Documentation Created
+
+1. **[`test/PWA_INSTANCE_TROUBLESHOOTING.md`](../test/PWA_INSTANCE_TROUBLESHOOTING.md)**
+   - Complete troubleshooting guide
+   - Step-by-step solutions
+   - Administrator instructions
+   - Verification procedures
+
+2. **[`scripts/diagnose-pwa-instance.ts`](../scripts/diagnose-pwa-instance.ts)**
+   - Automated diagnostic script
+   - Clear error identification
+   - Actionable guidance
+   - Added to package.json as `npm run diagnose:pwa`
+
+### Test Suite Status
+
+Integration tests **cannot run** until PWA instance is configured. Previous test results (97.4% pass rate) are from mock data and cannot be validated against real Project Online until this blocker is resolved.
+
+---
+
+## Previous Test Results (Mock Data)
+
 ## Overall Status: ✅ COMPLETE (97.4% Success Rate)
 
-**Last Updated:** 2025-12-09
+**Last Results:** 2025-12-09 (with mock data)
 
 ## Summary Statistics
 - **Total Tests:** 39
