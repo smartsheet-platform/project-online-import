@@ -597,17 +597,17 @@ export function discoverAssignmentColumns(
     const resourceType = resource.ResourceType || 'Work';
 
     if (resourceType === 'Work') {
-      columns['Team Members'] = {
+      columns['Assigned To'] = {
         type: 'MULTI_CONTACT_LIST',
         resourceType: 'Work',
       };
     } else if (resourceType === 'Material') {
-      columns['Equipment'] = {
+      columns['Materials'] = {
         type: 'MULTI_PICKLIST',
         resourceType: 'Material',
       };
     } else if (resourceType === 'Cost') {
-      columns['Cost Centers'] = {
+      columns['Cost Resources'] = {
         type: 'MULTI_PICKLIST',
         resourceType: 'Cost',
       };
@@ -619,37 +619,87 @@ export function discoverAssignmentColumns(
 
 /**
  * Configure assignment columns to source from Resources sheet
+ *
+ * @param client Smartsheet client
+ * @param tasksSheetId Tasks sheet ID
+ * @param assignmentColumnIds Map of assignment column names to IDs in Tasks sheet
+ * @param resourcesSheetId Resources sheet ID
+ * @param resourcesColumnIds Map of resource type column names to IDs in Resources sheet
+ * @param assignmentColumns Assignment column definitions discovered from resources
  */
 export async function configureAssignmentColumns(
   client: SmartsheetClient,
   tasksSheetId: number,
   assignmentColumnIds: Record<string, number>,
-  _resourcesSheetId: number,
-  _resourcesContactColumnId: number,
+  resourcesSheetId: number,
+  resourcesColumnIds: Record<string, number>,
   assignmentColumns: Record<string, AssignmentColumnDefinition>
 ): Promise<void> {
-  // Configure each assignment column
+  // Configure each assignment column to reference the corresponding Resources sheet column
   for (const [columnName, definition] of Object.entries(assignmentColumns)) {
-    const columnId = assignmentColumnIds[columnName];
-    if (!columnId) continue;
+    const tasksColumnId = assignmentColumnIds[columnName];
+    if (!tasksColumnId) continue;
 
-    if (definition.type === 'MULTI_CONTACT_LIST') {
-      // Configure to source from Resources sheet Contact column
-      await client.updateColumn?.(tasksSheetId, columnId, {
-        type: 'MULTI_CONTACT_LIST',
-        contactOptions: [
-          {
-            sheetId: _resourcesSheetId,
-            columnId: _resourcesContactColumnId,
+    if (definition.type === 'MULTI_CONTACT_LIST' && definition.resourceType === 'Work') {
+      // Configure "Assigned To" column to source from "Team Members" in Resources sheet
+      const teamMembersColumnId = resourcesColumnIds['Team Members'];
+      if (teamMembersColumnId) {
+        await client.columns?.updateColumn?.({
+          sheetId: tasksSheetId,
+          columnId: tasksColumnId,
+          body: {
+            type: 'MULTI_CONTACT_LIST',
+            contactOptions: [
+              {
+                sheetId: resourcesSheetId,
+                columnId: teamMembersColumnId,
+              },
+            ],
           },
-        ],
-      });
-    } else if (definition.type === 'MULTI_PICKLIST') {
-      // MULTI_PICKLIST columns for Material and Cost resources
-      // These use text-based selection without contact sourcing
-      await client.updateColumn?.(tasksSheetId, columnId, {
-        type: 'MULTI_PICKLIST',
-      });
+        });
+      }
+    } else if (definition.type === 'MULTI_PICKLIST' && definition.resourceType === 'Material') {
+      // Configure "Materials" column to source from "Materials" in Resources sheet
+      const materialsColumnId = resourcesColumnIds['Materials'];
+      if (materialsColumnId) {
+        await client.columns?.updateColumn?.({
+          sheetId: tasksSheetId,
+          columnId: tasksColumnId,
+          body: {
+            type: 'MULTI_PICKLIST',
+            options: [
+              {
+                value: {
+                  objectType: 'CELL_LINK',
+                  sheetId: resourcesSheetId,
+                  columnId: materialsColumnId,
+                },
+              },
+            ],
+          },
+        });
+      }
+    } else if (definition.type === 'MULTI_PICKLIST' && definition.resourceType === 'Cost') {
+      // Configure "Cost Resources" column to source from "Cost Resources" in Resources sheet
+      const costResourcesColumnId = resourcesColumnIds['Cost Resources'];
+      if (costResourcesColumnId) {
+        await client.columns?.updateColumn?.({
+          sheetId: tasksSheetId,
+          columnId: tasksColumnId,
+          body: {
+            type: 'MULTI_PICKLIST',
+            options: [
+              {
+                value: {
+                  objectType: 'CELL_LINK',
+                  sheetId: resourcesSheetId,
+                  columnId: costResourcesColumnId,
+                },
+              },
+            ],
+          },
+        });
+      }
     }
   }
 }

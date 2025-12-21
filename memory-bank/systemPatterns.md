@@ -53,6 +53,14 @@ Assignment → MULTI_CONTACT_LIST columns in Tasks Sheet (embedded)
 - Assignments embedded as Contact List columns (not separate sheet)
 - Resources provide contact objectValue for assignment columns
 
+**Key Pattern Changes (2024-12-21) - Resource Type Separation**:
+- Resources sheet separates resources by type into distinct columns
+- Team Members (CONTACT_LIST, primary) for Work resources
+- Materials (TEXT_NUMBER) for Material resources
+- Cost Resources (TEXT_NUMBER) for Cost resources
+- Each resource populates exactly ONE type-specific column
+- Tasks sheet assignment columns reference corresponding Resources columns
+
 ### Data Type Conversion Pattern
 Standardized conversions for consistency:
 - **Duration (Project Sheet)**: ISO 8601 → decimal days (e.g., `PT40H` → `5.0`)
@@ -162,11 +170,16 @@ Incremental validation strategy:
 - Prefix algorithm: acronym from project name (3-4 letters)
 - Special handling for Project IDs (use "Project" prefix)
 
-### Contact ObjectValue Pattern
-- Combine Name + Email into single Contact column
+### Contact ObjectValue Pattern (Updated 2024-12-21)
+- Combine Name + Email into contact objects
 - Use objectValue property with email and name
-- Multi-contact columns for assignments (multiple resources per task)
+- Multi-contact columns for Work resource assignments
 - Eliminates need for separate Name and Email columns
+- **Resource Type Separation**: Resources separated by type into distinct columns
+  - Team Members column (CONTACT_LIST) for Work resources
+  - Materials column (TEXT_NUMBER) for Material resources
+  - Cost Resources column (TEXT_NUMBER) for Cost resources
+  - Only ONE type-specific column populated per resource row
 
 ### Auto-Number Prefix Generation Pattern
 Algorithm for generating project-specific prefixes:
@@ -190,22 +203,43 @@ Preserve original timestamps while leveraging Smartsheet system columns:
 
 **Applies to**: All entity sheets (Projects, Tasks, Resources)
 
-### Assignment Column Type Distinction Pattern
+### Assignment Column Type Distinction Pattern (Updated 2024-12-21)
 Differentiate column types based on resource category:
-- **Work Resources** (people) → MULTI_CONTACT_LIST columns
+
+**Resources Sheet Structure**:
+- **Team Members** (CONTACT_LIST, primary) → Work resources (people)
+  - Contains contact objects with email and name properties
+  - One column for all Work resources
+  - Example: Alice Smith (alice@example.com)
+- **Materials** (TEXT_NUMBER) → Material resources (equipment/consumables)
+  - Contains resource names as plain text
+  - One column for all Material resources
+  - Example: Concrete Mix, Steel Beams
+- **Cost Resources** (TEXT_NUMBER) → Cost resources (cost centers/budget)
+  - Contains resource names as plain text
+  - One column for all Cost resources
+  - Example: Engineering Dept, Marketing Budget
+
+**Tasks Sheet Assignment Columns**:
+- **Assigned To** (MULTI_CONTACT_LIST) → references Team Members from Resources
   - Contains contact objects with email and name properties
   - Enables Smartsheet contact features (@mentions, notifications)
-  - Example: Team Members column with John Doe (john@example.com)
-- **Material Resources** (equipment) → MULTI_PICKLIST columns
+  - Sources from Team Members column in Resources sheet
+- **Materials** (MULTI_PICKLIST) → references Materials from Resources
   - Contains resource names as strings
   - Multiple selection enabled
-  - Example: Equipment column with ["Crane A", "Forklift B"]
-- **Cost Resources** (cost centers) → MULTI_PICKLIST columns
+  - Sources from Materials column in Resources sheet
+- **Cost Resources** (MULTI_PICKLIST) → references Cost Resources from Resources
   - Contains resource names as strings
   - Multiple selection enabled
-  - Example: Cost Centers column with ["Engineering Dept", "Marketing Budget"]
+  - Sources from Cost Resources column in Resources sheet
 
-**Rationale**: Contact columns are specifically designed for people with email addresses. Non-people resources should use picklists with multiple selection, which is more appropriate for equipment and cost tracking.
+**Rationale**:
+- Contact columns are specifically designed for people with email addresses
+- Non-people resources use text columns in Resources sheet for simplicity
+- Task assignment columns use picklists for Material/Cost resources for multi-selection
+- Sheet references enable dropdown population from Resources sheet
+- Mutually exclusive columns ensure each resource appears in only one column
 
 **Cell Population**:
 ```typescript

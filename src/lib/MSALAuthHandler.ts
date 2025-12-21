@@ -176,7 +176,7 @@ export class MSALAuthHandler {
     if (cachedToken) {
       DeviceCodeDisplay.showCachedTokenExpired();
     }
-    
+
     const tokenResponse = await this.acquireTokenByDeviceCode();
     return tokenResponse.accessToken;
   }

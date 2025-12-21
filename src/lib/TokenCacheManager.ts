@@ -1,6 +1,6 @@
 /**
  * Token Cache Manager
- * 
+ *
  * Manages secure storage and retrieval of OAuth tokens in the user's home directory.
  * Implements platform-specific security measures for token protection.
  */
@@ -34,7 +34,11 @@ export class TokenCacheManager {
   /**
    * Save token to cache
    */
-  async save(tenantId: string, clientId: string, tokenData: Omit<CachedToken, 'version' | 'tenant_id' | 'client_id' | 'cached_at'>): Promise<void> {
+  async save(
+    tenantId: string,
+    clientId: string,
+    tokenData: Omit<CachedToken, 'version' | 'tenant_id' | 'client_id' | 'cached_at'>
+  ): Promise<void> {
     try {
       // Ensure cache directory exists with secure permissions
       await this.ensureCacheDir();
@@ -48,20 +52,18 @@ export class TokenCacheManager {
       };
 
       const cachePath = this.getCachePath(tenantId, clientId);
-      
+
       // Write token to file with restrictive permissions (owner read/write only)
-      await fs.writeFile(
-        cachePath,
-        JSON.stringify(token, null, 2),
-        { mode: 0o600 }
-      );
+      await fs.writeFile(cachePath, JSON.stringify(token, null, 2), { mode: 0o600 });
 
       // Verify permissions were set correctly
       await this.verifyFilePermissions(cachePath);
 
       this.logger.debug(`Token cached to: ${cachePath}`);
     } catch (error) {
-      this.logger.error(`Failed to save token to cache: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to save token to cache: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -104,7 +106,9 @@ export class TokenCacheManager {
       this.logger.debug('Loaded token from cache');
       return token;
     } catch (error) {
-      this.logger.error(`Failed to load token from cache: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to load token from cache: ${error instanceof Error ? error.message : String(error)}`
+      );
       return null;
     }
   }
@@ -115,7 +119,7 @@ export class TokenCacheManager {
   async clear(tenantId: string, clientId: string): Promise<void> {
     try {
       const cachePath = this.getCachePath(tenantId, clientId);
-      
+
       try {
         await fs.unlink(cachePath);
         this.logger.debug(`Cleared token cache: ${cachePath}`);
@@ -126,7 +130,9 @@ export class TokenCacheManager {
         // File doesn't exist, nothing to clear
       }
     } catch (error) {
-      this.logger.error(`Failed to clear token cache: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to clear token cache: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -146,7 +152,7 @@ export class TokenCacheManager {
 
       // Read all files in cache directory
       const files = await fs.readdir(this.cacheDir);
-      
+
       // Delete all .json files
       for (const file of files) {
         if (file.endsWith('.json')) {
@@ -156,7 +162,9 @@ export class TokenCacheManager {
 
       this.logger.debug(`Cleared all token caches from: ${this.cacheDir}`);
     } catch (error) {
-      this.logger.error(`Failed to clear all token caches: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to clear all token caches: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -185,12 +193,14 @@ export class TokenCacheManager {
 
     // Verify directory permissions
     const stats = await fs.stat(this.cacheDir);
-    
+
     // On Unix-like systems, check permissions
     if (process.platform !== 'win32') {
       const permissions = stats.mode & 0o777;
       if (permissions !== 0o700) {
-        this.logger.warn(`Cache directory has insecure permissions: ${permissions.toString(8)}, fixing...`);
+        this.logger.warn(
+          `Cache directory has insecure permissions: ${permissions.toString(8)}, fixing...`
+        );
         await fs.chmod(this.cacheDir, 0o700);
       }
     }
@@ -210,7 +220,9 @@ export class TokenCacheManager {
 
     // File should be readable/writable by owner only (0600)
     if (permissions !== 0o600) {
-      this.logger.warn(`Token cache file has insecure permissions: ${permissions.toString(8)}, fixing...`);
+      this.logger.warn(
+        `Token cache file has insecure permissions: ${permissions.toString(8)}, fixing...`
+      );
       await fs.chmod(filePath, 0o600);
     }
   }

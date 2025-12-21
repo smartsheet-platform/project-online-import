@@ -1,6 +1,6 @@
 /**
  * Device Code Display Utility
- * 
+ *
  * Handles formatting and displaying device code authentication messages to users.
  * Provides clear, prominent instructions for the OAuth 2.0 Device Code Flow.
  */
@@ -33,7 +33,8 @@ export class DeviceCodeDisplay {
    * Show polling status while waiting for user authentication
    */
   static showPollingStatus(attempt: number, _maxAttempts: number): void {
-    if (attempt % 6 === 0) { // Update every ~30 seconds (6 attempts * 5s interval)
+    if (attempt % 6 === 0) {
+      // Update every ~30 seconds (6 attempts * 5s interval)
       const elapsed = Math.floor((attempt * 5) / 60);
       const minutes = elapsed > 0 ? `${elapsed} minute${elapsed > 1 ? 's' : ''}` : 'a few seconds';
       process.stdout.write(`\rStill waiting... (${minutes} elapsed)                    `);
@@ -56,33 +57,33 @@ export class DeviceCodeDisplay {
   static showError(errorCode: string, errorMessage?: string): void {
     console.log('\n');
     this.logger.error('✗ Authentication failed');
-    
+
     switch (errorCode) {
       case 'authorization_declined':
         console.log('\nYou declined the authentication request.');
         console.log('Please run the command again and approve the request to continue.');
         break;
-        
+
       case 'expired_token':
         console.log('\nThe authentication code expired (15 minute timeout).');
         console.log('Please run the command again to get a new code.');
         break;
-        
+
       case 'authorization_pending':
         console.log('\nAuthentication timed out - you did not complete authentication in time.');
         console.log('Please run the command again and complete authentication within 5 minutes.');
         break;
-        
+
       case 'bad_verification_code':
         console.log('\nInvalid verification code entered.');
         console.log('Please run the command again and enter the code exactly as shown.');
         break;
-        
+
       default:
         console.log(`\nError: ${errorMessage || errorCode}`);
         console.log('Please try again or contact your administrator if the problem persists.');
     }
-    
+
     console.log('');
   }
 
@@ -164,17 +165,21 @@ export class DeviceCodeDisplay {
   /**
    * Colorize text for terminal output (optional, basic implementation)
    */
-  private static colorize(text: string, color: 'cyan' | 'yellow' | 'green' | 'red', bold: boolean = false): string {
+  private static colorize(
+    text: string,
+    color: 'cyan' | 'yellow' | 'green' | 'red',
+    bold: boolean = false
+  ): string {
     const colors = {
       cyan: '\x1b[36m',
       yellow: '\x1b[33m',
       green: '\x1b[32m',
       red: '\x1b[31m',
     };
-    
+
     const reset = '\x1b[0m';
     const boldCode = bold ? '\x1b[1m' : '';
-    
+
     return `${boldCode}${colors[color]}${text}${reset}`;
   }
 }

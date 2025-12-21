@@ -60,7 +60,9 @@ describe('ResourceTransformer', () => {
       const columnTitles = sheet.columns?.map((col) => col.title) || [];
       expect(columnTitles).toContain('Resource ID');
       expect(columnTitles).toContain('Project Online Resource ID');
-      expect(columnTitles).toContain('Contact');
+      expect(columnTitles).toContain('Team Members');
+      expect(columnTitles).toContain('Materials');
+      expect(columnTitles).toContain('Cost Resources');
       expect(columnTitles).toContain('Resource Type');
       expect(columnTitles).toContain('Max Units');
       expect(columnTitles).toContain('Standard Rate');
@@ -80,15 +82,32 @@ describe('ResourceTransformer', () => {
   });
 
   describe('createResourcesSheetColumns', () => {
-    it('should create 18 columns total', () => {
+    it('should create 20 columns total', () => {
       const columns = createResourcesSheetColumns();
-      expect(columns).toHaveLength(18);
+      expect(columns).toHaveLength(20);
     });
 
-    it('should have Contact as primary column', () => {
+    it('should have Team Members as primary column', () => {
       const columns = createResourcesSheetColumns();
-      const contactColumn = columns.find((col) => col.title === 'Contact');
-      expect(contactColumn?.primary).toBe(true);
+      const teamMembersColumn = columns.find((col) => col.title === 'Team Members');
+      expect(teamMembersColumn?.primary).toBe(true);
+      expect(teamMembersColumn?.type).toBe('CONTACT_LIST');
+    });
+
+    it('should create Materials column as TEXT_NUMBER', () => {
+      const columns = createResourcesSheetColumns();
+      const materialsColumn = columns.find((col) => col.title === 'Materials');
+      expect(materialsColumn).toBeDefined();
+      expect(materialsColumn?.type).toBe('TEXT_NUMBER');
+      expect(materialsColumn?.width).toBe(200);
+    });
+
+    it('should create Cost Resources column as TEXT_NUMBER', () => {
+      const columns = createResourcesSheetColumns();
+      const costColumn = columns.find((col) => col.title === 'Cost Resources');
+      expect(costColumn).toBeDefined();
+      expect(costColumn?.type).toBe('TEXT_NUMBER');
+      expect(costColumn?.width).toBe(200);
     });
 
     it('should configure Resource ID as AUTO_NUMBER with project prefix', () => {
@@ -147,36 +166,133 @@ describe('ResourceTransformer', () => {
       expect(poIdCell?.value).toBe('resource-guid-123');
     });
 
-    it('should create contact object with name and email', () => {
-      const row = createResourceRow(sampleResource);
-      const contactCell = row.cells?.find((cell) => cell.columnId === 2);
-      expect(contactCell?.objectValue).toEqual({
-        name: 'John Doe',
-        email: 'john.doe@example.com',
+    describe('Work Resource Type Separation', () => {
+      it('should populate Team Members column for Work resources', () => {
+        const workResource: ProjectOnlineResource = {
+          ...sampleResource,
+          ResourceType: 'Work',
+        };
+        const row = createResourceRow(workResource);
+        const teamMembersCell = row.cells?.find((cell) => cell.columnId === 2);
+        expect(teamMembersCell?.objectValue).toEqual({
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+        });
+      });
+
+      it('should handle Work resource without email', () => {
+        const resourceWithoutEmail: ProjectOnlineResource = {
+          ...sampleResource,
+          ResourceType: 'Work',
+          Email: undefined,
+        };
+        const row = createResourceRow(resourceWithoutEmail);
+        const teamMembersCell = row.cells?.find((cell) => cell.columnId === 2);
+        expect(teamMembersCell?.objectValue).toEqual({
+          name: 'John Doe',
+        });
+      });
+
+      it('should not populate Materials or Cost Resources for Work resources', () => {
+        const workResource: ProjectOnlineResource = {
+          ...sampleResource,
+          ResourceType: 'Work',
+        };
+        const row = createResourceRow(workResource);
+        const materialsCell = row.cells?.find((cell) => cell.columnId === 3);
+        const costCell = row.cells?.find((cell) => cell.columnId === 4);
+        expect(materialsCell).toBeUndefined();
+        expect(costCell).toBeUndefined();
       });
     });
 
-    it('should handle resource without email', () => {
-      const resourceWithoutEmail: ProjectOnlineResource = {
-        ...sampleResource,
-        Email: undefined,
-      };
-      const row = createResourceRow(resourceWithoutEmail);
-      const contactCell = row.cells?.find((cell) => cell.columnId === 2);
-      expect(contactCell?.objectValue).toEqual({
-        name: 'John Doe',
+    describe('Material Resource Type Separation', () => {
+      it('should populate Materials column for Material resources', () => {
+        const materialResource: ProjectOnlineResource = {
+          ...sampleResource,
+          Name: 'Concrete Mix',
+          ResourceType: 'Material',
+          Email: undefined,
+        };
+        const row = createResourceRow(materialResource);
+        const materialsCell = row.cells?.find((cell) => cell.columnId === 3);
+        expect(materialsCell?.value).toBe('Concrete Mix');
+      });
+
+      it('should not populate Team Members or Cost Resources for Material resources', () => {
+        const materialResource: ProjectOnlineResource = {
+          ...sampleResource,
+          ResourceType: 'Material',
+        };
+        const row = createResourceRow(materialResource);
+        const teamMembersCell = row.cells?.find((cell) => cell.columnId === 2);
+        const costCell = row.cells?.find((cell) => cell.columnId === 4);
+        expect(teamMembersCell).toBeUndefined();
+        expect(costCell).toBeUndefined();
+      });
+    });
+
+    describe('Cost Resource Type Separation', () => {
+      it('should populate Cost Resources column for Cost resources', () => {
+        const costResource: ProjectOnlineResource = {
+          ...sampleResource,
+          Name: 'Engineering Department',
+          ResourceType: 'Cost',
+          Email: undefined,
+        };
+        const row = createResourceRow(costResource);
+        const costCell = row.cells?.find((cell) => cell.columnId === 4);
+        expect(costCell?.value).toBe('Engineering Department');
+      });
+
+      it('should not populate Team Members or Materials for Cost resources', () => {
+        const costResource: ProjectOnlineResource = {
+          ...sampleResource,
+          ResourceType: 'Cost',
+        };
+        const row = createResourceRow(costResource);
+        const teamMembersCell = row.cells?.find((cell) => cell.columnId === 2);
+        const materialsCell = row.cells?.find((cell) => cell.columnId === 3);
+        expect(teamMembersCell).toBeUndefined();
+        expect(materialsCell).toBeUndefined();
+      });
+    });
+
+    describe('Type Defaulting', () => {
+      it('should default to Work type if ResourceType is null', () => {
+        const resource: ProjectOnlineResource = {
+          ...sampleResource,
+          ResourceType: undefined,
+        };
+        const row = createResourceRow(resource);
+        const teamMembersCell = row.cells?.find((cell) => cell.columnId === 2);
+        const typeCell = row.cells?.find((cell) => cell.columnId === 5);
+        expect(teamMembersCell?.objectValue).toBeDefined();
+        expect(typeCell?.value).toBe('Work');
+      });
+
+      it('should default to Work type if ResourceType is undefined', () => {
+        const resource: any = {
+          ...sampleResource,
+        };
+        delete resource.ResourceType;
+        const row = createResourceRow(resource);
+        const teamMembersCell = row.cells?.find((cell) => cell.columnId === 2);
+        const typeCell = row.cells?.find((cell) => cell.columnId === 5);
+        expect(teamMembersCell?.objectValue).toBeDefined();
+        expect(typeCell?.value).toBe('Work');
       });
     });
 
     it('should populate Resource Type', () => {
       const row = createResourceRow(sampleResource);
-      const typeCell = row.cells?.find((cell) => cell.columnId === 3);
+      const typeCell = row.cells?.find((cell) => cell.columnId === 5);
       expect(typeCell?.value).toBe('Work');
     });
 
     it('should convert MaxUnits to percentage string', () => {
       const row = createResourceRow(sampleResource);
-      const maxUnitsCell = row.cells?.find((cell) => cell.columnId === 4);
+      const maxUnitsCell = row.cells?.find((cell) => cell.columnId === 6);
       expect(maxUnitsCell?.value).toBe('100%');
     });
 
@@ -186,15 +302,15 @@ describe('ResourceTransformer', () => {
         MaxUnits: 0.5,
       };
       const row = createResourceRow(resource);
-      const maxUnitsCell = row.cells?.find((cell) => cell.columnId === 4);
+      const maxUnitsCell = row.cells?.find((cell) => cell.columnId === 6);
       expect(maxUnitsCell?.value).toBe('50%');
     });
 
     it('should populate rates as numeric values', () => {
       const row = createResourceRow(sampleResource);
-      const standardRateCell = row.cells?.find((cell) => cell.columnId === 5);
-      const overtimeRateCell = row.cells?.find((cell) => cell.columnId === 6);
-      const costPerUseCell = row.cells?.find((cell) => cell.columnId === 7);
+      const standardRateCell = row.cells?.find((cell) => cell.columnId === 7);
+      const overtimeRateCell = row.cells?.find((cell) => cell.columnId === 8);
+      const costPerUseCell = row.cells?.find((cell) => cell.columnId === 9);
       expect(standardRateCell?.value).toBe(75.0);
       expect(overtimeRateCell?.value).toBe(112.5);
       expect(costPerUseCell?.value).toBe(50.0);
@@ -202,28 +318,28 @@ describe('ResourceTransformer', () => {
 
     it('should populate Department', () => {
       const row = createResourceRow(sampleResource);
-      const deptCell = row.cells?.find((cell) => cell.columnId === 8);
+      const deptCell = row.cells?.find((cell) => cell.columnId === 10);
       expect(deptCell?.value).toBe('Engineering');
     });
 
     it('should populate Code', () => {
       const row = createResourceRow(sampleResource);
-      const codeCell = row.cells?.find((cell) => cell.columnId === 9);
+      const codeCell = row.cells?.find((cell) => cell.columnId === 11);
       expect(codeCell?.value).toBe('ENG-001');
     });
 
     it('should populate boolean fields', () => {
       const row = createResourceRow(sampleResource);
-      const activeCell = row.cells?.find((cell) => cell.columnId === 10);
-      const genericCell = row.cells?.find((cell) => cell.columnId === 11);
+      const activeCell = row.cells?.find((cell) => cell.columnId === 12);
+      const genericCell = row.cells?.find((cell) => cell.columnId === 13);
       expect(activeCell?.value).toBe(true);
       expect(genericCell?.value).toBe(false);
     });
 
     it('should convert created and modified dates', () => {
       const row = createResourceRow(sampleResource);
-      const createdCell = row.cells?.find((cell) => cell.columnId === 12);
-      const modifiedCell = row.cells?.find((cell) => cell.columnId === 13);
+      const createdCell = row.cells?.find((cell) => cell.columnId === 14);
+      const modifiedCell = row.cells?.find((cell) => cell.columnId === 15);
       expect(createdCell?.value).toBe('2024-03-01');
       expect(modifiedCell?.value).toBe('2024-03-15');
     });

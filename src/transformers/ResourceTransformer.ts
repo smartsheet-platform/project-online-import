@@ -51,9 +51,19 @@ export function createResourcesSheetColumns(): SmartsheetColumn[] {
       locked: true,
     },
     {
-      title: 'Contact',
+      title: 'Team Members',
       type: 'CONTACT_LIST',
       primary: true,
+      width: 200,
+    },
+    {
+      title: 'Materials',
+      type: 'TEXT_NUMBER',
+      width: 200,
+    },
+    {
+      title: 'Cost Resources',
+      type: 'TEXT_NUMBER',
       width: 200,
     },
     {
@@ -148,87 +158,109 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
     value: resource.Id,
   });
 
-  // Column 2: Contact (primary column)
-  const contact = createContactObject(resource.Name, resource.Email);
-  if (contact) {
+  // Determine resource type (default to Work)
+  const resourceType = resource.ResourceType || 'Work';
+
+  // Populate type-specific column based on resource type
+  if (resourceType === 'Work') {
+    // Column 2: Team Members (Work resources) - primary column
+    const contact = createContactObject(resource.Name, resource.Email);
+    if (contact) {
+      cells.push({
+        columnId: 2,
+        objectValue: contact,
+      });
+    } else {
+      cells.push({
+        columnId: 2,
+        value: resource.Name,
+      });
+    }
+    // Columns 3-4: Materials and Cost Resources left empty
+  } else if (resourceType === 'Material') {
+    // Column 2: Team Members left empty
+    // Column 3: Materials (Material resources)
     cells.push({
-      columnId: 2,
-      objectValue: contact,
+      columnId: 3,
+      value: resource.Name,
     });
-  } else {
+    // Column 4: Cost Resources left empty
+  } else if (resourceType === 'Cost') {
+    // Columns 2-3: Team Members and Materials left empty
+    // Column 4: Cost Resources (Cost resources)
     cells.push({
-      columnId: 2,
-      value: '',
+      columnId: 4,
+      value: resource.Name,
     });
   }
 
-  // Column 3: Resource Type
+  // Column 5: Resource Type
   cells.push({
-    columnId: 3,
-    value: resource.ResourceType || '',
+    columnId: 5,
+    value: resourceType,
   });
 
-  // Column 4: Max Units (convert decimal to percentage)
+  // Column 6: Max Units (convert decimal to percentage)
   cells.push({
-    columnId: 4,
+    columnId: 6,
     value: resource.MaxUnits !== undefined ? convertMaxUnits(resource.MaxUnits) : '',
   });
 
-  // Column 5: Standard Rate (numeric value)
+  // Column 7: Standard Rate (numeric value)
   cells.push({
-    columnId: 5,
+    columnId: 7,
     value: resource.StandardRate !== undefined ? resource.StandardRate : '',
   });
 
-  // Column 6: Overtime Rate (numeric value)
+  // Column 8: Overtime Rate (numeric value)
   cells.push({
-    columnId: 6,
+    columnId: 8,
     value: resource.OvertimeRate !== undefined ? resource.OvertimeRate : '',
   });
 
-  // Column 7: Cost Per Use (numeric value)
+  // Column 9: Cost Per Use (numeric value)
   cells.push({
-    columnId: 7,
+    columnId: 9,
     value: resource.CostPerUse !== undefined ? resource.CostPerUse : '',
   });
 
-  // Column 8: Department
+  // Column 10: Department
   cells.push({
-    columnId: 8,
+    columnId: 10,
     value: resource.Department || '',
   });
 
-  // Column 9: Code
+  // Column 11: Code
   cells.push({
-    columnId: 9,
+    columnId: 11,
     value: resource.Code || '',
   });
 
-  // Column 10: Is Active (boolean)
+  // Column 12: Is Active (boolean)
   cells.push({
-    columnId: 10,
+    columnId: 12,
     value: resource.IsActive,
   });
 
-  // Column 11: Is Generic (boolean)
+  // Column 13: Is Generic (boolean)
   cells.push({
-    columnId: 11,
+    columnId: 13,
     value: resource.IsGeneric,
   });
 
-  // Column 12: Project Online Created Date
+  // Column 14: Project Online Created Date
   cells.push({
-    columnId: 12,
+    columnId: 14,
     value: resource.CreatedDate ? convertDateTimeToDate(resource.CreatedDate) : '',
   });
 
-  // Column 13: Project Online Modified Date
+  // Column 15: Project Online Modified Date
   cells.push({
-    columnId: 13,
+    columnId: 15,
     value: resource.ModifiedDate ? convertDateTimeToDate(resource.ModifiedDate) : '',
   });
 
-  // Columns 14-17: System-generated (Created Date, Modified Date, Created By, Modified By)
+  // Columns 16-19: System-generated (Created Date, Modified Date, Created By, Modified By)
   // These are populated by Smartsheet automatically, no values needed
 
   return {
@@ -386,8 +418,12 @@ export class ResourceTransformer {
 
     // Get existing columns from sheet
     const existingColumnMap = await getColumnMap(this.client, sheetId);
-    if (existingColumnMap['Resource Name']) {
-      columnMap['Resource Name'] = existingColumnMap['Resource Name'].id;
+
+    // Check for legacy "Resource Name" column or new "Team Members" column
+    if (existingColumnMap['Team Members']) {
+      columnMap['Team Members'] = existingColumnMap['Team Members'].id;
+    } else if (existingColumnMap['Resource Name']) {
+      columnMap['Team Members'] = existingColumnMap['Resource Name'].id;
     }
 
     // Discover unique department values for picklist
@@ -403,7 +439,8 @@ export class ResourceTransformer {
         hidden: true,
         locked: true,
       },
-      { title: 'Email', type: 'TEXT_NUMBER', width: 200 },
+      { title: 'Materials', type: 'TEXT_NUMBER', width: 200 },
+      { title: 'Cost Resources', type: 'TEXT_NUMBER', width: 200 },
       { title: 'Resource Type', type: 'PICKLIST', width: 120 },
       { title: 'Max Units', type: 'TEXT_NUMBER', width: 100 },
       { title: 'Standard Rate', type: 'TEXT_NUMBER', width: 120 },
@@ -454,14 +491,49 @@ export class ResourceTransformer {
     resource: ProjectOnlineResource,
     columnMap: Record<string, number>
   ): SmartsheetRow {
-    const cells: Array<{ columnId: number; value: string | number | boolean }> = [];
+    const cells: Array<{ columnId: number; value?: string | number | boolean; objectValue?: any }> =
+      [];
 
-    // Resource Name (primary column)
-    if (columnMap['Resource Name']) {
-      cells.push({
-        columnId: columnMap['Resource Name'],
-        value: resource.Name,
-      });
+    // Determine resource type (default to Work)
+    const resourceType = resource.ResourceType || 'Work';
+
+    // Populate type-specific column based on resource type
+    if (resourceType === 'Work') {
+      // Team Members column (Work resources) - primary column
+      if (columnMap['Team Members']) {
+        const contact = createContactObject(resource.Name, resource.Email);
+        if (contact) {
+          cells.push({
+            columnId: columnMap['Team Members'],
+            objectValue: contact,
+          });
+        } else {
+          cells.push({
+            columnId: columnMap['Team Members'],
+            value: resource.Name,
+          });
+        }
+      }
+      // Materials and Cost Resources left empty for Work resources
+    } else if (resourceType === 'Material') {
+      // Team Members left empty
+      // Materials column (Material resources)
+      if (columnMap['Materials']) {
+        cells.push({
+          columnId: columnMap['Materials'],
+          value: resource.Name,
+        });
+      }
+      // Cost Resources left empty for Material resources
+    } else if (resourceType === 'Cost') {
+      // Team Members and Materials left empty
+      // Cost Resources column (Cost resources)
+      if (columnMap['Cost Resources']) {
+        cells.push({
+          columnId: columnMap['Cost Resources'],
+          value: resource.Name,
+        });
+      }
     }
 
     // Project Online Resource ID
@@ -472,19 +544,11 @@ export class ResourceTransformer {
       });
     }
 
-    // Email
-    if (columnMap['Email']) {
-      cells.push({
-        columnId: columnMap['Email'],
-        value: resource.Email || '',
-      });
-    }
-
     // Resource Type
     if (columnMap['Resource Type']) {
       cells.push({
         columnId: columnMap['Resource Type'],
-        value: resource.ResourceType || '',
+        value: resourceType,
       });
     }
 

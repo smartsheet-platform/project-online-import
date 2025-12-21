@@ -99,6 +99,31 @@ export interface ProjectOnlineAssignment {
 }
 
 /**
+ * Resource column type for type-based column separation
+ */
+export type ResourceColumnType = 'Work' | 'Material' | 'Cost';
+
+/**
+ * Resource column mapping for Resources sheet
+ * Maps resource types to their corresponding column information
+ */
+export interface ResourceColumnMapping {
+  Work: { columnId: number; columnTitle: 'Team Members' };
+  Material: { columnId: number; columnTitle: 'Materials' };
+  Cost: { columnId: number; columnTitle: 'Cost Resources' };
+}
+
+/**
+ * Resource column IDs returned from ResourceTransformer
+ */
+export interface ResourceColumnIds {
+  'Team Members'?: number;
+  Materials?: number;
+  'Cost Resources'?: number;
+  'Resource Type'?: number;
+}
+
+/**
  * oData query options
  */
 export interface ODataQueryOptions {

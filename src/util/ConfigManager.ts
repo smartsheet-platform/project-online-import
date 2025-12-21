@@ -78,9 +78,12 @@ export class ConfigManager {
 
       // Optional: Project Online Configuration
       projectOnlineUrl: this.getOptional('PROJECT_ONLINE_URL'),
-      projectOnlineTenantId: this.getOptional('PROJECT_ONLINE_TENANT_ID') || this.getOptional('TENANT_ID'),
-      projectOnlineClientId: this.getOptional('PROJECT_ONLINE_CLIENT_ID') || this.getOptional('CLIENT_ID'),
-      projectOnlineClientSecret: this.getOptional('PROJECT_ONLINE_CLIENT_SECRET') || this.getOptional('CLIENT_SECRET'),
+      projectOnlineTenantId:
+        this.getOptional('PROJECT_ONLINE_TENANT_ID') || this.getOptional('TENANT_ID'),
+      projectOnlineClientId:
+        this.getOptional('PROJECT_ONLINE_CLIENT_ID') || this.getOptional('CLIENT_ID'),
+      projectOnlineClientSecret:
+        this.getOptional('PROJECT_ONLINE_CLIENT_SECRET') || this.getOptional('CLIENT_SECRET'),
       useDeviceCodeFlow: this.getOptionalBoolean('USE_DEVICE_CODE_FLOW'),
       tokenCacheDir: this.getOptional('TOKEN_CACHE_DIR'),
 
@@ -261,12 +264,14 @@ export class ConfigManager {
 
     if (this.config.projectOnlineUrl) {
       this.logger.info(`  Project Online URL: ${this.config.projectOnlineUrl}`);
-      
+
       // Determine authentication flow
       const useDeviceCode = this.config.useDeviceCodeFlow ?? !this.config.projectOnlineClientSecret;
-      const authFlow = useDeviceCode ? 'Device Code Flow (user authentication)' : 'Client Credentials Flow (app-only)';
+      const authFlow = useDeviceCode
+        ? 'Device Code Flow (user authentication)'
+        : 'Client Credentials Flow (app-only)';
       this.logger.info(`  Authentication: ${authFlow}`);
-      
+
       if (this.config.tokenCacheDir) {
         this.logger.info(`  Token Cache: ${this.config.tokenCacheDir}`);
       }

@@ -481,16 +481,16 @@ describe('TaskTransformer', () => {
     it('should discover assignment column types from resource types', () => {
       const resources = [
         { Id: 'res-1', Name: 'John Doe', Email: 'john@example.com', ResourceType: 'Work' },
-        { Id: 'res-2', Name: 'Crane A', Email: null, ResourceType: 'Material' },
+        { Id: 'res-2', Name: 'Concrete', Email: null, ResourceType: 'Material' },
         { Id: 'res-3', Name: 'Engineering Dept', Email: null, ResourceType: 'Cost' },
       ];
 
       const result = discoverAssignmentColumns(resources);
 
       expect(result).toEqual({
-        'Team Members': { type: 'MULTI_CONTACT_LIST', resourceType: 'Work' },
-        Equipment: { type: 'MULTI_PICKLIST', resourceType: 'Material' },
-        'Cost Centers': { type: 'MULTI_PICKLIST', resourceType: 'Cost' },
+        'Assigned To': { type: 'MULTI_CONTACT_LIST', resourceType: 'Work' },
+        Materials: { type: 'MULTI_PICKLIST', resourceType: 'Material' },
+        'Cost Resources': { type: 'MULTI_PICKLIST', resourceType: 'Cost' },
       });
     });
 
@@ -503,22 +503,58 @@ describe('TaskTransformer', () => {
       const result = discoverAssignmentColumns(resources);
 
       expect(result).toEqual({
-        'Team Members': { type: 'MULTI_CONTACT_LIST', resourceType: 'Work' },
+        'Assigned To': { type: 'MULTI_CONTACT_LIST', resourceType: 'Work' },
+      });
+    });
+
+    it('should handle only Material resources', () => {
+      const resources = [
+        { Id: 'res-1', Name: 'Concrete', Email: null, ResourceType: 'Material' },
+        { Id: 'res-2', Name: 'Steel', Email: null, ResourceType: 'Material' },
+      ];
+
+      const result = discoverAssignmentColumns(resources);
+
+      expect(result).toEqual({
+        Materials: { type: 'MULTI_PICKLIST', resourceType: 'Material' },
+      });
+    });
+
+    it('should handle only Cost resources', () => {
+      const resources = [
+        { Id: 'res-1', Name: 'Engineering', Email: null, ResourceType: 'Cost' },
+        { Id: 'res-2', Name: 'Marketing', Email: null, ResourceType: 'Cost' },
+      ];
+
+      const result = discoverAssignmentColumns(resources);
+
+      expect(result).toEqual({
+        'Cost Resources': { type: 'MULTI_PICKLIST', resourceType: 'Cost' },
+      });
+    });
+
+    it('should default to Work type for resources without ResourceType', () => {
+      const resources = [{ ResourceType: undefined }];
+
+      const result = discoverAssignmentColumns(resources);
+
+      expect(result).toEqual({
+        'Assigned To': { type: 'MULTI_CONTACT_LIST', resourceType: 'Work' },
       });
     });
   });
 
   describe('configureAssignmentColumns', () => {
-    it('should configure Team Members column to source from Resources sheet', async () => {
+    it('should configure Assigned To column to source from Resources Team Members', async () => {
       const workspace = await mockClient.createWorkspace({ name: 'Test Workspace' });
       const resourcesSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
         name: 'Resources',
-        columns: [{ title: 'Contact', type: 'CONTACT_LIST', primary: true }],
+        columns: [{ title: 'Team Members', type: 'CONTACT_LIST', primary: true }],
       });
 
       const tasksSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
         name: 'Tasks',
-        columns: [{ title: 'Team Members', type: 'MULTI_CONTACT_LIST' }],
+        columns: [{ title: 'Assigned To', type: 'MULTI_CONTACT_LIST' }],
       });
 
       const assignmentColumns: Record<
@@ -528,26 +564,166 @@ describe('TaskTransformer', () => {
           resourceType: 'Work' | 'Material' | 'Cost';
         }
       > = {
-        'Team Members': { type: 'MULTI_CONTACT_LIST', resourceType: 'Work' },
+        'Assigned To': { type: 'MULTI_CONTACT_LIST', resourceType: 'Work' },
       };
 
-      const teamMembersColumnId = tasksSheet.columns![0].id!;
-      const resourcesContactColumnId = resourcesSheet.columns![0].id!;
+      const assignedToColumnId = tasksSheet.columns![0].id!;
+      const teamMembersColumnId = resourcesSheet.columns![0].id!;
 
       await configureAssignmentColumns(
         mockClient,
         tasksSheet.id!,
-        { 'Team Members': teamMembersColumnId },
+        { 'Assigned To': assignedToColumnId },
         resourcesSheet.id!,
-        resourcesContactColumnId,
+        { 'Team Members': teamMembersColumnId },
         assignmentColumns
       );
 
       const updates = mockClient.getColumnUpdates(tasksSheet.id!);
-      const teamUpdate = updates.find((u) => u.columnId === teamMembersColumnId);
+      const assignedToUpdate = updates.find((u) => u.columnId === assignedToColumnId);
 
-      expect(teamUpdate).toBeDefined();
-      expect(teamUpdate?.column.type).toBe('MULTI_CONTACT_LIST');
+      expect(assignedToUpdate).toBeDefined();
+      expect(assignedToUpdate?.column.type).toBe('MULTI_CONTACT_LIST');
+      expect(assignedToUpdate?.column.contactOptions).toBeDefined();
+      expect(assignedToUpdate?.column.contactOptions![0].sheetId).toBe(resourcesSheet.id);
+      expect(assignedToUpdate?.column.contactOptions![0].columnId).toBe(teamMembersColumnId);
+    });
+
+    it('should configure Materials column to source from Resources Materials', async () => {
+      const workspace = await mockClient.createWorkspace({ name: 'Test Workspace' });
+      const resourcesSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
+        name: 'Resources',
+        columns: [
+          { title: 'Team Members', type: 'CONTACT_LIST', primary: true },
+          { title: 'Materials', type: 'TEXT_NUMBER' },
+        ],
+      });
+
+      const tasksSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
+        name: 'Tasks',
+        columns: [{ title: 'Materials', type: 'MULTI_PICKLIST' }],
+      });
+
+      const assignmentColumns: Record<
+        string,
+        {
+          type: 'MULTI_CONTACT_LIST' | 'MULTI_PICKLIST';
+          resourceType: 'Work' | 'Material' | 'Cost';
+        }
+      > = {
+        Materials: { type: 'MULTI_PICKLIST', resourceType: 'Material' },
+      };
+
+      const tasksMaterialsColumnId = tasksSheet.columns![0].id!;
+      const resourcesMaterialsColumnId = resourcesSheet.columns![1].id!;
+
+      await configureAssignmentColumns(
+        mockClient,
+        tasksSheet.id!,
+        { Materials: tasksMaterialsColumnId },
+        resourcesSheet.id!,
+        { Materials: resourcesMaterialsColumnId },
+        assignmentColumns
+      );
+
+      const updates = mockClient.getColumnUpdates(tasksSheet.id!);
+      const materialsUpdate = updates.find((u) => u.columnId === tasksMaterialsColumnId);
+
+      expect(materialsUpdate).toBeDefined();
+      expect(materialsUpdate?.column.type).toBe('MULTI_PICKLIST');
+      expect(materialsUpdate?.column.options).toBeDefined();
+    });
+
+    it('should configure Cost Resources column to source from Resources Cost Resources', async () => {
+      const workspace = await mockClient.createWorkspace({ name: 'Test Workspace' });
+      const resourcesSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
+        name: 'Resources',
+        columns: [
+          { title: 'Team Members', type: 'CONTACT_LIST', primary: true },
+          { title: 'Cost Resources', type: 'TEXT_NUMBER' },
+        ],
+      });
+
+      const tasksSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
+        name: 'Tasks',
+        columns: [{ title: 'Cost Resources', type: 'MULTI_PICKLIST' }],
+      });
+
+      const assignmentColumns: Record<
+        string,
+        {
+          type: 'MULTI_CONTACT_LIST' | 'MULTI_PICKLIST';
+          resourceType: 'Work' | 'Material' | 'Cost';
+        }
+      > = {
+        'Cost Resources': { type: 'MULTI_PICKLIST', resourceType: 'Cost' },
+      };
+
+      const tasksCostColumnId = tasksSheet.columns![0].id!;
+      const resourcesCostColumnId = resourcesSheet.columns![1].id!;
+
+      await configureAssignmentColumns(
+        mockClient,
+        tasksSheet.id!,
+        { 'Cost Resources': tasksCostColumnId },
+        resourcesSheet.id!,
+        { 'Cost Resources': resourcesCostColumnId },
+        assignmentColumns
+      );
+
+      const updates = mockClient.getColumnUpdates(tasksSheet.id!);
+      const costUpdate = updates.find((u) => u.columnId === tasksCostColumnId);
+
+      expect(costUpdate).toBeDefined();
+      expect(costUpdate?.column.type).toBe('MULTI_PICKLIST');
+      expect(costUpdate?.column.options).toBeDefined();
+    });
+
+    it('should configure all three resource types simultaneously', async () => {
+      const workspace = await mockClient.createWorkspace({ name: 'Test Workspace' });
+      const resourcesSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
+        name: 'Resources',
+        columns: [
+          { title: 'Team Members', type: 'CONTACT_LIST', primary: true },
+          { title: 'Materials', type: 'TEXT_NUMBER' },
+          { title: 'Cost Resources', type: 'TEXT_NUMBER' },
+        ],
+      });
+
+      const tasksSheet = await mockClient.createSheetInWorkspace(workspace.id!, {
+        name: 'Tasks',
+        columns: [
+          { title: 'Assigned To', type: 'MULTI_CONTACT_LIST' },
+          { title: 'Materials', type: 'MULTI_PICKLIST' },
+          { title: 'Cost Resources', type: 'MULTI_PICKLIST' },
+        ],
+      });
+
+      const assignmentColumns = {
+        'Assigned To': { type: 'MULTI_CONTACT_LIST' as const, resourceType: 'Work' as const },
+        Materials: { type: 'MULTI_PICKLIST' as const, resourceType: 'Material' as const },
+        'Cost Resources': { type: 'MULTI_PICKLIST' as const, resourceType: 'Cost' as const },
+      };
+
+      await configureAssignmentColumns(
+        mockClient,
+        tasksSheet.id!,
+        {
+          'Assigned To': tasksSheet.columns![0].id!,
+          Materials: tasksSheet.columns![1].id!,
+          'Cost Resources': tasksSheet.columns![2].id!,
+        },
+        resourcesSheet.id!,
+        {
+          'Team Members': resourcesSheet.columns![0].id!,
+          Materials: resourcesSheet.columns![1].id!,
+          'Cost Resources': resourcesSheet.columns![2].id!,
+        },
+        assignmentColumns
+      );
+
+      const updates = mockClient.getColumnUpdates(tasksSheet.id!);
+      expect(updates.length).toBe(3);
     });
   });
 

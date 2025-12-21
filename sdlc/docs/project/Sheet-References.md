@@ -80,9 +80,9 @@ When you assign team members to tasks in Smartsheet, the assignment columns can 
 
 **The Flow**:
 ```
-Task Sheet: Assignment Column (shows team members)
+Task Sheet: Assigned To Column (shows team members)
     ↓ Gets team member list from
-Resource Sheet: Contact Column (your full team)
+Resource Sheet: Team Members Column (your full team)
 ```
 
 ### Assignment Column Types
@@ -308,8 +308,10 @@ Result: "Archived" now appears in all project summary sheets
 
 **How to fix**:
 1. Verify your Resources sheet exists and is populated
-2. Check that the resources have the Contact column filled in
-3. Confirm the column type is set for contacts (not plain text)
+2. Check that Work resources have the Team Members column filled in
+3. Check that Material resources have the Materials column filled in
+4. Check that Cost resources have the Cost Resources column filled in
+5. Confirm the column types are set correctly (contacts for Team Members, text for Materials/Cost Resources)
 
 ### Reference Sheet Not Found
 

@@ -1,10 +1,22 @@
 # Active Context: Project Online to Smartsheet ETL
 
 ## Current Focus
-Device Code Flow authentication implementation complete (2025-12-17). Successfully resolved "Unsupported app only token" error by implementing OAuth 2.0 Device Code Flow for user authentication. Authentication working perfectly with token caching and reuse. Current blocker: User account needs access to Project Online PWA site (`/sites/pwa`) - authentication mechanism is fully functional.
+Resource Type Column Separation implementation complete (2025-12-21). Successfully implemented type-based resource separation into distinct Smartsheet columns (Team Members for Work resources, Materials for Material resources, Cost Resources for Cost resources). All implementation, tests, and documentation complete.
 
 ## Current Phase
-Architecture & Design Complete - Authentication Implemented - Awaiting PWA Site Access
+Architecture & Design Complete - Authentication Implemented - Resource Type Separation Complete - Awaiting PWA Site Access
+
+## Recent Completion: Resource Type Column Separation (2025-12-21)
+- ✅ Comprehensive specification created (1,058 lines) at [`sdlc/docs/specs/Resource-Type-Column-Separation.md`](../sdlc/docs/specs/Resource-Type-Column-Separation.md)
+- ✅ Resources sheet restructured with type-specific columns (Team Members, Materials, Cost Resources)
+- ✅ ResourceTransformer updated with type-based row population logic
+- ✅ TaskTransformer updated with proper assignment column configuration
+- ✅ Sheet reference configuration for Task → Resources column sourcing
+- ✅ Type definitions added (ResourceColumnType, ResourceColumnMapping, ResourceColumnIds)
+- ✅ Comprehensive unit tests (17 new test cases covering all scenarios)
+- ✅ Implementation documentation created at [`sdlc/docs/architecture/Resource-Type-Column-Separation-Implementation.md`](../sdlc/docs/architecture/Resource-Type-Column-Separation-Implementation.md)
+- ✅ Existing documentation updated (Sheet-References.md, systemPatterns.md, activeContext.md)
+- ✅ Backward compatibility support for legacy "Resource Name" column
 
 ## Recent Completion: PMO Standards Test Stability Improvements (2025-12-16)
 - ✅ Systematic diagnostic approach with empirical failure data collection
