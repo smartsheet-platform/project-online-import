@@ -132,9 +132,10 @@ export interface SmartsheetCell {
 }
 
 /**
- * Smartsheet Contact Object
+ * Smartsheet Contact Object (for CONTACT_LIST single contact columns)
  */
 export interface SmartsheetContact {
+  objectType?: 'CONTACT';
   name?: string;
   email?: string;
 }

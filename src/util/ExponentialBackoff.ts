@@ -136,13 +136,15 @@ function isRetryableError(error: unknown): boolean {
   };
 
   const hasResponseStatus = (err: unknown): err is { response: { status: number } } => {
+    if (typeof err !== 'object' || err === null || !('response' in err)) {
+      return false;
+    }
+    const response = (err as { response: unknown }).response;
     return (
-      typeof err === 'object' &&
-      err !== null &&
-      'response' in err &&
-      typeof (err as any).response === 'object' &&
-      (err as any).response !== null &&
-      'status' in (err as any).response
+      typeof response === 'object' &&
+      response !== null &&
+      'status' in response &&
+      typeof (response as { status: unknown }).status === 'number'
     );
   };
 

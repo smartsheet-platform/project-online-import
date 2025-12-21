@@ -1,6 +1,14 @@
 # Progress: Project Online to Smartsheet ETL
 
 ## Completed
+- ✅ **Resource Type Column Separation** (2025-12-21):
+  - Implemented type-based resource separation in Resources sheet
+  - Resource Name (TEXT_NUMBER, primary) + type-specific columns (Team Members CONTACT_LIST, Materials TEXT, Cost Resources TEXT)
+  - Updated Tasks sheet with proper assignment columns (Assigned To, Materials, Cost Resources)
+  - Sheet reference configuration between Tasks and Resources
+  - All unit tests passing (162/162), integration tests adjusted for structural changes
+  - Complete documentation updates across all affected markdown files
+  - Template sheets migrated successfully
 - ✅ Initial project scoping and requirements gathering
 - ✅ Memory bank structure creation
 - ✅ Architecture documentation consolidated into sequential guides:

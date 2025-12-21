@@ -34,7 +34,7 @@ export function createResourcesSheet(
 
 /**
  * Create columns for Resources sheet
- * Returns 18 columns per specification
+ * Returns 21 columns total (includes Resource Name primary + 3 type-specific columns)
  */
 export function createResourcesSheetColumns(): SmartsheetColumn[] {
   return [
@@ -51,9 +51,14 @@ export function createResourcesSheetColumns(): SmartsheetColumn[] {
       locked: true,
     },
     {
+      title: 'Resource Name',
+      type: 'TEXT_NUMBER',
+      primary: true,
+      width: 200,
+    },
+    {
       title: 'Team Members',
       type: 'CONTACT_LIST',
-      primary: true,
       width: 200,
     },
     {
@@ -158,109 +163,114 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
     value: resource.Id,
   });
 
+  // Column 2: Resource Name (PRIMARY column - always populated)
+  cells.push({
+    columnId: 2,
+    value: resource.Name,
+  });
+
   // Determine resource type (default to Work)
   const resourceType = resource.ResourceType || 'Work';
 
   // Populate type-specific column based on resource type
   if (resourceType === 'Work') {
-    // Column 2: Team Members (Work resources) - primary column
+    // Column 3: Team Members (CONTACT_LIST for Work resources)
     const contact = createContactObject(resource.Name, resource.Email);
     if (contact) {
+      // CONTACT_LIST requires objectType: "CONTACT" wrapper
       cells.push({
-        columnId: 2,
-        objectValue: contact,
-      });
-    } else {
-      cells.push({
-        columnId: 2,
-        value: resource.Name,
+        columnId: 3,
+        objectValue: {
+          objectType: 'CONTACT',
+          ...contact,
+        },
       });
     }
-    // Columns 3-4: Materials and Cost Resources left empty
+    // Columns 4-5: Materials and Cost Resources left empty
   } else if (resourceType === 'Material') {
-    // Column 2: Team Members left empty
-    // Column 3: Materials (Material resources)
-    cells.push({
-      columnId: 3,
-      value: resource.Name,
-    });
-    // Column 4: Cost Resources left empty
-  } else if (resourceType === 'Cost') {
-    // Columns 2-3: Team Members and Materials left empty
-    // Column 4: Cost Resources (Cost resources)
+    // Column 3: Team Members left empty
+    // Column 4: Materials (Material resources)
     cells.push({
       columnId: 4,
       value: resource.Name,
     });
+    // Column 5: Cost Resources left empty
+  } else if (resourceType === 'Cost') {
+    // Columns 3-4: Team Members and Materials left empty
+    // Column 5: Cost Resources (Cost resources)
+    cells.push({
+      columnId: 5,
+      value: resource.Name,
+    });
   }
 
-  // Column 5: Resource Type
+  // Column 6: Resource Type
   cells.push({
-    columnId: 5,
+    columnId: 6,
     value: resourceType,
   });
 
-  // Column 6: Max Units (convert decimal to percentage)
+  // Column 7: Max Units (convert decimal to percentage)
   cells.push({
-    columnId: 6,
+    columnId: 7,
     value: resource.MaxUnits !== undefined ? convertMaxUnits(resource.MaxUnits) : '',
   });
 
-  // Column 7: Standard Rate (numeric value)
+  // Column 8: Standard Rate (numeric value)
   cells.push({
-    columnId: 7,
+    columnId: 8,
     value: resource.StandardRate !== undefined ? resource.StandardRate : '',
   });
 
-  // Column 8: Overtime Rate (numeric value)
+  // Column 9: Overtime Rate (numeric value)
   cells.push({
-    columnId: 8,
+    columnId: 9,
     value: resource.OvertimeRate !== undefined ? resource.OvertimeRate : '',
   });
 
-  // Column 9: Cost Per Use (numeric value)
+  // Column 10: Cost Per Use (numeric value)
   cells.push({
-    columnId: 9,
+    columnId: 10,
     value: resource.CostPerUse !== undefined ? resource.CostPerUse : '',
   });
 
-  // Column 10: Department
+  // Column 11: Department
   cells.push({
-    columnId: 10,
+    columnId: 11,
     value: resource.Department || '',
   });
 
-  // Column 11: Code
+  // Column 12: Code
   cells.push({
-    columnId: 11,
+    columnId: 12,
     value: resource.Code || '',
   });
 
-  // Column 12: Is Active (boolean)
+  // Column 13: Is Active (boolean)
   cells.push({
-    columnId: 12,
+    columnId: 13,
     value: resource.IsActive,
   });
 
-  // Column 13: Is Generic (boolean)
+  // Column 14: Is Generic (boolean)
   cells.push({
-    columnId: 13,
+    columnId: 14,
     value: resource.IsGeneric,
   });
 
-  // Column 14: Project Online Created Date
+  // Column 15: Project Online Created Date
   cells.push({
-    columnId: 14,
+    columnId: 15,
     value: resource.CreatedDate ? convertDateTimeToDate(resource.CreatedDate) : '',
   });
 
-  // Column 15: Project Online Modified Date
+  // Column 16: Project Online Modified Date
   cells.push({
-    columnId: 15,
+    columnId: 16,
     value: resource.ModifiedDate ? convertDateTimeToDate(resource.ModifiedDate) : '',
   });
 
-  // Columns 16-19: System-generated (Created Date, Modified Date, Created By, Modified By)
+  // Columns 17-20: System-generated (Created Date, Modified Date, Created By, Modified By)
   // These are populated by Smartsheet automatically, no values needed
 
   return {
@@ -419,11 +429,9 @@ export class ResourceTransformer {
     // Get existing columns from sheet
     const existingColumnMap = await getColumnMap(this.client, sheetId);
 
-    // Check for legacy "Resource Name" column or new "Team Members" column
-    if (existingColumnMap['Team Members']) {
-      columnMap['Team Members'] = existingColumnMap['Team Members'].id;
-    } else if (existingColumnMap['Resource Name']) {
-      columnMap['Team Members'] = existingColumnMap['Resource Name'].id;
+    // Check for "Resource Name" primary column
+    if (existingColumnMap['Resource Name']) {
+      columnMap['Resource Name'] = existingColumnMap['Resource Name'].id;
     }
 
     // Discover unique department values for picklist
@@ -439,6 +447,7 @@ export class ResourceTransformer {
         hidden: true,
         locked: true,
       },
+      { title: 'Team Members', type: 'CONTACT_LIST', width: 200 },
       { title: 'Materials', type: 'TEXT_NUMBER', width: 200 },
       { title: 'Cost Resources', type: 'TEXT_NUMBER', width: 200 },
       { title: 'Resource Type', type: 'PICKLIST', width: 120 },
@@ -491,32 +500,45 @@ export class ResourceTransformer {
     resource: ProjectOnlineResource,
     columnMap: Record<string, number>
   ): SmartsheetRow {
-    const cells: Array<{ columnId: number; value?: string | number | boolean; objectValue?: any }> =
-      [];
+    const cells: Array<{
+      columnId: number;
+      value?: string | number | boolean;
+      objectValue?:
+        | { objectType: 'CONTACT'; name?: string; email?: string }
+        | { name?: string; email?: string };
+    }> = [];
+
+    // Resource Name (PRIMARY column - always populated)
+    if (columnMap['Resource Name']) {
+      cells.push({
+        columnId: columnMap['Resource Name'],
+        value: resource.Name,
+      });
+    }
 
     // Determine resource type (default to Work)
     const resourceType = resource.ResourceType || 'Work';
 
     // Populate type-specific column based on resource type
+    // Per Smartsheet SDK: Omit columnId from cells array for empty values
     if (resourceType === 'Work') {
-      // Team Members column (Work resources) - primary column
+      // Team Members column (CONTACT_LIST for Work resources)
       if (columnMap['Team Members']) {
         const contact = createContactObject(resource.Name, resource.Email);
         if (contact) {
+          // CONTACT_LIST requires objectType: "CONTACT" wrapper
           cells.push({
             columnId: columnMap['Team Members'],
-            objectValue: contact,
-          });
-        } else {
-          cells.push({
-            columnId: columnMap['Team Members'],
-            value: resource.Name,
+            objectValue: {
+              objectType: 'CONTACT',
+              ...contact,
+            },
           });
         }
+        // If no contact, omit the cell entirely (Smartsheet treats as empty)
       }
-      // Materials and Cost Resources left empty for Work resources
+      // Materials and Cost Resources: omit cells (empty)
     } else if (resourceType === 'Material') {
-      // Team Members left empty
       // Materials column (Material resources)
       if (columnMap['Materials']) {
         cells.push({
@@ -524,9 +546,8 @@ export class ResourceTransformer {
           value: resource.Name,
         });
       }
-      // Cost Resources left empty for Material resources
+      // Team Members and Cost Resources: omit cells (empty)
     } else if (resourceType === 'Cost') {
-      // Team Members and Materials left empty
       // Cost Resources column (Cost resources)
       if (columnMap['Cost Resources']) {
         cells.push({
@@ -534,6 +555,7 @@ export class ResourceTransformer {
           value: resource.Name,
         });
       }
+      // Team Members and Materials: omit cells (empty)
     }
 
     // Project Online Resource ID
@@ -552,51 +574,51 @@ export class ResourceTransformer {
       });
     }
 
-    // Max Units (convert decimal to percentage)
-    if (columnMap['Max Units']) {
+    // Max Units (convert decimal to percentage) - only add if value exists
+    if (columnMap['Max Units'] && resource.MaxUnits !== undefined) {
       cells.push({
         columnId: columnMap['Max Units'],
-        value: resource.MaxUnits !== undefined ? convertMaxUnits(resource.MaxUnits) : '',
+        value: convertMaxUnits(resource.MaxUnits),
       });
     }
 
-    // Standard Rate
-    if (columnMap['Standard Rate']) {
+    // Standard Rate - only add if value exists
+    if (columnMap['Standard Rate'] && resource.StandardRate !== undefined) {
       cells.push({
         columnId: columnMap['Standard Rate'],
-        value: resource.StandardRate !== undefined ? resource.StandardRate : '',
+        value: resource.StandardRate,
       });
     }
 
-    // Overtime Rate
-    if (columnMap['Overtime Rate']) {
+    // Overtime Rate - only add if value exists
+    if (columnMap['Overtime Rate'] && resource.OvertimeRate !== undefined) {
       cells.push({
         columnId: columnMap['Overtime Rate'],
-        value: resource.OvertimeRate !== undefined ? resource.OvertimeRate : '',
+        value: resource.OvertimeRate,
       });
     }
 
-    // Cost Per Use
-    if (columnMap['Cost Per Use']) {
+    // Cost Per Use - only add if value exists
+    if (columnMap['Cost Per Use'] && resource.CostPerUse !== undefined) {
       cells.push({
         columnId: columnMap['Cost Per Use'],
-        value: resource.CostPerUse !== undefined ? resource.CostPerUse : '',
+        value: resource.CostPerUse,
       });
     }
 
-    // Department
-    if (columnMap['Department']) {
+    // Department - only add if value exists
+    if (columnMap['Department'] && resource.Department) {
       cells.push({
         columnId: columnMap['Department'],
-        value: resource.Department || '',
+        value: resource.Department,
       });
     }
 
-    // Code
-    if (columnMap['Code']) {
+    // Code - only add if value exists
+    if (columnMap['Code'] && resource.Code) {
       cells.push({
         columnId: columnMap['Code'],
-        value: resource.Code || '',
+        value: resource.Code,
       });
     }
 
@@ -616,19 +638,19 @@ export class ResourceTransformer {
       });
     }
 
-    // Project Online Created Date
-    if (columnMap['Project Online Created Date']) {
+    // Project Online Created Date - only add if value exists
+    if (columnMap['Project Online Created Date'] && resource.CreatedDate) {
       cells.push({
         columnId: columnMap['Project Online Created Date'],
-        value: resource.CreatedDate ? convertDateTimeToDate(resource.CreatedDate) : '',
+        value: convertDateTimeToDate(resource.CreatedDate),
       });
     }
 
-    // Project Online Modified Date
-    if (columnMap['Project Online Modified Date']) {
+    // Project Online Modified Date - only add if value exists
+    if (columnMap['Project Online Modified Date'] && resource.ModifiedDate) {
       cells.push({
         columnId: columnMap['Project Online Modified Date'],
-        value: resource.ModifiedDate ? convertDateTimeToDate(resource.ModifiedDate) : '',
+        value: convertDateTimeToDate(resource.ModifiedDate),
       });
     }
 

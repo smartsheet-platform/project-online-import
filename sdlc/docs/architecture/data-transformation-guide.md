@@ -171,14 +171,17 @@ Your Project Online:             In Smartsheet:
 
 **Sheet Type**: Flat list (no hierarchy)
 
-**Columns Created** (18 columns for each resource):
+**Columns Created** (21 columns total with type-specific separation):
 
 | Column Name | What It Stores | Source | Example |
 |-------------|----------------|--------|---------|
 | Resource ID | Auto-generated identifier | Automatic | "WEB-00042" |
 | Project Online Resource ID | Original identifier | `Resource.Id` | Hidden column |
-| Contact | Name and email together | `Resource.Name` + `Email` | John Doe (john@example.com) |
-| Resource Type | People, Equipment, or Cost | `Resource.ResourceType` | "Work" (people) |
+| **Resource Name** | Resource name (primary, all resources) | `Resource.Name` | "Alice Smith" (all types) |
+| **Team Members** | Contact for Work resources only | `Resource.Name` + `Email` | Alice Smith (alice@example.com) |
+| **Materials** | Material resource name only | `Resource.Name` | "Concrete Mix" (Material only) |
+| **Cost Resources** | Cost resource name only | `Resource.Name` | "Engineering Dept" (Cost only) |
+| Resource Type | Work, Material, or Cost | `Resource.ResourceType` | "Work" |
 | Max Units | Availability percentage | `Resource.MaxUnits` | "100%" |
 | Standard Rate | Regular hourly rate | `Resource.StandardRate` | 75.00 |
 | Overtime Rate | Overtime hourly rate | `Resource.OvertimeRate` | 112.50 |
@@ -187,6 +190,14 @@ Your Project Online:             In Smartsheet:
 | Code | Resource code | `Resource.Code` | "ENG-001" |
 | Is Active | Currently active? | `Resource.IsActive` | Checkmark or empty |
 | Is Generic | Generic resource? | `Resource.IsGeneric` | Checkmark or empty |
+| Project Online Created Date | When created in PO | `Resource.CreatedDate` | "2024-03-01" |
+| Project Online Modified Date | When last changed in PO | `Resource.ModifiedDate` | "2024-03-15" |
+| Created Date | When created in SS | System | Automatic |
+| Modified Date | When last changed in SS | System | Automatic |
+| Created By | Who created in SS | System | Automatic |
+| Modified By | Who last changed in SS | System | Automatic |
+
+**Key Pattern**: Resource Name (primary) is always populated. Each resource also populates exactly ONE type-specific column (Team Members, Materials, or Cost Resources) based on ResourceType.
 
 ## 4. Assignments
 
@@ -195,21 +206,23 @@ Your Project Online:             In Smartsheet:
 **Important**: There is no separate Assignments sheet - assignments appear as columns in your Tasks sheet.
 
 **How It Works**:
-- **Team members (people)** → Collaboration-enabled columns (you can @mention them)
-- **Equipment/materials** → Simple selection lists (text-based)
+- **Work resources (people)** → Multi-contact columns with collaboration features
+- **Material resources** → Multi-select picklists with text-based selection
+- **Cost resources** → Multi-select picklists with text-based selection
 
-**Example Assignment Columns**:
+**Assignment Columns by Resource Type**:
 
-| Column Name | Type | Contains | How It's Set Up |
-|------------|------|----------|-----------------|
-| Team Members | Contact list | Your team members | Options come from Resources Sheet |
-| Equipment | Selection list | Equipment items | Text-based options |
-| Cost Centers | Selection list | Cost allocations | Text-based options |
+| Column Name | Type | Contains | Sources From Resources Sheet |
+|------------|------|----------|------------------------------|
+| Assigned To | Multi-Contact List | Work resources (people) | Team Members (CONTACT_LIST) column |
+| Materials | Multi-Picklist | Material resources | Materials (TEXT_NUMBER) column |
+| Cost Resources | Multi-Picklist | Cost resources | Cost Resources (TEXT_NUMBER) column |
 
 **Benefits**:
 - See assignments directly in your task list
-- Validated against your resource list
-- Enable collaboration features (notifications, mentions)
+- Dropdown options sourced from Resources sheet
+- Enable collaboration features for people (@mentions, notifications)
+- Proper column types for different resource categories
 - Simpler structure with fewer sheets
 
 ## Data Type Conversions

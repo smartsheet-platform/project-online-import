@@ -55,10 +55,11 @@ Assignment → MULTI_CONTACT_LIST columns in Tasks Sheet (embedded)
 
 **Key Pattern Changes (2024-12-21) - Resource Type Separation**:
 - Resources sheet separates resources by type into distinct columns
-- Team Members (CONTACT_LIST, primary) for Work resources
-- Materials (TEXT_NUMBER) for Material resources
-- Cost Resources (TEXT_NUMBER) for Cost resources
-- Each resource populates exactly ONE type-specific column
+- Resource Name (TEXT_NUMBER, primary) - always populated for ALL resources
+- Team Members (CONTACT_LIST, NOT primary) - for Work resources only
+- Materials (TEXT_NUMBER) - for Material resources only
+- Cost Resources (TEXT_NUMBER) - for Cost resources only
+- Each resource populates Resource Name + exactly ONE type-specific column
 - Tasks sheet assignment columns reference corresponding Resources columns
 
 ### Data Type Conversion Pattern

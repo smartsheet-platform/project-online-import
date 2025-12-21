@@ -238,13 +238,13 @@ export class MSALAuthHandler {
       this.cachedToken = {
         accessToken: response.accessToken,
         expiresOn: response.expiresOn ?? new Date(Date.now() + 3600000), // Default 1 hour
-        refreshToken: (response as any).refreshToken, // MSAL may not expose this in types
+        refreshToken: (response as { refreshToken?: string }).refreshToken, // MSAL may not expose this in types
       };
 
       // Save to file cache
       await this.tokenCacheManager.save(this.config.tenantId, this.config.clientId, {
         access_token: response.accessToken,
-        refresh_token: (response as any).refreshToken,
+        refresh_token: (response as { refreshToken?: string }).refreshToken,
         expires_on: this.cachedToken.expiresOn.toISOString(),
         scopes,
       });
@@ -363,7 +363,7 @@ export class MSALAuthHandler {
       this.cachedToken = {
         accessToken: response.accessToken,
         expiresOn: response.expiresOn ?? new Date(Date.now() + 3600000),
-        refreshToken: (response as any).refreshToken ?? refreshToken,
+        refreshToken: (response as { refreshToken?: string }).refreshToken ?? refreshToken,
       };
 
       // Save to file cache

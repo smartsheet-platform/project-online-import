@@ -123,8 +123,8 @@ export class TokenCacheManager {
       try {
         await fs.unlink(cachePath);
         this.logger.debug(`Cleared token cache: ${cachePath}`);
-      } catch (error: any) {
-        if (error.code !== 'ENOENT') {
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
           throw error;
         }
         // File doesn't exist, nothing to clear
@@ -185,8 +185,8 @@ export class TokenCacheManager {
     try {
       // Create directory with restrictive permissions (owner access only)
       await fs.mkdir(this.cacheDir, { mode: 0o700, recursive: true });
-    } catch (error: any) {
-      if (error.code !== 'EEXIST') {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && error.code !== 'EEXIST') {
         throw error;
       }
     }
@@ -230,16 +230,24 @@ export class TokenCacheManager {
   /**
    * Validate token structure and required fields
    */
-  private validateToken(token: any): token is CachedToken {
+  private validateToken(token: unknown): token is CachedToken {
     return (
-      token &&
+      token !== null &&
+      token !== undefined &&
       typeof token === 'object' &&
+      'version' in token &&
       typeof token.version === 'string' &&
+      'tenant_id' in token &&
       typeof token.tenant_id === 'string' &&
+      'client_id' in token &&
       typeof token.client_id === 'string' &&
+      'access_token' in token &&
       typeof token.access_token === 'string' &&
+      'expires_on' in token &&
       typeof token.expires_on === 'string' &&
+      'cached_at' in token &&
       typeof token.cached_at === 'string' &&
+      'scopes' in token &&
       Array.isArray(token.scopes)
     );
   }
