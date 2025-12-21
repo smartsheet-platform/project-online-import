@@ -4,8 +4,8 @@
 - **Created**: 2024-12-08
 - **Purpose**: Comprehensive guide for verifying test data accuracy and maintaining test data lifecycle
 - **Related Specs**: 
-  - [`sdlc/docs/specs/Project-Online-Test-Data-Population-Script.md`](./Project-Online-Test-Data-Population-Script.md) - Test data population
-  - [`sdlc/docs/specs/Project-Online-E2E-Integration-Tests.md`](./Project-Online-E2E-Integration-Tests.md) - E2E integration tests
+  - [`sdlc/docs/project/Test-Data-Population-Script.md`](./Test-Data-Population-Script.md) - Test data population
+  - [`sdlc/docs/project/E2E-Integration-Tests.md`](./E2E-Integration-Tests.md) - E2E integration tests
   - [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md) - Integration test scenarios
 
 ## Executive Summary
@@ -1224,6 +1224,6 @@ Test data maintenance is successful when:
 
 ## Related Documentation
 
-- **Test Data Population**: [`sdlc/docs/specs/Project-Online-Test-Data-Population-Script.md`](./Project-Online-Test-Data-Population-Script.md)
-- **E2E Integration Tests**: [`sdlc/docs/specs/Project-Online-E2E-Integration-Tests.md`](./Project-Online-E2E-Integration-Tests.md)
+- **Test Data Population**: [`sdlc/docs/project/Test-Data-Population-Script.md`](./Test-Data-Population-Script.md)
+- **E2E Integration Tests**: [`sdlc/docs/project/E2E-Integration-Tests.md`](./E2E-Integration-Tests.md)
 - **Integration Test Spec**: [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md)

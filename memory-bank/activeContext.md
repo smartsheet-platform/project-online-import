@@ -36,9 +36,9 @@ Architecture & Design Complete - Authentication Implemented - Resource Type Sepa
 
 ## Completed Architecture Work
 - ✅ Architecture documentation consolidated into sequential guides (TypeScript):
-  - [`project-online-migration-overview.md`](../sdlc/docs/architecture/project-online-migration-overview.md) - Business context, drivers, and technology stack
-  - [`etl-system-design.md`](../sdlc/docs/architecture/etl-system-design.md) - Component architecture and CLI design
-  - [`data-transformation-guide.md`](../sdlc/docs/architecture/data-transformation-guide.md) - Complete entity mappings and conversions
+  - [`Project-Online-Migration-Overview.md`](../sdlc/docs/project/Project-Online-Migration-Overview.md) - Business context, drivers, and technology stack
+  - [`ETL-System-Design.md`](../sdlc/docs/project/ETL-System-Design.md) - Component architecture and CLI design
+  - [`Data-Transformation-Guide.md`](../sdlc/docs/project/Data-Transformation-Guide.md) - Complete entity mappings and conversions
 - ✅ Professional PDF generation system (2024-12-16):
   - Custom LaTeX template with Smartsheet branding
   - Professional title page and headers/footers

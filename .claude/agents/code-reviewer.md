@@ -24,7 +24,7 @@ Complete role definition, core principles (including "Static Analysis Only"), ex
 ## Review Patterns and Workflows
 
 All review checklists, security patterns, performance patterns, testing guidelines, feedback templates, workflow details, and Git integration guidance defined in:
-- [code-reviewer-review-patterns.md](../../sdlc/shared/code-reviewer-review-patterns.md)
+- [code-reviewer-review-Patterns.md](../../sdlc/shared/code-reviewer-review-Patterns.md)
 
 **Note**: Review patterns include language-specific checklists for Kotlin/Java, TypeScript/JavaScript, and Python, plus security, performance, and testing review guidelines.
 

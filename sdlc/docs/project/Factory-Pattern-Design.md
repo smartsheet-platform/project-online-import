@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
 
-[🎯 Migrating](./project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/Conventions.md)
 
 </div>
 
 <div align="center">
 
-[← Previous: Data Transformation Guide](./data-transformation-guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md)
+[← Previous: Data Transformation Guide](./Data-Transformation-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Template Workspace Creation →](./Template-Based-Workspace-Creation.md)
 
 </div>
 
@@ -111,6 +111,6 @@ This process repeats for each project you migrate, with all projects sharing the
 
 <div align="center">
 
-[← Previous: Data Transformation Guide](./data-transformation-guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md)
+[← Previous: Data Transformation Guide](./Data-Transformation-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Template Workspace Creation →](../project/Template-Based-Workspace-Creation.md)
 
 </div>

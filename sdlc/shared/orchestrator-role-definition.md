@@ -155,7 +155,7 @@ Route based on:
 ### Jira Integration
 
 See shared docs:
-- [jira-workflow-patterns.md](./jira-workflow-patterns.md)
+- [jira-workflow-Patterns.md](./jira-workflow-Patterns.md)
 - [jira-status-updates.md](./jira-status-updates.md)
 
 Orchestrator handles ALL Jira status updates and assignments before routing to specialists.
@@ -170,7 +170,7 @@ Orchestrator coordinates MR feedback processing via mr-actions agent/mode.
 ### Delegation Patterns
 
 See shared docs:
-- [orchestrator-delegation-patterns.md](./orchestrator-delegation-patterns.md)
+- [orchestrator-delegation-Patterns.md](./orchestrator-delegation-Patterns.md)
 
 Defines how orchestrator delegates to all specialist agents/modes.
 

@@ -82,10 +82,10 @@ Bootstrap generates structured knowledge artifacts in `sdlc/docs/`:
 
 ### Code Guidance Artifacts (`sdlc/docs/code/`)
 - **`BOOTSTRAP-[project].md`** - Comprehensive, human-readable project knowledge
-- **`patterns.md`** - Recurring code patterns with DO/DON'T examples
-- **`conventions.md`** - Team conventions and standards
-- **`anti-patterns.md`** - Anti-patterns to avoid with correct alternatives
-- **`troubleshooting-playbook.md`** - Common issues, diagnostics, and solutions
+- **`Patterns.md`** - Recurring code patterns with DO/DON'T examples
+- **`Conventions.md`** - Team conventions and standards
+- **`Anti-Patterns.md`** - Anti-patterns to avoid with correct alternatives
+- **`Troubleshooting-Playbook.md`** - Common issues, diagnostics, and solutions
 
 ### Specification Artifacts (`sdlc/docs/specs/`)
 - **`architecture-decisions.md`** - Architectural decisions, rationale, and trade-offs
@@ -132,10 +132,10 @@ Validates existing bootstrap artifacts against current codebase, identifies drif
 
 All SDLC modes (Roo) and agents (Claude) reference bootstrap knowledge from `sdlc/docs/`:
 - **Architect Mode/Agent**: References `sdlc/docs/specs/architecture-decisions.md` for design patterns
-- **Code Mode/Agent**: Follows `sdlc/docs/code/patterns.md` and `sdlc/docs/code/conventions.md`
+- **Code Mode/Agent**: Follows `sdlc/docs/code/Patterns.md` and `sdlc/docs/code/Conventions.md`
 - **Spec Mode/Agent**: Aligns with documented architecture in `sdlc/docs/specs/`
 - **Dev Env Mode/Agent**: References configuration patterns in `sdlc/docs/code/`
-- **MR Actions Mode/Agent**: Validates against conventions in `sdlc/docs/code/conventions.md`
+- **MR Actions Mode/Agent**: Validates against conventions in `sdlc/docs/code/Conventions.md`
 
 ## 📊 Expected Output
 

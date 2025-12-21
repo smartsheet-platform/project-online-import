@@ -34,7 +34,7 @@ This workflow provides:
 ## Git Integration
 
 All git operations, MR discovery, git platform API integration, authentication, and error handling defined in:
-- [git-integration-patterns.md](../../sdlc/shared/git-integration-patterns.md)
+- [git-integration-Patterns.md](../../sdlc/shared/git-integration-Patterns.md)
 
 **CRITICAL**: All git commands MUST use `source .env &&` prefix (ABSOLUTE HIGHEST PRIORITY)
 

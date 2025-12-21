@@ -40,7 +40,7 @@ Complete role definition, core expertise, principles, and scope boundaries defin
 ## Delegation Patterns
 
 Complete delegation patterns defined in:
-- [orchestrator-delegation-patterns.md](../../sdlc/shared/orchestrator-delegation-patterns.md)
+- [orchestrator-delegation-Patterns.md](../../sdlc/shared/orchestrator-delegation-Patterns.md)
 
 ### Critical Principles
 
@@ -268,13 +268,13 @@ If answers are: YES, NO, NO → **STOP - You're about to violate the workflow**
 Complete Jira workflow patterns defined in:
 - [jira-project-key-workflow.md](../../sdlc/shared/jira-project-key-workflow.md)
 - [jira-user-identification.md](../../sdlc/shared/jira-user-identification.md)
-- [jira-jql-patterns.md](../../sdlc/shared/jira-jql-patterns.md)
-- [jira-workflow-patterns.md](../../sdlc/shared/jira-workflow-patterns.md)
+- [jira-jql-Patterns.md](../../sdlc/shared/jira-jql-Patterns.md)
+- [jira-workflow-Patterns.md](../../sdlc/shared/jira-workflow-Patterns.md)
 - [jira-status-updates.md](../../sdlc/shared/jira-status-updates.md)
 - [jira-git-integration.md](../../sdlc/shared/jira-git-integration.md)
 
 **Orchestrator handles**:
-- Task discovery via JQL queries (see jira-jql-patterns.md)
+- Task discovery via JQL queries (see jira-jql-Patterns.md)
 - User assignment via `git config user.email` (see jira-user-identification.md)
 - Story Points validation for Stories
 - Status transitions ("Open" → "In Progress" → "In Review")

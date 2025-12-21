@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🛠️ Contributing</h1>
 
-[🎯 Migrating](../architecture/project-online-migration-overview.md) · [🏗️ How it Works](../architecture/etl-system-design.md) · 🛠️ Contributing
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · [🏗️ How it Works](./ETL-System-Design.md) · 🛠️ Contributing
 
 </div>
 
 <div align="center">
 
-[← Previous: Troubleshooting Playbook](./troubleshooting-playbook.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Patterns →](./patterns.md)
+[← Previous: Troubleshooting Playbook](./Troubleshooting-Playbook.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Patterns →](./Patterns.md)
 
 </div>
 
@@ -720,6 +720,6 @@ When in doubt, consistency with existing code takes precedence.
 
 <div align="center">
 
-[← Previous: Troubleshooting Playbook](./troubleshooting-playbook.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Patterns →](./patterns.md)
+[← Previous: Troubleshooting Playbook](./Troubleshooting-Playbook.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Patterns →](./Patterns.md)
 
 </div>

@@ -22,7 +22,7 @@ Before adding content here, check if the pattern already exists in:
 - `../../shared/mr-interactive-workflow.md`
 - `../../shared/mr-processor-role-definition.md`
 - `../../shared/mr-scope-constraints.md`
-- `../../shared/git-integration-patterns.md`
+- `../../shared/git-integration-Patterns.md`
 
 **Decision Tree**:
 - If it exists → Reference the shared pattern in a comment

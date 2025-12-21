@@ -2,7 +2,7 @@
 
 <div align="center">
 
-| [← Previous: API Services Catalog](../sdlc/docs/api-reference/api-services-catalog.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | **End of Series** |
+| [← Previous: API Services Catalog](../sdlc/docs/api-reference/API-Services-Catalog.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | **End of Series** |
 |:---|:---:|---:|
 
 </div>
@@ -480,14 +480,14 @@ The Smartsheet SDK handles rate limiting automatically. If tests consistently hi
 - **Project Documentation**: `sdlc/docs/project/`
 - **Architecture**: `sdlc/docs/architecture/`
 - **Test Scenarios**: `test/integration/load-phase-test-scenarios.md`
-- **Transformation Spec**: `sdlc/docs/architecture/data-transformation-guide.md`
+- **Transformation Spec**: `sdlc/docs/project/Data-Transformation-Guide.md`
 - **Smartsheet API**: https://smartsheet-platform.github.io/api-docs/
 
 ---
 
 <div align="center">
 
-| [← Previous: API Services Catalog](../sdlc/docs/api-reference/api-services-catalog.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | **End of Series** |
+| [← Previous: API Services Catalog](../sdlc/docs/api-reference/API-Services-Catalog.md) | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | **End of Series** |
 |:---|:---:|---:|
 
 </div>

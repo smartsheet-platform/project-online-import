@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
 
-[🎯 Migrating](./project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/Conventions.md)
 
 </div>
 
 <div align="center">
 
-[← Previous: Migration Overview](./project-online-migration-overview.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Data Transformation Guide →](./data-transformation-guide.md)
+[← Previous: Migration Overview](./Project-Online-Migration-Overview.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Data Transformation Guide →](./Data-Transformation-Guide.md)
 
 </div>
 
@@ -385,6 +385,6 @@ The next guide provides detailed information about how your data is converted fr
 
 <div align="center">
 
-[← Previous: Migration Overview](./project-online-migration-overview.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Data Transformation Guide →](./data-transformation-guide.md)
+[← Previous: Migration Overview](./Project-Online-Migration-Overview.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Data Transformation Guide →](./Data-Transformation-Guide.md)
 
 </div>

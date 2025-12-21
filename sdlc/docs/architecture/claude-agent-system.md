@@ -33,7 +33,7 @@ Each agent follows this structure:
 {{sdlc/shared/specific-guidance.md}}
 
 ## Workflow Patterns
-{{sdlc/shared/workflow-patterns.md}}
+{{sdlc/shared/workflow-Patterns.md}}
 ```
 
 The `{{path/to/file.md}}` syntax tells Claude Code to include the referenced markdown file's content.
@@ -59,8 +59,8 @@ The `{{path/to/file.md}}` syntax tells Claude Code to include the referenced mar
 
 **Shared Documentation**:
 - `sdlc/shared/orchestrator-role-definition.md`
-- `sdlc/shared/jira-workflow-patterns.md`
-- `sdlc/shared/git-integration-patterns.md`
+- `sdlc/shared/jira-workflow-Patterns.md`
+- `sdlc/shared/git-integration-Patterns.md`
 
 ### 2. Implementer (`code.md`)
 
@@ -103,7 +103,7 @@ The `{{path/to/file.md}}` syntax tells Claude Code to include the referenced mar
 
 **Shared Documentation**:
 - `sdlc/shared/spec-writer-role-definition.md`
-- `sdlc/shared/spec-writer-documentation-patterns.md`
+- `sdlc/shared/spec-writer-documentation-Patterns.md`
 
 ### 4. Architect (`architect.md`)
 
@@ -162,7 +162,7 @@ The `{{path/to/file.md}}` syntax tells Claude Code to include the referenced mar
 
 **Shared Documentation**:
 - `sdlc/shared/api-client-role-definition.md`
-- `sdlc/shared/api-client-generation-patterns.md`
+- `sdlc/shared/api-client-generation-Patterns.md`
 
 ### 7. Environment Troubleshooter (`dev-env.md`)
 

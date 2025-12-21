@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🛠️ Contributing</h1>
 
-[🎯 Migrating](../architecture/project-online-migration-overview.md) · [🏗️ How it Works](../architecture/etl-system-design.md) · 🛠️ Contributing
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · [🏗️ How it Works](./ETL-System-Design.md) · 🛠️ Contributing
 
 </div>
 
 <div align="center">
 
-[← Previous: Code Patterns](./patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: API Services Catalog →](../api-reference/api-services-catalog.md)
+[← Previous: Code Patterns](./Patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: API Services Catalog →](../api-reference/API-Services-Catalog.md)
 
 </div>
 
@@ -848,6 +848,6 @@ Stop and refactor. Future you will thank you.
 
 <div align="center">
 
-[← Previous: Code Patterns](./patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: API Services Catalog →](../api-reference/api-services-catalog.md)
+[← Previous: Code Patterns](./Patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: API Services Catalog →](../api-reference/API-Services-Catalog.md)
 
 </div>

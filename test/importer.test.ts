@@ -1,9 +1,27 @@
 import { ProjectOnlineImporter } from '../src/lib/importer';
+import { ProjectOnlineClient } from '../src/lib/ProjectOnlineClient';
+
+// Mock ProjectOnlineClient to avoid real authentication in unit tests
+jest.mock('../src/lib/ProjectOnlineClient');
 
 describe('ProjectOnlineImporter', () => {
   let importer: ProjectOnlineImporter;
+  let mockProjectOnlineClient: jest.Mocked<ProjectOnlineClient>;
 
   beforeEach(() => {
+    // Clear all mocks
+    jest.clearAllMocks();
+
+    // Create mock instance (partial mock with only testConnection)
+    mockProjectOnlineClient = {
+      testConnection: jest.fn().mockResolvedValue(false),
+    } as unknown as jest.Mocked<ProjectOnlineClient>;
+
+    // Make ProjectOnlineClient constructor return our mock
+    (ProjectOnlineClient as jest.MockedClass<typeof ProjectOnlineClient>).mockImplementation(
+      () => mockProjectOnlineClient
+    );
+
     importer = new ProjectOnlineImporter();
   });
 
@@ -33,15 +51,19 @@ describe('ProjectOnlineImporter', () => {
       );
     });
 
-    it('should return valid for valid GUID format', async () => {
+    it('should validate GUID format and check config without real authentication', async () => {
+      // Mock successful connection to test GUID validation only
+      mockProjectOnlineClient.testConnection.mockResolvedValue(true);
+
       const result = await importer.validate('12345678-1234-1234-1234-123456789abc');
 
-      // Will have errors due to missing environment variables, but GUID format should be validated
-      expect(result.errors).not.toContain('Source project ID is required');
-      expect(result.errors).not.toContain(
-        'Source must be a valid Project Online project ID (GUID format)'
-      );
-    }, 60000); // 60 second timeout - validate() attempts Project Online connection with retries
+      // With mocked successful connection, validation should pass
+      expect(result.valid).toBe(true);
+      expect(result.errors).toBeUndefined(); // No errors when valid
+
+      // Verify testConnection was called (but mocked, so no real auth)
+      expect(mockProjectOnlineClient.testConnection).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('import', () => {

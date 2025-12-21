@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
 
-[🎯 Migrating](./project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/Conventions.md)
 
 </div>
 
 <div align="center">
 
-[← Previous: System Design](./etl-system-design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Workspace Creation Strategies →](./Factory-Pattern-Design.md)
+[← Previous: System Design](./ETL-System-Design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Workspace Creation Strategies →](./Factory-Pattern-Design.md)
 
 </div>
 
@@ -539,6 +539,6 @@ Your project sheets reference the standards workspace for dropdown values:
 
 <div align="center">
 
-[← Previous: System Design](./etl-system-design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Workspace Creation Strategies →](./Factory-Pattern-Design.md)
+[← Previous: System Design](./ETL-System-Design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Workspace Creation Strategies →](./Factory-Pattern-Design.md)
 
 </div>

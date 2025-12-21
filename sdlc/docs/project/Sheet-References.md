@@ -4,7 +4,7 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
 
-[🎯 Migrating](../architecture/project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/Conventions.md)
 
 </div>
 

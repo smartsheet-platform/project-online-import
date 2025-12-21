@@ -88,19 +88,19 @@ HEADER
 
 # Add each document (removing navigation headers/footers)
 for file in \
-  "sdlc/docs/architecture/project-online-migration-overview.md" \
-  "sdlc/docs/architecture/etl-system-design.md" \
-  "sdlc/docs/architecture/data-transformation-guide.md" \
+  "sdlc/docs/project/Project-Online-Migration-Overview.md" \
+  "sdlc/docs/project/ETL-System-Design.md" \
+  "sdlc/docs/project/Data-Transformation-Guide.md" \
   "sdlc/docs/project/Template-Based-Workspace-Creation.md" \
   "sdlc/docs/project/Re-run-Resiliency.md" \
   "sdlc/docs/project/Sheet-References.md" \
   "sdlc/docs/project/Authentication-Setup.md" \
   "sdlc/docs/project/CLI-Usage-Guide.md" \
-  "sdlc/docs/code/troubleshooting-playbook.md" \
-  "sdlc/docs/code/conventions.md" \
-  "sdlc/docs/code/patterns.md" \
-  "sdlc/docs/code/anti-patterns.md" \
-  "sdlc/docs/api-reference/api-services-catalog.md" \
+  "sdlc/docs/code/Troubleshooting-Playbook.md" \
+  "sdlc/docs/code/Conventions.md" \
+  "sdlc/docs/code/Patterns.md" \
+  "sdlc/docs/code/Anti-Patterns.md" \
+  "sdlc/docs/api-reference/API-Services-Catalog.md" \
   "test/README.md"
 do
   echo "" >> sdlc/docs/output/Combined-Guide.md

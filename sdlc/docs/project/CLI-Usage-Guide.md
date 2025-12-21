@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🎯 Migrating to Smartsheet</h1>
 
-🎯 Migrating · [🏗️ How it Works](../architecture/etl-system-design.md) · [🛠️ Contributing](../code/conventions.md)
+🎯 Migrating · [🏗️ How it Works](./ETL-System-Design.md) · [🛠️ Contributing](../code/Conventions.md)
 
 </div>
 
 <div align="center">
 
-[← Previous: Setting Up Authentication](./Authentication-Setup.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Troubleshooting →](../code/troubleshooting-playbook.md)
+[← Previous: Setting Up Authentication](./Authentication-Setup.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Troubleshooting →](../code/Troubleshooting-Playbook.md)
 
 </div>
 
@@ -38,10 +38,9 @@ cp .env.sample .env
 Edit the `.env` file and add your credentials:
 
 ```env
-# Project Online Connection
+# Project Online Connection (Device Code Flow)
 TENANT_ID=your-azure-tenant-id
 CLIENT_ID=your-azure-app-client-id
-CLIENT_SECRET=your-azure-app-client-secret
 PROJECT_ONLINE_URL=https://your-tenant.sharepoint.com/sites/pwa
 
 # Smartsheet Connection
@@ -50,6 +49,8 @@ SMARTSHEET_API_TOKEN=your_smartsheet_token_here
 # Optional: Reuse existing Standards workspace
 STANDARDS_WORKSPACE_ID=12345678901234
 ```
+
+**Note:** No `CLIENT_SECRET` is required! The tool uses Device Code Flow authentication - you'll authenticate in your browser when you first run the tool.
 
 ### 2. Verify Your Configuration
 
@@ -158,10 +159,11 @@ npm run cli config [options]
 Configuration Summary:
   • TENANT_ID: ******** (hidden for security)
   • CLIENT_ID: ******** (hidden for security)
-  • CLIENT_SECRET: ******** (hidden for security)
   • PROJECT_ONLINE_URL: https://your-tenant.sharepoint.com/sites/pwa
   • SMARTSHEET_API_TOKEN: ********token (80 characters)
   • STANDARDS_WORKSPACE_ID: Not set (will create new workspace)
+  • Authentication: Device Code Flow (interactive)
+  • Token Cache: ~/.project-online-tokens/ (default)
 
 ✅ Configuration is valid
 ```
@@ -178,7 +180,6 @@ These settings are required for the tool to work:
 |---------|---------------|---------|
 | `TENANT_ID` | Your Azure Active Directory tenant | `12345678-1234-1234-1234-123456789012` |
 | `CLIENT_ID` | Your application identifier | `87654321-4321-4321-4321-210987654321` |
-| `CLIENT_SECRET` | Your application secret | `abc123...xyz789` |
 | `PROJECT_ONLINE_URL` | Your Project Online site address | `https://contoso.sharepoint.com/sites/pwa` |
 | `SMARTSHEET_API_TOKEN` | Your Smartsheet access token | `abc123...xyz789` |
 
@@ -402,6 +403,6 @@ npm run cli import \
 
 <div align="center">
 
-[← Previous: Setting Up Authentication](./Authentication-Setup.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Troubleshooting →](../code/troubleshooting-playbook.md)
+[← Previous: Setting Up Authentication](./Authentication-Setup.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Troubleshooting →](../code/Troubleshooting-Playbook.md)
 
 </div>

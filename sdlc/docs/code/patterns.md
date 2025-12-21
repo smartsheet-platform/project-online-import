@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🛠️ Contributing</h1>
 
-[🎯 Migrating](../architecture/project-online-migration-overview.md) · [🏗️ How it Works](../architecture/etl-system-design.md) · 🛠️ Contributing
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · [🏗️ How it Works](./ETL-System-Design.md) · 🛠️ Contributing
 
 </div>
 
 <div align="center">
 
-[← Previous: Code Conventions](./conventions.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Anti-Patterns →](./anti-patterns.md)
+[← Previous: Code Conventions](./Conventions.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Anti-Patterns →](./Anti-Patterns.md)
 
 </div>
 
@@ -733,6 +733,6 @@ When you need to add a new pattern:
 
 <div align="center">
 
-[← Previous: Code Conventions](./conventions.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Anti-Patterns →](./anti-patterns.md)
+[← Previous: Code Conventions](./Conventions.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Anti-Patterns →](./Anti-Patterns.md)
 
 </div>

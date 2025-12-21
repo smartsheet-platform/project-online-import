@@ -100,7 +100,7 @@ export class ProjectOnlineClient {
     if (status === 403) {
       throw ErrorHandler.authError(
         'Access forbidden (403 Forbidden)',
-        'Your Azure AD app may not have the required permissions (Sites.ReadWrite.All) or admin consent is not granted.'
+        'Your Azure AD app may not have the required delegated permissions (AllSites.Read, AllSites.Write) or your user account does not have access to this Project Online site.'
       );
     }
 

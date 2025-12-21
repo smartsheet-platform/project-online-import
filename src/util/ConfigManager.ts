@@ -18,12 +18,10 @@ export interface ETLConfig {
   // Solution Type Configuration
   solutionType?: 'StandaloneWorkspaces' | 'Portfolio';
 
-  // Project Online Configuration
+  // Project Online Configuration (Device Code Flow only)
   projectOnlineUrl?: string;
   projectOnlineTenantId?: string;
   projectOnlineClientId?: string;
-  projectOnlineClientSecret?: string;
-  useDeviceCodeFlow?: boolean;
   tokenCacheDir?: string;
 
   // Logging Configuration
@@ -76,15 +74,12 @@ export class ConfigManager {
       // Optional: Solution Type (defaults to StandaloneWorkspaces)
       solutionType: this.getSolutionType(),
 
-      // Optional: Project Online Configuration
+      // Optional: Project Online Configuration (Device Code Flow only)
       projectOnlineUrl: this.getOptional('PROJECT_ONLINE_URL'),
       projectOnlineTenantId:
         this.getOptional('PROJECT_ONLINE_TENANT_ID') || this.getOptional('TENANT_ID'),
       projectOnlineClientId:
         this.getOptional('PROJECT_ONLINE_CLIENT_ID') || this.getOptional('CLIENT_ID'),
-      projectOnlineClientSecret:
-        this.getOptional('PROJECT_ONLINE_CLIENT_SECRET') || this.getOptional('CLIENT_SECRET'),
-      useDeviceCodeFlow: this.getOptionalBoolean('USE_DEVICE_CODE_FLOW'),
       tokenCacheDir: this.getOptional('TOKEN_CACHE_DIR'),
 
       // Optional: Logging Configuration
@@ -264,16 +259,12 @@ export class ConfigManager {
 
     if (this.config.projectOnlineUrl) {
       this.logger.info(`  Project Online URL: ${this.config.projectOnlineUrl}`);
-
-      // Determine authentication flow
-      const useDeviceCode = this.config.useDeviceCodeFlow ?? !this.config.projectOnlineClientSecret;
-      const authFlow = useDeviceCode
-        ? 'Device Code Flow (user authentication)'
-        : 'Client Credentials Flow (app-only)';
-      this.logger.info(`  Authentication: ${authFlow}`);
+      this.logger.info(`  Authentication: Device Code Flow (interactive user authentication)`);
 
       if (this.config.tokenCacheDir) {
         this.logger.info(`  Token Cache: ${this.config.tokenCacheDir}`);
+      } else {
+        this.logger.info(`  Token Cache: ~/.project-online-tokens/ (default)`);
       }
     }
 

@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🛠️ Contributing</h1>
 
-[🎯 Migrating](../architecture/project-online-migration-overview.md) · [🏗️ How it Works](../architecture/etl-system-design.md) · 🛠️ Contributing
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · [🏗️ How it Works](./ETL-System-Design.md) · 🛠️ Contributing
 
 </div>
 
 <div align="center">
 
-[← Previous: Anti-Patterns](../code/anti-patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Test Suite Guide →](../../test/README.md)
+[← Previous: Anti-Patterns](../code/Anti-Patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Test Suite Guide →](../../test/README.md)
 
 </div>
 
@@ -144,42 +144,60 @@ The API supports standard OData v4 query parameters:
 
 ### Azure AD Authentication API
 
-**Authority:** Microsoft Identity Platform  
-**Documentation:** [Azure AD OAuth 2.0](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow)  
+**Authority:** Microsoft Identity Platform
+**Documentation:** [Azure AD Device Code Flow](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code)
 **Implementation:** [@azure/msal-node](https://www.npmjs.com/package/@azure/msal-node) v2.6.0
 
 | Endpoint | Purpose | Used By |
 |----------|---------|---------|
-| `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token` | Acquire access token | [`MSALAuthHandler.acquireToken()`](../../src/lib/auth/MSALAuthHandler.ts:99) |
+| `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/devicecode` | Initiate device code flow | [`MSALAuthHandler.acquireTokenByDeviceCode()`](../../src/lib/MSALAuthHandler.ts) |
+| `https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token` | Poll for access token | [`MSALAuthHandler.acquireTokenByDeviceCode()`](../../src/lib/MSALAuthHandler.ts) |
 
 #### Authentication Flow
 
-**Grant Type:** Client Credentials (service-to-service)
+**Grant Type:** Device Code Flow (interactive user authentication)
 
 **Required Configuration:**
 - `TENANT_ID` - Azure AD tenant ID (GUID)
 - `CLIENT_ID` - Application (client) ID (GUID)
-- `CLIENT_SECRET` - Client secret value (string)
+- `PROJECT_ONLINE_URL` - SharePoint site URL for scope generation
 
-**Token Request:**
+**Note:** No client secret required. Uses interactive browser authentication.
+
+**Device Code Request:**
 ```typescript
 {
-  scopes: [`{sharePointDomain}/.default`],
-  grantType: 'client_credentials'
+  scopes: [
+    `{sharePointDomain}/AllSites.Read`,
+    `{sharePointDomain}/AllSites.Write`
+  ],
+  deviceCodeCallback: (response) => {
+    // Display device code and verification URL to user
+    console.log(`Go to: ${response.verificationUri}`);
+    console.log(`Enter code: ${response.userCode}`);
+  }
 }
 ```
 
 **Token Response:**
 - `accessToken` - Bearer token for API calls
 - `expiresOn` - Token expiration timestamp
+- `refreshToken` - Used for automatic token refresh
 - **Cache Duration:** Token cached with 5-minute expiration buffer
+- **Cache Location:** `~/.project-online-tokens/`
 
 #### Required Azure AD Permissions
 
-**API Permission:** SharePoint  
-**Permission Name:** `Sites.ReadWrite.All` or `Sites.FullControl.All`  
-**Type:** Application permission (not delegated)  
-**Admin Consent:** Required
+**API Permission:** SharePoint
+**Permission Names:** `AllSites.Read` and `AllSites.Write`
+**Type:** Delegated permissions (user context)
+**Admin Consent:** Optional (user consent requested during authentication)
+
+#### Required Azure AD Configuration
+
+**Public Client Flows:**
+- Azure Portal → App registration → Authentication
+- "Allow public client flows" must be set to **Yes**
 
 ---
 
@@ -187,17 +205,36 @@ The API supports standard OData v4 query parameters:
 
 ### Project Online API Authentication
 
-**Method:** OAuth 2.0 Bearer Token  
-**Provider:** Azure AD (Microsoft Identity Platform)  
-**Flow:** Client Credentials Grant
+**Method:** OAuth 2.0 Bearer Token
+**Provider:** Azure AD (Microsoft Identity Platform)
+**Flow:** Device Code Flow (interactive user authentication)
 
 **Token Acquisition:**
-1. Request token from Azure AD with SharePoint scope
-2. Cache token until expiration (minus 5-minute buffer)
-3. Attach as `Authorization: Bearer {token}` header
-4. Auto-refresh on 401 response
+1. User initiates operation requiring Project Online access
+2. Tool displays device code and verification URL
+3. User authenticates in browser at https://microsoft.com/devicelogin
+4. Tool polls Azure AD for token after user completes authentication
+5. Token cached to `~/.project-online-tokens/` with 5-minute expiration buffer
+6. Cached token used for subsequent operations
+7. Token auto-refreshed when expired using refresh token
+8. User re-authenticates if refresh token expired (typically 90 days)
 
-**Implementation:** [`MSALAuthHandler`](../../src/lib/auth/MSALAuthHandler.ts)
+**First-Time User Experience:**
+```
+Authentication Required
+-----------------------
+1. Open your browser and go to: https://microsoft.com/devicelogin
+2. Enter this code: ABCD-1234
+3. Sign in with your Microsoft credentials
+
+Waiting for authentication...
+✓ Authentication successful!
+✓ Token cached for future use
+```
+
+**Subsequent Operations:** Use cached token automatically (no user interaction).
+
+**Implementation:** [`MSALAuthHandler`](../../src/lib/MSALAuthHandler.ts)
 
 ### Smartsheet API Authentication
 
@@ -338,11 +375,13 @@ class ImportError extends Error {
 
 **Environment Variables:** (`.env` file)
 ```bash
-# Project Online & Azure AD
+# Project Online & Azure AD (Device Code Flow - no CLIENT_SECRET required)
 TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-CLIENT_SECRET=your_client_secret
 PROJECT_ONLINE_URL=https://contoso.sharepoint.com/sites/pwa
+
+# Note: Interactive authentication via browser on first run
+# Token cached at: ~/.project-online-tokens/
 
 # Smartsheet
 SMARTSHEET_API_TOKEN=abc123...xyz (26 chars)
@@ -498,6 +537,6 @@ const resources = await client.getResources();
 
 <div align="center">
 
-[← Previous: Anti-Patterns](../code/anti-patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Test Suite Guide →](../../test/README.md)
+[← Previous: Anti-Patterns](../code/Anti-Patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Test Suite Guide →](../../test/README.md)
 
 </div>

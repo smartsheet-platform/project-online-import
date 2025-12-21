@@ -43,9 +43,9 @@ Python-specific: type hints, context managers, comprehensions, async patterns, P
 Check for guidance documents in `sdlc/docs/code/` including all subdirectories
 
 **Example subdirectories**:
-- `sdlc/docs/code/api/integration-patterns.md`
+- `sdlc/docs/code/api/integration-Patterns.md`
 - `sdlc/docs/code/testing/unit-test-examples.md`
-- `sdlc/docs/code/patterns/error-handling-patterns.md`
+- `sdlc/docs/code/patterns/error-handling-Patterns.md`
 
 ### Step 2: Read Applicable Standards
 Read applicable standards, patterns, or examples from all subdirectories
@@ -64,7 +64,7 @@ Reference specific guidance documents in code comments when appropriate
 - **When**: Before implementing any new code
 
 ### Architecture Patterns
-- **Filename**: `architecture-patterns.md`
+- **Filename**: `architecture-Patterns.md`
 - **Usage**: Reference for consistent architectural approaches
 - **When**: Designing component structure or system integration
 
@@ -74,7 +74,7 @@ Reference specific guidance documents in code comments when appropriate
 - **When**: Implementing API integrations (but delegate client creation to API Client Code specialist)
 
 ### Testing Patterns
-- **Filename**: `testing-patterns.md`
+- **Filename**: `testing-Patterns.md`
 - **Usage**: Reference for testing approaches and framework usage
 - **When**: Writing tests or setting up test suites
 
@@ -115,7 +115,7 @@ matches your project's approaches.
 ```
 I'll apply language-specific best practices from language-best-practices/. No
 project-specific guidance found in sdlc/docs/code/. Consider adding coding-standards.md
-and architecture-patterns.md for more consistent results.
+and architecture-Patterns.md for more consistent results.
 ```
 
 ## Best Practices

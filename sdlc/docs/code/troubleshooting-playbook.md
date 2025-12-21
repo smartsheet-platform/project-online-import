@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🎯 Migrating to Smartsheet</h1>
 
-🎯 Migrating · [🏗️ How it Works](../architecture/etl-system-design.md) · [🛠️ Contributing](./conventions.md)
+🎯 Migrating · [🏗️ How it Works](./ETL-System-Design.md) · [🛠️ Contributing](./Conventions.md)
 
 </div>
 
 <div align="center">
 
-[← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Conventions →](./conventions.md)
+[← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Conventions →](./Conventions.md)
 
 </div>
 
@@ -37,14 +37,16 @@ Each issue includes:
 ### "Authentication failed" Error
 
 **What you're seeing**:
-- Migration stops immediately with an authentication error
+- Migration stops with an authentication error
 - Validation shows "Authentication failed"
-- Error messages about tokens or credentials
+- Device code not accepted
+- Browser authentication not completing
 
 **Why it's happening**:
-- Your Azure Active Directory credentials are invalid or expired
-- The client secret is incorrect
-- Missing permissions
+- You didn't complete the browser authentication
+- Azure AD app not configured for Device Code Flow
+- Missing delegated permissions
+- Device code expired (15-minute timeout)
 - Your Project Online web address is formatted incorrectly
 
 **How to diagnose**:
@@ -53,28 +55,43 @@ Each issue includes:
    ```bash
    TENANT_ID=your-tenant-id
    CLIENT_ID=your-client-id
-   CLIENT_SECRET=your-client-secret
    PROJECT_ONLINE_URL=https://your-organization.sharepoint.com/sites/pwa
    ```
-3. Verify your client secret hasn't expired (check in Azure Portal)
+   (Note: No CLIENT_SECRET required for Device Code Flow)
+3. Verify you completed the browser authentication when prompted
 4. Test your Project Online web address in a browser
 
 **How to fix it**:
-1. **Refresh your client secret**:
-   - Go to Azure Portal → App registration → Certificates & secrets
-   - Create a new client secret
-   - Update your `.env` file with the new secret
-2. **Check web address format**:
+1. **Complete browser authentication**:
+   - When prompted, go to: https://microsoft.com/devicelogin
+   - Enter the exact code shown in your terminal
+   - Sign in with your Microsoft account
+   - Approve the permission consent
+   
+2. **Enable Public Client Flows**:
+   - Go to Azure Portal → App registration → Authentication
+   - Under "Advanced settings" → "Allow public client flows"
+   - Set to **Yes**
+   - Click "Save"
+   
+3. **Verify delegated permissions**:
+   - Azure Portal → App registration → API permissions
+   - Should have: AllSites.Read and AllSites.Write (Delegated, not Application)
+   - Status should show "Granted"
+   
+4. **Check web address format**:
    - Should be: `https://[your-organization].sharepoint.com/sites/[site-name]`
    - Example: `https://contoso.sharepoint.com/sites/pwa`
-3. **Ensure permissions are approved**:
-   - Azure Portal → App registration → Permissions
-   - Click "Grant admin consent for [Your Organization]"
+   
+5. **Clear cached tokens if needed**:
+   - Run: `npm run cli auth:clear`
+   - This forces re-authentication on next run
 
 **How to prevent it**:
-- Set client secrets to expire after 12-24 months
-- Keep separate credentials for testing and production
-- Validate your configuration before important migrations
+- Complete authentication within the 15-minute device code timeout
+- Ensure Azure AD app is properly configured for Device Code Flow
+- Test authentication separately with: `npm run cli auth`
+- Keep your Microsoft account credentials current
 
 ### "Access forbidden" Error
 
@@ -279,6 +296,6 @@ When reporting an issue, please provide:
 
 <div align="center">
 
-[← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Conventions →](./conventions.md)
+[← Previous: Using the Migration Tool](../project/CLI-Usage-Guide.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Code Conventions →](./Conventions.md)
 
 </div>

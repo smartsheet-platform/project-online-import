@@ -361,11 +361,11 @@ export class ProjectOnlineImporter {
 ### Phase 8: Documentation and Code Quality
 
 **Files to Create:**
-- `sdlc/docs/architecture/Factory-Pattern-Design.md`
+- `sdlc/docs/project/Factory-Pattern-Design.md`
 
 **Files to Modify:**
 - `README.md` - Add SOLUTION_TYPE configuration
-- `sdlc/docs/architecture/etl-system-design.md` - Document factory pattern
+- `sdlc/docs/project/ETL-System-Design.md` - Document factory pattern
 
 **Tasks:**
 

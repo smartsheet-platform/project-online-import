@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🎯 Migrating to Smartsheet</h1>
 
-🎯 Migrating · [🏗️ How it Works](./etl-system-design.md) · [🛠️ Contributing](../code/conventions.md)
+🎯 Migrating · [🏗️ How it Works](./ETL-System-Design.md) · [🛠️ Contributing](../code/Conventions.md)
 
 </div>
 
 <div align="center">
 
-[Next: System Design →](./etl-system-design.md)
+[Next: System Design →](./ETL-System-Design.md)
 
 </div>
 
@@ -206,6 +206,6 @@ Ready to learn more about how the migration works? The next guide explains the t
 
 <div align="center">
 
-[Next: System Design →](./etl-system-design.md)
+[Next: System Design →](./ETL-System-Design.md)
 
 </div>

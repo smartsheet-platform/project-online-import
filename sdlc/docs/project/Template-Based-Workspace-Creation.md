@@ -4,13 +4,13 @@
 
 <h1 style="color: rgba(0, 15, 51, 0.75);">🏗️ How it Works</h1>
 
-[🎯 Migrating](../architecture/project-online-migration-overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/conventions.md)
+[🎯 Migrating](./Project-Online-Migration-Overview.md) · 🏗️ How it Works · [🛠️ Contributing](../code/Conventions.md)
 
 </div>
 
 <div align="center">
 
-[← Previous: Workspace Creation Strategies](../architecture/Factory-Pattern-Design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Safe Re-runs →](./Re-run-Resiliency.md)
+[← Previous: Workspace Creation Strategies](./Factory-Pattern-Design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Safe Re-runs →](./Re-run-Resiliency.md)
 
 </div>
 
@@ -110,6 +110,6 @@ You can test that your template works correctly by running the migration with sa
 
 <div align="center">
 
-[← Previous: Workspace Creation Strategies](../architecture/Factory-Pattern-Design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Safe Re-runs →](./Re-run-Resiliency.md)
+[← Previous: Workspace Creation Strategies](./Factory-Pattern-Design.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Safe Re-runs →](./Re-run-Resiliency.md)
 
 </div>

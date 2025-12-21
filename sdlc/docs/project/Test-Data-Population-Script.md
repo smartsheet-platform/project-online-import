@@ -5,7 +5,7 @@
 - **Purpose**: Comprehensive specification for populating Project Online with diverse test data
 - **Related Specs**: 
   - [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md) - 31 integration test scenarios
-  - [`sdlc/docs/architecture/etl-system-design.md`](../architecture/etl-system-design.md) - ETL architecture
+  - [`sdlc/docs/project/ETL-System-Design.md`](./ETL-System-Design.md) - ETL architecture
 
 ## Executive Summary
 
@@ -622,11 +622,13 @@ async function ensureTaskHierarchyExists(projectId: string, tasks: TaskDefinitio
 ### Environment Variables
 
 ```bash
-# .env.test-data
+# .env.test-data (Device Code Flow - interactive authentication)
 PROJECT_ONLINE_TENANT_ID=your-tenant-id
 PROJECT_ONLINE_CLIENT_ID=your-client-id
-PROJECT_ONLINE_CLIENT_SECRET=your-client-secret
 PROJECT_ONLINE_SITE_URL=https://your-tenant.sharepoint.com/sites/pwa
+
+# Note: No CLIENT_SECRET required for Device Code Flow
+# You'll authenticate interactively via browser when running the script
 
 # Script configuration
 TEST_DATA_MARKER=TEST_DATA_v1
@@ -811,8 +813,8 @@ The script is successful when:
 ## Related Documentation
 
 - **Integration Test Spec**: [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md)
-- **ETL Architecture**: [`sdlc/docs/architecture/etl-system-design.md`](../architecture/etl-system-design.md)
-- **E2E Test Spec**: [`sdlc/docs/specs/Project-Online-E2E-Integration-Tests.md`](./Project-Online-E2E-Integration-Tests.md) (to be created)
+- **ETL Architecture**: [`sdlc/docs/project/ETL-System-Design.md`](./ETL-System-Design.md)
+- **E2E Test Spec**: [`sdlc/docs/project/E2E-Integration-Tests.md`](./E2E-Integration-Tests.md) (to be created)
 - **Project Online Client**: [`src/lib/ProjectOnlineClient.ts`](../../../src/lib/ProjectOnlineClient.ts)
 
 ## Next Steps

@@ -46,13 +46,11 @@ async function diagnosePWA() {
   console.log(`Checking site: ${siteUrl}\n`);
 
   try {
-    // Initialize auth handler
-    const useDeviceCodeFlow = process.env.USE_DEVICE_CODE_FLOW === 'true' || !process.env.CLIENT_SECRET;
+    // Initialize auth handler (Device Code Flow)
     const authHandler = new MSALAuthHandler(
       {
         tenantId: process.env.TENANT_ID!,
         clientId: process.env.CLIENT_ID!,
-        clientSecret: process.env.CLIENT_SECRET,
         projectOnlineUrl: siteUrl,
         useDeviceCodeFlow,
       },

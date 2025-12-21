@@ -19,10 +19,10 @@ Add customizations here when you need:
 
 Before adding content here, check if the pattern already exists in:
 - `../../shared/orchestrator-role-definition.md`
-- `../../shared/orchestrator-delegation-patterns.md`
+- `../../shared/orchestrator-delegation-Patterns.md`
 - `../../shared/orchestrator-mr-coordination.md`
 - `../../shared/orchestrator-validation-testing.md`
-- `../../shared/jira-workflow-patterns.md`
+- `../../shared/jira-workflow-Patterns.md`
 
 **Decision Tree**:
 - If it exists → Reference the shared pattern in a comment

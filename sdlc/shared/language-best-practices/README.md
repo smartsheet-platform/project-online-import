@@ -44,7 +44,7 @@ To add a new language:
 
 1. Create `{language}.md` in this directory
 2. Include sections for common concerns (null safety, error handling, testing, etc.)
-3. Update `../code-reviewer-review-patterns.md` to reference it
+3. Update `../code-reviewer-review-Patterns.md` to reference it
 4. Update `../implementer-code-guidance.md` to reference it
 
 ## Customization

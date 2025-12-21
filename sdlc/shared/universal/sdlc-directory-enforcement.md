@@ -227,7 +227,7 @@ If deployment is needed:
 
 2. **Reference shared docs**:
    ```xml
-   <reference>../../sdlc/shared/jira-workflow-patterns.md</reference>
+   <reference>../../sdlc/shared/jira-workflow-Patterns.md</reference>
    ```
 
 3. **Use deployment scripts**:
@@ -247,7 +247,7 @@ If deployment is needed:
 2. **Reference shared docs**:
    ```markdown
    Complete workflow defined in:
-   - [jira-workflow-patterns.md](../jira-workflow-patterns.md)
+   - [jira-workflow-Patterns.md](../jira-workflow-Patterns.md)
    ```
 
 3. **Include universal rules**:

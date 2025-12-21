@@ -200,6 +200,6 @@ Modes should function fully even when no Jira ticket is associated.
 - `../../sdlc/shared/jira-git-integration.md`
 
 ### Complete Jira Workflows
-- `../../sdlc/shared/jira-workflow-patterns.md`
+- `../../sdlc/shared/jira-workflow-Patterns.md`
 - `../../sdlc/shared/jira-project-key-workflow.md`
 - `../../sdlc/shared/jira-user-identification.md`

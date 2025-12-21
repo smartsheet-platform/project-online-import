@@ -96,11 +96,10 @@ export class ProjectOnlineImporter {
       return; // Already initialized (e.g., for testing)
     }
 
-    // Read configuration from environment
+    // Read configuration from environment (Device Code Flow)
     const config: ProjectOnlineClientConfig = {
       tenantId: process.env.TENANT_ID || '',
       clientId: process.env.CLIENT_ID || '',
-      clientSecret: process.env.CLIENT_SECRET || '',
       projectOnlineUrl: process.env.PROJECT_ONLINE_URL || '',
     };
 
@@ -553,11 +552,10 @@ export class ProjectOnlineImporter {
       this.logger.success('✓ Project ID format is valid');
     }
 
-    // Check Project Online configuration
+    // Check Project Online configuration (Device Code Flow - no client secret required)
     const poConfig = {
       tenantId: process.env.TENANT_ID,
       clientId: process.env.CLIENT_ID,
-      clientSecret: process.env.CLIENT_SECRET,
       projectOnlineUrl: process.env.PROJECT_ONLINE_URL,
     };
 
@@ -573,17 +571,13 @@ export class ProjectOnlineImporter {
       this.logger.success('✓ Azure AD Client ID is configured');
     }
 
-    if (!poConfig.clientSecret) {
-      errors.push('CLIENT_SECRET environment variable is not set');
-    } else {
-      this.logger.success('✓ Azure AD Client Secret is configured');
-    }
-
     if (!poConfig.projectOnlineUrl) {
       errors.push('PROJECT_ONLINE_URL environment variable is not set');
     } else {
       this.logger.success('✓ Project Online URL is configured');
     }
+
+    this.logger.info('ℹ️  Authentication: Device Code Flow (interactive browser authentication)');
 
     // Check Smartsheet configuration
     if (!process.env.SMARTSHEET_API_TOKEN) {

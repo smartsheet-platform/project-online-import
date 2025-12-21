@@ -121,7 +121,7 @@ await client.columns?.updateColumn?.({
 - Updated [`memory-bank/systemPatterns.md`](systemPatterns.md) - Resource Type Separation pattern
 - Updated [`memory-bank/activeContext.md`](activeContext.md) - Current focus and recent completion
 - Updated [`sdlc/docs/project/Sheet-References.md`](../sdlc/docs/project/Sheet-References.md) - Column references
-- Updated [`sdlc/docs/architecture/data-transformation-guide.md`](../sdlc/docs/architecture/data-transformation-guide.md) - Resource columns
+- Updated [`sdlc/docs/project/Data-Transformation-Guide.md`](../sdlc/docs/project/Data-Transformation-Guide.md) - Resource columns
 
 **Template Sheets Migrated**:
 - Resources sheet (2652229468114820): Resource Name primary + type-specific columns configured
@@ -150,7 +150,7 @@ await client.columns?.updateColumn?.({
 - `memory-bank/systemPatterns.md` - Pattern documentation
 - `memory-bank/activeContext.md` - Current status
 - `sdlc/docs/project/Sheet-References.md` - User documentation
-- `sdlc/docs/architecture/data-transformation-guide.md` - Technical guide
+- `sdlc/docs/project/Data-Transformation-Guide.md` - Technical guide
 
 **Status**: Implemented and Tested - Production Ready (2025-12-21)
 
@@ -711,7 +711,7 @@ module.exports = {
 **Git Commit**: `0e615b0` - "feat(docs): enhance PDF generation with Smartsheet branding and optimized typography"
 
 **References**:
-- PDF Generation Guide: [`sdlc/docs/pdf/pdf-generation.md`](../sdlc/docs/pdf/pdf-generation.md)
+- PDF Generation Guide: [`sdlc/docs/pdf/PDF-Generation.md`](../sdlc/docs/pdf/PDF-Generation.md)
 - Generation Script: [`sdlc/docs/pdf/generate-pdf-guide.sh`](../sdlc/docs/pdf/generate-pdf-guide.sh)
 - LaTeX Template: [`sdlc/docs/output/custom-header.tex`](../sdlc/docs/output/custom-header.tex)
 - Output PDF: [`sdlc/docs/output/Project-Online-Migration-Guide.pdf`](../sdlc/docs/output/Project-Online-Migration-Guide.pdf)
@@ -751,9 +751,9 @@ module.exports = {
 
 **4. File Organization Improvements**:
 - Renamed architecture files to remove number prefixes:
-  - `01-project-online-migration-overview.md` → `project-online-migration-overview.md`
-  - `02-etl-system-design.md` → `etl-system-design.md`
-  - `03-data-transformation-guide.md` → `data-transformation-guide.md`
+  - `01-Project-Online-Migration-Overview.md` → `Project-Online-Migration-Overview.md`
+  - `02-ETL-System-Design.md` → `ETL-System-Design.md`
+  - `03-Data-Transformation-Guide.md` → `Data-Transformation-Guide.md`
 - Updated 25+ files with corrected references
 - Removed separate INDEX.md in favor of direct section links
 
@@ -1081,7 +1081,7 @@ Workspace: {ProjectName} (sanitized, NO prefix)
 
 **Status**: Approved - Architecture Complete
 
-**Reference**: Architecture overview at [`sdlc/docs/architecture/project-online-migration-overview.md`](../sdlc/docs/architecture/project-online-migration-overview.md), system design at [`sdlc/docs/architecture/etl-system-design.md`](../sdlc/docs/architecture/etl-system-design.md), and transformation guide at [`sdlc/docs/architecture/data-transformation-guide.md`](../sdlc/docs/architecture/data-transformation-guide.md)
+**Reference**: Architecture overview at [`sdlc/docs/project/Project-Online-Migration-Overview.md`](../sdlc/docs/project/Project-Online-Migration-Overview.md), system design at [`sdlc/docs/project/ETL-System-Design.md`](../sdlc/docs/project/ETL-System-Design.md), and transformation guide at [`sdlc/docs/project/Data-Transformation-Guide.md`](../sdlc/docs/project/Data-Transformation-Guide.md)
 
 ---
 

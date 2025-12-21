@@ -4,9 +4,9 @@
 - **Created**: 2024-12-08
 - **Purpose**: Comprehensive specification for E2E integration tests using real Project Online data
 - **Related Specs**: 
-  - [`sdlc/docs/specs/Project-Online-Test-Data-Population-Script.md`](./Project-Online-Test-Data-Population-Script.md) - Test data population
+  - [`sdlc/docs/project/Test-Data-Population-Script.md`](./Test-Data-Population-Script.md) - Test data population
   - [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md) - 31 integration test scenarios
-  - [`sdlc/docs/architecture/etl-system-design.md`](../architecture/etl-system-design.md) - ETL architecture
+  - [`sdlc/docs/project/ETL-System-Design.md`](./ETL-System-Design.md) - ETL architecture
 
 ## Executive Summary
 
@@ -873,11 +873,13 @@ export class SmartsheetVerifier {
 
 2. **Environment Configuration**: Set up `.env.e2e`
    ```bash
-   # Project Online
+   # Project Online (Device Code Flow - interactive authentication)
    PROJECT_ONLINE_TENANT_ID=your-tenant-id
    PROJECT_ONLINE_CLIENT_ID=your-client-id
-   PROJECT_ONLINE_CLIENT_SECRET=your-client-secret
    PROJECT_ONLINE_SITE_URL=https://your-tenant.sharepoint.com/sites/pwa
+   
+   # Note: No CLIENT_SECRET required for Device Code Flow
+   # You'll authenticate interactively via browser when tests run
    
    # Smartsheet
    SMARTSHEET_ACCESS_TOKEN=your-smartsheet-token
@@ -1026,17 +1028,18 @@ jobs:
         env:
           PROJECT_ONLINE_TENANT_ID: ${{ secrets.PROJECT_ONLINE_TENANT_ID }}
           PROJECT_ONLINE_CLIENT_ID: ${{ secrets.PROJECT_ONLINE_CLIENT_ID }}
-          PROJECT_ONLINE_CLIENT_SECRET: ${{ secrets.PROJECT_ONLINE_CLIENT_SECRET }}
           PROJECT_ONLINE_SITE_URL: ${{ secrets.PROJECT_ONLINE_SITE_URL }}
+          # Note: Device Code Flow requires pre-authenticated token cache in CI/CD
+          # Recommendation: Use cached authentication token from secure storage
         run: npm run populate-test-data
       
       - name: Run E2E tests
         env:
           PROJECT_ONLINE_TENANT_ID: ${{ secrets.PROJECT_ONLINE_TENANT_ID }}
           PROJECT_ONLINE_CLIENT_ID: ${{ secrets.PROJECT_ONLINE_CLIENT_ID }}
-          PROJECT_ONLINE_CLIENT_SECRET: ${{ secrets.PROJECT_ONLINE_CLIENT_SECRET }}
           PROJECT_ONLINE_SITE_URL: ${{ secrets.PROJECT_ONLINE_SITE_URL }}
           SMARTSHEET_ACCESS_TOKEN: ${{ secrets.SMARTSHEET_ACCESS_TOKEN }}
+          # Note: Device Code Flow uses cached authentication token
         run: npm run test:e2e
       
       - name: Upload test results
@@ -1049,7 +1052,7 @@ jobs:
 
 ## Related Documentation
 
-- **Test Data Population**: [`sdlc/docs/specs/Project-Online-Test-Data-Population-Script.md`](./Project-Online-Test-Data-Population-Script.md)
+- **Test Data Population**: [`sdlc/docs/project/Test-Data-Population-Script.md`](./Test-Data-Population-Script.md)
 - **Integration Test Spec**: [`test/integration/INTEGRATION_TEST_SPEC.md`](../../../test/integration/INTEGRATION_TEST_SPEC.md)
-- **ETL Architecture**: [`sdlc/docs/architecture/etl-system-design.md`](../architecture/etl-system-design.md)
+- **ETL Architecture**: [`sdlc/docs/project/ETL-System-Design.md`](./ETL-System-Design.md)
 - **Project Online Client**: [`src/lib/ProjectOnlineClient.ts`](../../../src/lib/ProjectOnlineClient.ts)

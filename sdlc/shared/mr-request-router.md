@@ -98,7 +98,7 @@ The router supports three methods for identifying which MR to work with:
 5. Search for MR associated with branch
 ```
 
-**Action:** Use existing branch discovery workflow (see [`git-integration-patterns.md`](./git-integration-patterns.md))
+**Action:** Use existing branch discovery workflow (see [`git-integration-Patterns.md`](./git-integration-Patterns.md))
 
 ## Workflow Router Logic
 

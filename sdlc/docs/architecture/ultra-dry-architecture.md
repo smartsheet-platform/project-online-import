@@ -18,9 +18,9 @@ sdlc/shared/
 ├── architect-role-definition.md
 ├── mr-processor-role-definition.md
 ├── api-client-role-definition.md
-├── jira-workflow-patterns.md
+├── jira-workflow-Patterns.md
 ├── jira-status-updates.md
-├── git-integration-patterns.md
+├── git-integration-Patterns.md
 ├── env-setup-workflow.md
 └── [30+ additional shared files]
 ```
@@ -33,7 +33,7 @@ Both tools reference the same markdown files:
 ```xml
 <rule>
   <reference>See sdlc/shared/implementer-code-guidance.md</reference>
-  <integration>Follows patterns in sdlc/shared/jira-workflow-patterns.md</integration>
+  <integration>Follows patterns in sdlc/shared/jira-workflow-Patterns.md</integration>
 </rule>
 ```
 
@@ -76,16 +76,16 @@ Both tools reference the same markdown files:
    - `env-troubleshooter-role-definition.md`
 
 2. **Workflow Patterns** - How to execute tasks
-   - `jira-workflow-patterns.md`
+   - `jira-workflow-Patterns.md`
    - `jira-status-updates.md`
-   - `git-integration-patterns.md`
+   - `git-integration-Patterns.md`
    - `mr-feedback-workflow.md`
 
 3. **Technical Guidance** - Implementation details
    - `implementer-code-guidance.md`
    - `implementer-targeted-implementation.md`
-   - `spec-writer-documentation-patterns.md`
-   - `api-client-generation-patterns.md`
+   - `spec-writer-documentation-Patterns.md`
+   - `api-client-generation-Patterns.md`
 
 4. **Integration Patterns** - External system integration
    - `jira-integration-guide.md`

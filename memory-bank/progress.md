@@ -1,6 +1,18 @@
 # Progress: Project Online to Smartsheet ETL
 
 ## Completed
+- ✅ **Device Code Flow Migration & Documentation Reorganization** (2025-12-21):
+  - Migrated authentication from app-only (Client Credentials) to Device Code Flow only
+  - Removed ~123 lines of app-only authentication code from MSALAuthHandler.ts
+  - Removed ConfidentialClient, CLIENT_SECRET, useDeviceCodeFlow flag
+  - Updated all documentation for delegated permissions (AllSites.Read, AllSites.Write)
+  - Reorganized 7 docs from architecture/ and specs/ to project/ directory
+  - Renamed all 23 markdown files to Title Case for consistency
+  - Updated ~50+ cross-references across codebase
+  - Fixed test timeout by mocking ProjectOnlineClient
+  - Archived outdated Device-Code-Flow-Authentication.md spec
+  - All tests passing (8/8 in importer.test.ts), linting clean
+  - Production code: zero CLIENT_SECRET, clientSecret, or ConfidentialClient references
 - ✅ **Resource Type Column Separation** (2025-12-21):
   - Implemented type-based resource separation in Resources sheet
   - Resource Name (TEXT_NUMBER, primary) + type-specific columns (Team Members CONTACT_LIST, Materials TEXT, Cost Resources TEXT)
@@ -12,9 +24,9 @@
 - ✅ Initial project scoping and requirements gathering
 - ✅ Memory bank structure creation
 - ✅ Architecture documentation consolidated into sequential guides:
-  - [`project-online-migration-overview.md`](../sdlc/docs/architecture/project-online-migration-overview.md) - Business context and overview
-  - [`etl-system-design.md`](../sdlc/docs/architecture/etl-system-design.md) - System architecture and design
-  - [`data-transformation-guide.md`](../sdlc/docs/architecture/data-transformation-guide.md) - Entity transformation specifications
+  - [`Project-Online-Migration-Overview.md`](../sdlc/docs/project/Project-Online-Migration-Overview.md) - Business context and overview
+  - [`ETL-System-Design.md`](../sdlc/docs/project/ETL-System-Design.md) - System architecture and design
+  - [`Data-Transformation-Guide.md`](../sdlc/docs/project/Data-Transformation-Guide.md) - Entity transformation specifications
 - ✅ Enhanced documentation navigation system (2024-12-16):
   - Three-section organization: Migrating to Smartsheet, How it Works, Contributing
   - Professional Smartsheet branding with logo and background
