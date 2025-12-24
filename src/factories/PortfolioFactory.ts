@@ -56,8 +56,7 @@ export class PortfolioFactory implements WorkspaceFactory {
   async createProjectWorkspace(
     _client: SmartsheetClient,
     _project: ProjectOnlineProject,
-    _configManager?: ConfigManager,
-    _workspaceId?: number
+    _configManager?: ConfigManager
   ): Promise<ProjectWorkspaceResult> {
     throw new Error(
       'Portfolio solution type is not yet implemented. ' +

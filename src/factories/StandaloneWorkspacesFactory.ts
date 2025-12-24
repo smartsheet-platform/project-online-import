@@ -21,6 +21,7 @@ import { sanitizeWorkspaceName, createSheetName } from '../transformers/utils';
 import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
 import { createProjectSummaryColumns, validateProject } from '../transformers/ProjectTransformer';
 import { tryWith as withBackoff } from '../util/ExponentialBackoff';
+import { TemplateAcquisitionHelper } from '../util/TemplateAcquisitionHelper';
 
 /**
  * Standard reference sheets with predefined values
@@ -40,6 +41,8 @@ const STANDARD_REFERENCE_SHEETS: Record<string, string[]> = {
  * Creates workspaces independently without portfolio structure
  */
 export class StandaloneWorkspacesFactory implements WorkspaceFactory {
+  private logger?: Logger;
+
   /**
    * Create or get existing PMO Standards workspace with all standard reference sheets
    */
@@ -114,93 +117,136 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
   async createProjectWorkspace(
     client: SmartsheetClient,
     project: ProjectOnlineProject,
-    configManager?: ConfigManager,
-    workspaceId?: number
+    configManager?: ConfigManager
   ): Promise<ProjectWorkspaceResult> {
-    // Validate project
+    // Validate project data
     const validation = validateProject(project);
     if (!validation.valid) {
       throw new Error(`Invalid project: ${validation.errors.join(', ')}`);
     }
 
-    // Transform to workspace structure
+    // Create workspace structure
     const workspace: SmartsheetWorkspace = {
       name: sanitizeWorkspaceName(project.Name),
     };
 
-    // Get template workspace ID from config if available
-    // IMPORTANT: Only use template if explicitly provided via configManager
-    // Do NOT fall back to environment variables to avoid test interference
-    const templateWorkspaceId = configManager ? configManager.get().templateWorkspaceId : undefined;
+    // Get template workspace ID from config
+    const templateWorkspaceId = configManager?.get().templateWorkspaceId;
 
-    // Create or use existing workspace
-    if (!workspaceId) {
-      let newWorkspace: { id: number; permalink?: string };
+    // Create workspace - three strategies:
+    // 1. Configured template (ID > 0): Copy from template
+    // 2. Explicit skip (ID = 0): Create blank workspace directly
+    // 3. Not configured (undefined): Attempt acquisition flow
+    let newWorkspace: { id: number; permalink?: string };
 
-      if (templateWorkspaceId && templateWorkspaceId > 0) {
-        // Use template workspace if configured and valid
-        try {
-          newWorkspace = await copyWorkspace(client, templateWorkspaceId, workspace.name);
-        } catch (error) {
-          // If template copy fails, fall back to blank workspace creation
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          throw new Error(
-            `Failed to copy template workspace ${templateWorkspaceId}: ${errorMessage}. ` +
-              `Ensure the template workspace exists and is accessible.`
-          );
-        }
-      } else {
-        // Create blank workspace if no template configured - wrap with retry for API resilience
-        if (!client.workspaces?.createWorkspace) {
-          throw new Error('Smartsheet client does not support workspace creation');
-        }
-        const createWorkspace = client.workspaces.createWorkspace;
-        const created = await withBackoff(() =>
-          createWorkspace({
-            body: {
-              name: workspace.name,
-            },
-          })
+    if (templateWorkspaceId && templateWorkspaceId > 0) {
+      // Strategy 1: Use configured template workspace
+      try {
+        newWorkspace = await copyWorkspace(client, templateWorkspaceId, workspace.name);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Failed to copy template workspace ${templateWorkspaceId}: ${errorMessage}. ` +
+            `Ensure the template workspace exists and is accessible.`
         );
-        const createdData = created?.result || created?.data;
-        if (!createdData?.id) {
-          throw new Error('Failed to create workspace - no ID returned');
-        }
-        newWorkspace = { id: createdData.id, permalink: createdData.permalink };
       }
-      workspace.id = newWorkspace.id;
-      workspace.permalink = newWorkspace.permalink;
-
-      // Create the three sheets in the new workspace
-      const summarySheet = await this.createSummarySheet(client, workspace.id, workspace.name);
-      const taskSheet = await this.createTaskSheet(client, workspace.id, workspace.name);
-      const resourceSheet = await this.createResourceSheet(client, workspace.id, workspace.name);
-
-      return {
-        workspace,
-        sheets: {
-          summarySheet,
-          taskSheet,
-          resourceSheet,
-        },
-      };
+    } else if (templateWorkspaceId === 0) {
+      // Strategy 2: Explicit skip - create blank workspace (useful for tests)
+      newWorkspace = await this.createBlankWorkspace(client, workspace.name);
+    } else {
+      // Strategy 3: Not configured - attempt acquisition flow
+      newWorkspace = await this.acquireTemplateOrCreateBlank(client, workspace.name, configManager);
     }
 
-    // If workspaceId provided (for testing), use it
-    workspace.id = workspaceId;
+    workspace.id = newWorkspace.id;
+    workspace.permalink = newWorkspace.permalink;
 
-    const summarySheet = await this.createSummarySheet(client, workspaceId, workspace.name);
-    const taskSheet = await this.createTaskSheet(client, workspaceId, workspace.name);
-    const resourceSheet = await this.createResourceSheet(client, workspaceId, workspace.name);
+    // Create the three required sheets
+    const summarySheet = await this.createSummarySheet(client, workspace.id, workspace.name);
+    const taskSheet = await this.createTaskSheet(client, workspace.id, workspace.name);
+    const resourceSheet = await this.createResourceSheet(client, workspace.id, workspace.name);
 
     return {
-      workspace: { ...workspace, id: workspaceId },
+      workspace,
       sheets: {
         summarySheet,
         taskSheet,
         resourceSheet,
       },
     };
+  }
+
+  /**
+   * Acquire template via distribution link with automatic polling, or create blank workspace on failure
+   *
+   * This method orchestrates the template acquisition workflow:
+   * 1. Prompts user to accept template via browser (30s polling for up to 5 minutes)
+   * 2. On success: persists template ID to .env and uses it
+   * 3. On timeout/cancellation/error: creates blank workspace as fallback
+   */
+  private async acquireTemplateOrCreateBlank(
+    client: SmartsheetClient,
+    workspaceName: string,
+    configManager?: ConfigManager
+  ): Promise<{ id: number; permalink?: string }> {
+    // Get distribution link configuration with defaults
+    const config = configManager?.get();
+    const distributionUrl =
+      config?.templateDistributionUrl ||
+      'https://app.smartsheet.com/b/launch?lx=LK9cBN90Gip3Qo5lHDIGneqKwon7W423t4KaXJloEug';
+    const templateWorkspaceName = config?.templateWorkspaceName || 'Project Online Migration';
+
+    // Attempt template acquisition with automatic polling
+    const acquisitionResult = await TemplateAcquisitionHelper.acquireTemplate(
+      client,
+      distributionUrl,
+      templateWorkspaceName,
+      this.logger
+    );
+
+    if (acquisitionResult.success && acquisitionResult.workspaceId) {
+      // Persist template ID to .env for future runs
+      if (configManager) {
+        try {
+          configManager.updateTemplateWorkspaceId(acquisitionResult.workspaceId);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          this.logger?.warn(`Could not update .env file: ${errorMessage}`);
+          console.log('\n⚠  Warning: Template acquired but could not update .env file.');
+          console.log('   You may need to manually add TEMPLATE_WORKSPACE_ID to .env\n');
+        }
+      }
+
+      // Use the acquired template with fallback to blank on copy failure
+      try {
+        const newWorkspace = await copyWorkspace(
+          client,
+          acquisitionResult.workspaceId,
+          workspaceName
+        );
+        console.log('\n✓ Created project workspace using acquired template\n');
+        return newWorkspace;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger?.error(`Failed to copy acquired template: ${errorMessage}`);
+        console.log('\n⚠  Template copy failed - creating blank workspace instead\n');
+        return await this.createBlankWorkspace(client, workspaceName);
+      }
+    } else {
+      // Acquisition failed/cancelled - create blank workspace with appropriate messaging
+      if (acquisitionResult.cancelled) {
+        this.logger?.info('Template acquisition cancelled - creating blank workspace');
+        console.log('\n⚠  Creating blank workspace (template acquisition cancelled)\n');
+      } else {
+        this.logger?.error(
+          `Template acquisition failed: ${acquisitionResult.error}. Creating blank workspace instead.`
+        );
+        console.log('\n⚠  Template acquisition failed - creating blank workspace instead');
+        console.log(`   Error: ${acquisitionResult.error}\n`);
+      }
+
+      return await this.createBlankWorkspace(client, workspaceName);
+    }
   }
 
   /**
@@ -304,6 +350,37 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
       id: sheet.id,
       name: sheet.name!,
     };
+  }
+
+  /**
+   * Create a blank workspace without template
+   * @param client - Smartsheet client
+   * @param workspaceName - Name for the new workspace
+   * @returns Workspace info with ID and permalink
+   */
+  private async createBlankWorkspace(
+    client: SmartsheetClient,
+    workspaceName: string
+  ): Promise<{ id: number; permalink?: string }> {
+    if (!client.workspaces?.createWorkspace) {
+      throw new Error('Smartsheet client does not support workspace creation');
+    }
+
+    const createWorkspace = client.workspaces.createWorkspace;
+    const created = await withBackoff(() =>
+      createWorkspace({
+        body: {
+          name: workspaceName,
+        },
+      })
+    );
+
+    const createdData = created?.result || created?.data;
+    if (!createdData?.id) {
+      throw new Error('Failed to create workspace - no ID returned');
+    }
+
+    return { id: createdData.id, permalink: createdData.permalink };
   }
 
   /**
