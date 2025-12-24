@@ -7,7 +7,7 @@ import {
   ProjectOnlineAssignment,
 } from '../types/ProjectOnline';
 import { ProjectOnlineClient, ProjectOnlineClientConfig } from './ProjectOnlineClient';
-import { configureProjectPicklistColumns } from '../transformers/ProjectTransformer';
+import { configureProjectPicklistColumns, populateProjectSummary } from '../transformers/ProjectTransformer';
 import { TaskTransformer } from '../transformers/TaskTransformer';
 import { ResourceTransformer } from '../transformers/ResourceTransformer';
 import { AssignmentTransformer } from '../transformers/AssignmentTransformer';
@@ -231,6 +231,15 @@ export class ProjectOnlineImporter {
         this.pmoStandardsWorkspace
       );
       progress.completeStage('Status and Priority picklists configured');
+
+      // Step 3.5: Populate project data into summary sheet
+      progress.startStage('Project Data Population');
+      await populateProjectSummary(
+        this.smartsheetClient,
+        data.project,
+        projectResult.sheets.summarySheet.id
+      );
+      progress.completeStage('Project data populated in summary sheet');
 
       // Step 4: Transform tasks
       let tasksImported = 0;
