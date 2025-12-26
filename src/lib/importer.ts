@@ -1,5 +1,5 @@
 import { SmartsheetClient } from '../types/SmartsheetClient';
-import { SmartsheetSheet, SmartsheetColumn } from '../types/Smartsheet';
+import { SmartsheetColumn } from '../types/Smartsheet';
 import {
   ProjectOnlineProject,
   ProjectOnlineTask,
