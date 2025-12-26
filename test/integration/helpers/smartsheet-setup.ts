@@ -286,7 +286,7 @@ export async function getSheetDetails(client: SmartsheetClient, sheetId: number)
     });
 
     // Unwrap the API response to get the actual sheet
-    return response?.result || response?.data;
+    return response;
   } catch (error) {
     throw new Error(
       `Failed to get sheet details: ${error instanceof Error ? error.message : JSON.stringify(error)}`
