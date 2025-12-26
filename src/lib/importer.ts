@@ -438,16 +438,13 @@ export class ProjectOnlineImporter {
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = this.smartsheetClient.sheets.getSheet;
-    const sheetResponse = await withBackoff(() => getSheet({ id: summarySheetId }));
-    console.log(`[DEBUG] Raw API response keys:`, Object.keys(sheetResponse || {}));
+    const sheet = await withBackoff(() => getSheet({ id: summarySheetId }));
+    console.log(`[DEBUG] Raw API response keys:`, Object.keys(sheet || {}));
     console.log(
       `[DEBUG] Response structure:`,
-      JSON.stringify(sheetResponse, null, 2).substring(0, 500)
+      JSON.stringify(sheet, null, 2).substring(0, 500)
     );
 
-    const sheet = (sheetResponse?.data ||
-      sheetResponse?.result ||
-      sheetResponse) as SmartsheetSheet;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get summary sheet ${summarySheetId}`,
@@ -506,10 +503,8 @@ export class ProjectOnlineImporter {
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = this.smartsheetClient.sheets.getSheet;
-    const sheetResponse = await withBackoff(() => getSheet({ id: taskSheetId }));
-    const sheet = (sheetResponse?.data ||
-      sheetResponse?.result ||
-      sheetResponse) as SmartsheetSheet;
+    const sheet = await withBackoff(() => getSheet({ id: taskSheetId }));
+
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get task sheet ${taskSheetId}`,
