@@ -24,6 +24,7 @@
     "diagnose:permissions": "ts-node scripts/diagnose-project-online-permissions.ts",
     "cleanup-test-workspaces": "ts-node scripts/cleanup-test-workspaces.ts",
     "create-sample-workspace": "ts-node scripts/create-sample-workspace.ts",
+    "extract-real-data": "ts-node scripts/extract-real-project-data.ts",
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' 'test/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",

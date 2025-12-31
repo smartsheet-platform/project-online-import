@@ -35,7 +35,7 @@ class RestApiTester {
     this.logger = new Logger();
     
     // Validate required environment variables
-    const requiredVars = ['TENANT_ID', 'CLIENT_ID', 'CLIENT_SECRET', 'PROJECT_ONLINE_URL'];
+    const requiredVars = ['TENANT_ID', 'CLIENT_ID', 'PROJECT_ONLINE_URL'];
     for (const varName of requiredVars) {
       if (!process.env[varName]) {
         throw new Error(`Missing required environment variable: ${varName}`);
@@ -45,7 +45,6 @@ class RestApiTester {
     const config: AuthConfig = {
       tenantId: process.env.TENANT_ID!,
       clientId: process.env.CLIENT_ID!,
-      clientSecret: process.env.CLIENT_SECRET!,
       projectOnlineUrl: process.env.PROJECT_ONLINE_URL!,
     };
 
