@@ -73,17 +73,31 @@
   - Comprehensive memory bank documentation of investigation and solution
 
 ## In Progress
-- ⏳ Awaiting Azure AD admin consent for SharePoint API permissions
 - ⏳ PMO Standards test stabilization: 75% pass rate, investigating remaining 2 failures
   - Next: Run with increased timeout and error logging to diagnose remaining issues
   - Tools: Diagnostic scripts and logging available for further investigation if needed
 
-## Blocked
-- ⛔ **Project Online API Access**: Waiting for IT admin to grant SharePoint `Sites.ReadWrite.All` permission
-  - Status: Admin request submitted (2025-12-15)
-  - Impact: Cannot run E2E tests with real Project Online data
-  - Workaround: Mock integration tests continue to pass (38/39)
-  - Next: Run `npm run test:connection` after admin grants consent
+## Recently Resolved
+- ✅ **Project Online OAuth Authentication Issue** (2025-12-30): RESOLVED
+  - Problem: Legacy OData API (`/_api/ProjectData`) rejected OAuth tokens with "GeneralSecurityAccessDenied"
+  - Root Cause: OData endpoint designed for Windows Auth/cookies, doesn't support OAuth in SharePoint Permission Mode
+  - Solution: Switched to modern CSOM API (`/_api/ProjectServer`) which natively supports OAuth
+  - Code Change: Updated [`src/lib/ProjectOnlineClient.ts`](../src/lib/ProjectOnlineClient.ts) line 80
+  - Result: Connection test now passes ✅
+  - Learnings Documented: Enhanced [`Authentication-Setup.md`](../sdlc/docs/project/Authentication-Setup.md) with:
+    - P3 license requirement
+    - Admin consent requirement
+    - API endpoint evolution explanation
+    - 5 common setup pitfalls
+    - Diagnostic tools reference
+    - 12-point setup checklist
+
+## Unblocked - Ready for Next Phase
+- ✅ Project Online API access working
+- ✅ OAuth authentication functional
+- ✅ Admin consent granted
+- ✅ Connection test passing
+- ➡️ Ready to run integration tests with real Project Online data
 
 ## Upcoming
 - Stakeholder review and approval

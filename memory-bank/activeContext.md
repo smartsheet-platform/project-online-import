@@ -1,10 +1,10 @@
 # Active Context: Project Online to Smartsheet ETL
 
 ## Current Focus
-Resource Type Column Separation implementation complete (2025-12-21). Successfully implemented type-based resource separation with ALL TESTS PASSING. Feature production-ready and committed to Git.
+Project Online OAuth Authentication RESOLVED (2025-12-30). Switched from legacy OData (`/_api/ProjectData`) to modern CSOM API (`/_api/ProjectServer`). Connection test now passing!
 
 ## Current Phase
-Architecture & Design Complete - Authentication Implemented - Resource Type Separation Complete - Awaiting PWA Site Access
+Architecture & Design Complete - Authentication Working - Resource Type Separation Complete - **Ready for Integration Testing**
 
 ## Recent Completion: Resource Type Column Separation (2025-12-21) - ALL TESTS PASSING ✅
 - ✅ Resource Name (TEXT_NUMBER, primary) + Team Members (CONTACT_LIST) structure implemented
@@ -144,8 +144,18 @@ Authentication: SUCCESS
 - ✅ Delegated permissions added (AllSites.Read, AllSites.Write)
 - ✅ Device Code authentication working perfectly
 
-### Current Blocker
-**User Account Access**: Authenticated user doesn't have permission to Project Online PWA site (`/sites/pwa`). Authentication mechanism is fully functional - only site-level access permission needed.
+### Issue Resolved (2025-12-30) ✅
+**Project Online OAuth Authentication**: Successfully resolved by switching from legacy OData API to modern CSOM API.
+
+**Root Cause**: Legacy OData Reporting API (`/_api/ProjectData`) doesn't properly support OAuth bearer token authentication in SharePoint Permission Mode. It was designed for Windows Auth and cookie-based authentication.
+
+**Solution**: Changed API endpoint from `/_api/ProjectData` to `/_api/ProjectServer` (CSOM REST API) which natively supports OAuth bearer tokens.
+
+**Code Change**: [`src/lib/ProjectOnlineClient.ts`](../src/lib/ProjectOnlineClient.ts) line 80 - updated `getApiBaseUrl()` method.
+
+**Result**: Connection test passes ✅ - OAuth authentication working correctly with Project Online.
+
+**Documentation**: All learnings incorporated into [`Authentication-Setup.md`](../sdlc/docs/project/Authentication-Setup.md) including P3 license requirement, admin consent steps, common pitfalls, and diagnostic tools.
 
 ### Usage
 ```bash

@@ -74,10 +74,11 @@ export class ProjectOnlineClient {
 
   /**
    * Get API base URL from Project Online URL
+   * Using ProjectServer (CSOM) instead of ProjectData (legacy OData) for OAuth support
    */
   private getApiBaseUrl(): string {
     const url = this.config.projectOnlineUrl.replace(/\/$/, ''); // Remove trailing slash
-    return `${url}/_api/ProjectData`;
+    return `${url}/_api/ProjectServer`;
   }
 
   /**

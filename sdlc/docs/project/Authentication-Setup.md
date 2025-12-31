@@ -21,14 +21,34 @@
 
 This guide walks you through connecting the migration tool to your Project Online environment using **Device Code Flow** authentication.
 
-## What You'll Need
+## Prerequisites
+
+Before you begin, ensure you have:
+
+### 1. Project Online P3 License (Critical!)
+
+**You must have a Project Online Plan 3 (P3) license assigned to your account.**
+
+- ❌ **Project for the Web** (not sufficient)
+- ❌ **Project Online Plan 1** (not sufficient)
+- ✅ **Project Online Plan 3 (P3)** (required for legacy Project Online cloud access)
+
+**How to verify your license:**
+1. Go to [Office 365 Account Page](https://portal.office.com/account)
+2. Click "Subscriptions"
+3. Look for "Project Online Plan 3" or "Project Plan 3"
+
+**If you don't see a P3 license**, contact your IT administrator and specifically request a **Project Online Plan 3 (P3)** license. Other license types will not provide access to legacy Project Online cloud instances.
+
+### 2. Additional Requirements
 
 To migrate your projects, the tool needs secure access to both your Project Online data and your Smartsheet account. This requires:
 
 1. An application registration in Azure Active Directory
 2. Delegated permissions to access your Project Online data
-3. Your Microsoft account credentials for authentication
-4. Configuration in the tool's `.env` file
+3. Admin consent for the permissions (required by most organizations)
+4. Your Microsoft account credentials for authentication
+5. Configuration in the tool's `.env` file
 
 ## Understanding Device Code Flow
 
@@ -127,10 +147,16 @@ After registering, you'll see the application overview page.
 
 6. Click **Add permissions**
 
-7. **Note on Admin Consent**:
-   - Admin consent is optional for delegated permissions
-   - If your organization requires it, you'll see a "Grant admin consent" button - click it
-   - If not required, user consent will be handled during first authentication
+7. **Grant Admin Consent** (REQUIRED):
+   - You'll see a button: **"Grant admin consent for [organization name]"**
+   - Click this button (requires Azure AD administrator rights)
+   - Confirm the consent grant
+   - All permissions should now show green checkmarks with "Granted for [organization]" status
+   
+   **Why admin consent is required:**
+   - Most organizations disable user consent for SharePoint APIs as a security measure
+   - Without admin consent, OAuth authentication will succeed but API calls will fail
+   - You must be an Azure AD administrator or have your admin grant consent
 
 ### Step 5: Verify the Setup
 
@@ -219,6 +245,48 @@ npm run cli validate -- --source [your-project-id]
 
 ## Troubleshooting
 
+### ⚠️ "GeneralSecurityAccessDenied" Error (403 Forbidden)
+
+**This is the most common issue!**
+
+**What this means:**
+You're experiencing the legacy OData API limitation. The `/_api/ProjectData` endpoint (used in older Project Online implementations) does not properly support OAuth bearer token authentication in SharePoint Permission Mode.
+
+**Symptoms:**
+- ✅ Authentication succeeds
+- ✅ OAuth token obtained with correct scopes
+- ✅ Admin consent granted
+- ✅ You can access Project Online in your browser
+- ❌ API calls return: "GeneralSecurityAccessDenied" (Error Code: 20010)
+
+**Solution:**
+The tool has been updated to use the modern CSOM API (`/_api/ProjectServer`) which fully supports OAuth authentication. **If you cloned this repository before December 2025**, update to the latest version:
+
+```bash
+git pull origin main
+npm install
+```
+
+The fix changes one line in [`src/lib/ProjectOnlineClient.ts`](../../../src/lib/ProjectOnlineClient.ts):
+```typescript
+// OLD (doesn't work with OAuth)
+return `${url}/_api/ProjectData`;
+
+// NEW (works with OAuth)
+return `${url}/_api/ProjectServer`;
+```
+
+After updating, clear your token cache and test:
+```bash
+rm -rf ~/.project-online-tokens/
+npm run test:connection
+```
+
+**Why this happens:**
+- The OData Reporting API (`ProjectData`) was designed for Excel/PowerBI with Windows Auth or cookie-based authentication
+- It doesn't properly map OAuth user identity to PWA user identity
+- The CSOM API (`ProjectServer`) is modern and natively supports OAuth bearer tokens
+
 ### "Authentication failed" or "Authorization pending"
 
 **What this means**:
@@ -244,18 +312,31 @@ The Azure AD app isn't configured for Device Code Flow.
 ### "Insufficient permissions" or "Access denied"
 
 **What this means**:
-Either the app doesn't have the right permissions, or your user account doesn't have Project Online access.
+Either the app doesn't have the right permissions, admin consent wasn't granted, or your user account doesn't have Project Online access.
 
 **How to fix**:
-1. **Check App Permissions**:
+1. **Verify Admin Consent** (Most Common Issue):
+   - Azure Portal → Your app registration → API permissions
+   - Check the "Status" column for SharePoint permissions
+   - **All permissions must show**: "Granted for [organization name]" with green checkmarks
+   - **If status is empty or missing**: Admin consent was not granted
+   - **Solution**: Click "Grant admin consent for [organization]" button (requires Azure AD admin rights)
+   - **After granting**: Clear token cache (`rm -rf ~/.project-online-tokens/`) and re-authenticate
+
+2. **Check App Permissions**:
    - Azure Portal → Your app registration → API permissions
    - Verify both **AllSites.Read** and **AllSites.Write** are listed as **Delegated** permissions
-   - Status should show "Granted"
+   - **Remove any Application-level permissions** if present (they conflict with delegated flow)
 
-2. **Check User Access**:
+3. **Check User Access**:
    - Verify you can access the Project Online site in your browser
    - Go to your PROJECT_ONLINE_URL and confirm you can view projects
-   - If not, request access from your Project Online administrator
+   - Ensure you have a **Project Online Plan 3 (P3)** license assigned
+   - If not, request access and P3 license from your IT administrator
+
+4. **Verify PWA Mode**:
+   - If your PWA is in SharePoint Permission Mode, ensure you're in the "Project Web App Owners" or "Administrators for Project Web App" groups
+   - Navigate to: Site Permissions in SharePoint
 
 ### "Resource not found" Error
 
@@ -345,18 +426,132 @@ This will delete cached tokens and force re-authentication on next run.
    - Refresh tokens expire after 90 days (or sooner if configured by admin)
    - Tool will prompt for re-authentication after refresh token expires
 
-## Authentication vs App-Only Flow
+## API Endpoint Evolution
 
-**Previous versions** of this tool used "app-only" authentication with client secrets. This has been replaced with Device Code Flow because:
+### Modern CSOM API (Current - December 2025)
 
-- ❌ App-only authentication disabled on many SharePoint tenants
+This tool now uses the **Project Server CSOM REST API** (`/_api/ProjectServer`):
+
+- ✅ **Full OAuth support**: Natively supports bearer token authentication
+- ✅ **Modern architecture**: Built for cloud-first authentication
+- ✅ **Proper identity mapping**: Correctly maps OAuth user to PWA user
+- ✅ **Works in all PWA modes**: SharePoint Permission Mode and Project Server Permission Mode
+
+**Endpoint:** `https://[tenant].sharepoint.com/sites/pwa/_api/ProjectServer/Projects`
+
+### Legacy OData API (Deprecated for OAuth)
+
+Previous implementations used the **OData Reporting API** (`/_api/ProjectData`):
+
+- ❌ **Limited OAuth support**: Designed for Windows Auth and cookie-based authentication
+- ❌ **Identity mapping issues**: Doesn't properly recognize OAuth tokens in SharePoint Permission Mode
+- ❌ **GeneralSecurityAccessDenied errors**: Returns 403 errors despite valid authentication and permissions
+
+**Historical endpoint:** `https://[tenant].sharepoint.com/sites/pwa/_api/ProjectData/Projects`
+
+**If you experience 403 errors**, ensure you're using version December 2025 or later with the CSOM endpoint.
+
+## Authentication Method: Device Code Flow
+
+This tool uses **OAuth 2.0 Device Code Flow** with delegated permissions:
+
+- ✅ **Works on all tenants**: No tenant-level authentication restrictions
+- ✅ **No secrets to manage**: No `CLIENT_SECRET` required
+- ✅ **User-based access**: Uses your personal Project Online permissions
+- ✅ **Secure token caching**: Automatic token refresh with secure local storage
+- ✅ **One-time authentication**: Authenticate once, tokens cached for 90 days
+
+**Previous versions** used "app-only" authentication (client credentials flow) which:
+- ❌ Is disabled on many SharePoint tenants
 - ❌ Requires managing sensitive client secrets
-- ❌ Requires admin consent
-- ✅ Device Code Flow works on all tenants
-- ✅ No secrets to manage
-- ✅ Uses your personal access rights
+- ❌ Often requires elevated permissions
 
-**If you have old configuration** with `CLIENT_SECRET`, simply remove that line from your `.env` file. The tool now exclusively uses Device Code Flow.
+**If you have old configuration** with `CLIENT_SECRET`, simply remove that line from your `.env` file.
+
+## Common Setup Pitfalls (Lessons Learned)
+
+This section documents common issues discovered during real-world setup and testing:
+
+### Pitfall #1: Wrong License Type
+
+**Issue**: IT team assigned "Project for the Web" license instead of "Project Online P3"
+
+**Result**: User could access Office 365 but not legacy Project Online cloud (`/sites/pwa` returned 404)
+
+**Solution**: Specifically request **Project Online Plan 3 (P3)** license from IT
+
+**How to verify**: Office 365 Account → Subscriptions → Look for "Project Online Plan 3"
+
+### Pitfall #2: Missing Admin Consent
+
+**Issue**: Delegated permissions added but admin consent not granted
+
+**Symptoms**:
+- OAuth authentication succeeds
+- Token obtained
+- API calls fail with 403 error
+- Azure Portal shows permissions in list but "Status" column is empty
+
+**Solution**: Azure AD admin must click "Grant admin consent for [organization]" button
+
+**How to verify**: API permissions page shows "Granted for [organization]" with green checkmarks
+
+### Pitfall #3: Conflicting Permission Types
+
+**Issue**: Both Delegated AND Application-level permissions added for SharePoint
+
+**Result**: OAuth token authentication confused about which authorization flow to use
+
+**Solution**: Remove ALL Application-level SharePoint permissions - only keep Delegated permissions
+
+**How to verify**: In API permissions, check that SharePoint permissions show "Type: Delegated" only
+
+### Pitfall #4: Legacy OData API Endpoint
+
+**Issue**: Code using `/_api/ProjectData` endpoint (legacy OData Reporting API)
+
+**Symptoms**:
+- Authentication succeeds
+- Admin consent granted
+- All permissions correct
+- Browser access works
+- OAuth API calls return "GeneralSecurityAccessDenied" (Error 20010)
+
+**Solution**: Use `/_api/ProjectServer` (modern CSOM API) instead of `/_api/ProjectData`
+
+**Code fix**: In ProjectOnlineClient.ts, change:
+```typescript
+return `${url}/_api/ProjectServer`;  // Not ProjectData
+```
+
+**Why**: OData API was designed for Windows Auth, doesn't properly map OAuth identity in SharePoint Permission Mode
+
+### Pitfall #5: No Consent Screen During Authentication
+
+**Issue**: During device code authentication, no SharePoint permissions consent screen appears
+
+**Cause**: Organization has disabled user consent for SharePoint APIs (common security policy)
+
+**Solution**: Azure AD administrator must grant consent via Azure Portal instead
+
+**Not a bug**: This is expected behavior when tenant policies require admin consent
+
+### Setup Checklist ✅
+
+Use this checklist to avoid common pitfalls:
+
+- [ ] Project Online P3 license assigned to user account
+- [ ] Azure AD app registration created
+- [ ] Public client flows enabled (Authentication → Allow public client flows = Yes)
+- [ ] SharePoint delegated permissions added (AllSites.Read, AllSites.Write)
+- [ ] **Admin consent granted** (Status shows "Granted for [organization]")
+- [ ] NO Application-level SharePoint permissions present
+- [ ] Code uses `/_api/ProjectServer` endpoint (not `/_api/ProjectData`)
+- [ ] User can access PWA site in browser (`/sites/pwa`)
+- [ ] User in appropriate SharePoint groups (Owners or Administrators)
+- [ ] `.env` configured with correct TENANT_ID, CLIENT_ID, PROJECT_ONLINE_URL
+- [ ] Token cache cleared before first test (`rm -rf ~/.project-online-tokens/`)
+- [ ] Connection test passes (`npm run test:connection`)
 
 ## Additional Resources
 
@@ -366,17 +561,52 @@ This will delete cached tokens and force re-authentication on next run.
 - [Creating App Registrations](https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app)
 - [Delegated Permissions](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent)
 - [Project Online Documentation](https://docs.microsoft.com/en-us/previous-versions/office/project-javascript-api/jj712612(v=office.15))
+- [Project Server CSOM API](https://docs.microsoft.com/en-us/previous-versions/office/project-class-library/jj163047(v=office.15))
 
 ### Getting Help
 
 If you encounter issues:
 
 1. Read the error message carefully - it often explains what's wrong
-2. Review the troubleshooting section above
-3. Verify all your configuration values are correct
+2. Review the **Common Setup Pitfalls** section above - it documents real issues from testing
+3. Verify all items in the **Setup Checklist** are complete
 4. Test the connection using the `test:connection` command
-5. Clear token cache if experiencing authentication issues
+5. Clear token cache if experiencing authentication issues: `rm -rf ~/.project-online-tokens/`
 6. Contact your Azure Active Directory administrator for permission issues
+7. Ensure you have a **Project Online Plan 3 (P3)** license
+
+### Diagnostic Tools
+
+The tool includes diagnostic scripts to help troubleshoot issues:
+
+```bash
+# Test connection (main test - use this first)
+npm run test:connection
+
+# Inspect OAuth token scopes and verify permissions
+npm run diagnose:token
+
+# Test raw HTTP requests with OAuth bearer token
+npm run test:http
+
+# Diagnose PWA instance configuration (404 errors)
+npm run diagnose:pwa
+
+# Comprehensive permission diagnostic
+npm run diagnose:permissions
+```
+
+**When to use each tool:**
+
+| Script | Purpose | When to Use |
+|--------|---------|-------------|
+| `test:connection` | Main connection test | Always start here - validates full setup |
+| `diagnose:token` | Inspect JWT token contents | Verify scopes, expiration, audience |
+| `test:http` | Raw HTTP request test | Isolate API vs client library issues |
+| `diagnose:pwa` | PWA instance check | Getting 404 errors on `/_api/ProjectData` |
+| `diagnose:permissions` | Comprehensive check | Step-by-step validation of entire setup |
+
+These scripts can help identify configuration issues before contacting support.
 
 ---
 
