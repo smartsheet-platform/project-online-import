@@ -5,6 +5,8 @@ import { ProjectOnlineImporter } from './lib/importer';
 import { Logger, LogLevel } from './util/Logger';
 import { ErrorHandler } from './util/ErrorHandler';
 import { ConfigManager } from './util/ConfigManager';
+import * as smartsheet from 'smartsheet';
+
 
 const program = new Command();
 
@@ -58,7 +60,10 @@ program
       configManager.printSummary();
 
       // Initialize importer
-      const importer = new ProjectOnlineImporter(undefined, logger, errorHandler);
+      const smartsheetClient = smartsheet.createClient({
+        accessToken: process.env.SMARTSHEET_API_TOKEN,
+      })
+      const importer = new ProjectOnlineImporter(smartsheetClient, logger, errorHandler);
 
       if (config.dryRun) {
         logger.warn('\n🚨 DRY RUN MODE: No changes will be made\n');
@@ -107,7 +112,11 @@ program
       configManager.load(options.config);
 
       // Initialize importer
-      const importer = new ProjectOnlineImporter(undefined, logger, errorHandler);
+      const smartsheetClient = smartsheet.createClient({
+        accessToken: process.env.SMARTSHEET_API_TOKEN,
+      })
+      const importer = new ProjectOnlineImporter(smartsheetClient, logger, errorHandler);
+
       const result = await importer.validate(options.source);
 
       if (result.valid) {
