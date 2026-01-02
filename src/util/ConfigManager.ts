@@ -12,6 +12,7 @@ import { Logger } from './Logger';
 export interface ETLConfig {
   // Smartsheet Configuration
   smartsheetApiToken: string;
+  smartsheetApiHost?: string;
   pmoStandardsWorkspaceId?: number;
   templateWorkspaceId?: number;
 
@@ -64,6 +65,9 @@ export class ConfigManager {
     this.config = {
       // Required: Smartsheet API Token
       smartsheetApiToken: this.getRequired('SMARTSHEET_API_TOKEN'),
+
+      // Optional: Smartsheet API Host (with validation)
+      smartsheetApiHost: this.getSmartsheetApiHost(),
 
       // Optional: PMO Standards Workspace ID
       pmoStandardsWorkspaceId: this.getOptionalNumber('PMO_STANDARDS_WORKSPACE_ID'),
@@ -236,6 +240,34 @@ export class ConfigManager {
   }
 
   /**
+   * Get and validate Smartsheet API host from environment
+   */
+  private getSmartsheetApiHost(): string {
+    const host = process.env.SMARTSHEET_API_HOST;
+    
+    if (!host) {
+      // Default to North America endpoint
+      return 'https://api.smartsheet.com/2.0/';
+    }
+    
+    // Validate against allowed regional endpoints
+    const validHosts = [
+      'https://api.smartsheet.com/2.0/',    // North America
+      'https://api.smartsheet.eu/2.0/',     // Europe
+      'https://api.smartsheet.au/2.0/'      // Australia
+    ];
+    
+    if (!validHosts.includes(host)) {
+      throw ErrorHandler.configError(
+        'SMARTSHEET_API_HOST',
+        `must be one of: ${validHosts.join(', ')} (got: "${host}")`
+      );
+    }
+    
+    return host;
+  }
+
+  /**
    * Print configuration summary (with sensitive values masked)
    */
   printSummary(): void {
@@ -246,6 +278,7 @@ export class ConfigManager {
 
     this.logger.info('\n⚙️  Configuration:');
     this.logger.info(`  Smartsheet API Token: ${this.maskToken(this.config.smartsheetApiToken)}`);
+    this.logger.info(`  Smartsheet API Host: ${this.config.smartsheetApiHost}`);
 
     if (this.config.pmoStandardsWorkspaceId) {
       this.logger.info(`  PMO Standards Workspace ID: ${this.config.pmoStandardsWorkspaceId}`);
