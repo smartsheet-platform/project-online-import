@@ -1,5 +1,47 @@
 # Decision Log: Project Online to Smartsheet ETL
 
+## 2025-12-30: Project Server OAuth API Limitation Discovery
+
+**Context**: Systematic troubleshooting of persistent 403 "GeneralSecurityAccessDenied" error from Project Online OData API despite perfect Azure AD configuration.
+
+**Investigation Results**:
+- ✅ Azure AD app configuration verified correct (public client flows, delegated permissions)
+- ✅ Admin consent successfully granted - all permissions show "Granted for Smartsheet..."
+- ✅ OAuth token obtained with correct scopes (AllSites.Read, AllSites.Write, User.Read)
+- ✅ User has maximum PWA permissions (Owner + Administrator groups in SharePoint Permission Mode)
+- ✅ Browser access works perfectly (can view project data via cookies)
+- ❌ OData API (`/_api/ProjectData`) consistently rejects OAuth bearer tokens
+- ❌ Error: "GeneralSecurityAccessDenied" (Project Server Error Code 20010)
+
+**Root Cause Identified**: Project Server in SharePoint Permission Mode does not properly recognize OAuth bearer token authentication for the OData API endpoint. This appears to be an architectural limitation where Project Server's OData API layer does not integrate with Azure AD OAuth token validation the same way browser-based authentication does.
+
+**Evidence Pattern**:
+1. Authentication succeeds (token acquired)
+2. Permissions granted (admin consent confirmed)
+3. User access verified (browser works, maximum SharePoint permissions)
+4. API call fails consistently (OAuth token rejected by Project Server layer)
+
+**Conclusion**: This is a Product limitation, not a configuration issue.
+
+**Documentation Created**:
+- [`PROJECT_SERVER_OAUTH_FIX.md`](../PROJECT_SERVER_OAUTH_FIX.md) - Complete troubleshooting
+- [`ADMIN_CONSENT_TROUBLESHOOTING.md`](../ADMIN_CONSENT_TROUBLESHOOTING.md) - Admin consent steps
+- [`scripts/diagnose-token-scopes.ts`](../scripts/diagnose-token-scopes.ts) - Token inspection tool
+- [`scripts/test-raw-http-request.ts`](../scripts/test-raw-http-request.ts) - HTTP testing tool
+
+**Resolution**: Successfully switched to CSOM API (`/_api/ProjectServer`) which natively supports OAuth bearer token authentication. Connection test now passes.
+
+**Impact**: Unblocked E2E testing and production implementation. Project Online data extraction now fully functional.
+
+**Decision**: Updated [`src/lib/ProjectOnlineClient.ts`](../src/lib/ProjectOnlineClient.ts) to use CSOM endpoint. Enhanced [`Authentication-Setup.md`](../sdlc/docs/project/Authentication-Setup.md) with complete troubleshooting guide to prevent future users from experiencing this issue.
+
+**Key Learnings for Documentation**:
+1. P3 license requirement (not P1 or Project for the Web)
+2. Admin consent required (most orgs disable user consent for SharePoint)
+3. Remove conflicting Application permissions (only use Delegated)
+4. CSOM API (`/_api/ProjectServer`) works, OData (`/_api/ProjectData`) doesn't with OAuth
+5. No consent screen appearing is expected with tenant policies (not a bug)
+
 ## 2025-12-21: Resource Type Column Separation Implementation
 
 ### Decision: Separate Resources by Type into Distinct Smartsheet Columns

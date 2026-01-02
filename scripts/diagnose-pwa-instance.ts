@@ -52,7 +52,6 @@ async function diagnosePWA() {
         tenantId: process.env.TENANT_ID!,
         clientId: process.env.CLIENT_ID!,
         projectOnlineUrl: siteUrl,
-        useDeviceCodeFlow,
       },
       logger
     );
