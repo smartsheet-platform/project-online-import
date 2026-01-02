@@ -13,6 +13,7 @@ import { SmartsheetClient } from '../../src/types/SmartsheetClient';
 import { SmartsheetSheet, SmartsheetColumn } from '../../src/types/Smartsheet';
 import { ProjectOnlineImporter } from '../../src/lib/importer';
 import { WorkspaceFactoryProvider } from '../../src/factories';
+import { ConfigManager } from '../../src/util/ConfigManager';
 import { TestWorkspaceManager, getAllSheetsFromWorkspace } from './helpers/smartsheet-setup';
 import * as fixtures from './helpers/odata-fixtures';
 
@@ -54,11 +55,16 @@ describe('PMO Standards Integration Tests', () => {
       accessToken: process.env.SMARTSHEET_API_TOKEN,
     }) as SmartsheetClient;
 
+    // Load test configuration - allows tests to control template behavior via .env.test
+    // TEMPLATE_WORKSPACE_ID=0 in .env.test skips acquisition and creates blank workspaces
+    const configManager = new ConfigManager();
+    configManager.load('.env.test');
+
     // CRITICAL FIX: Create ONE shared importer instance for all tests
     // The importer caches the PMO Standards workspace internally as an instance variable
     // Creating a new importer per test was causing multiple PMO workspaces to be created,
     // leading to race conditions and eventual consistency issues
-    importer = new ProjectOnlineImporter(smartsheetClient);
+    importer = new ProjectOnlineImporter(smartsheetClient, undefined, undefined, configManager);
 
     console.log('[PMO Standards Test] Integration tests configured with shared importer instance');
 

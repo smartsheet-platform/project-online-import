@@ -87,14 +87,12 @@ export interface WorkspaceFactory {
    * @param client - Smartsheet client instance for API operations
    * @param project - Project Online project data to transform
    * @param configManager - Configuration manager for template workspace ID
-   * @param workspaceId - Optional existing workspace ID (primarily for testing)
    * @returns Promise resolving to workspace and sheet information
    * @throws Error if workspace creation fails or required data is invalid
    */
   createProjectWorkspace(
     client: SmartsheetClient,
     project: ProjectOnlineProject,
-    configManager?: ConfigManager,
-    workspaceId?: number
+    configManager?: ConfigManager
   ): Promise<ProjectWorkspaceResult>;
 }

@@ -15,6 +15,8 @@ export interface ETLConfig {
   smartsheetApiHost?: string;
   pmoStandardsWorkspaceId?: number;
   templateWorkspaceId?: number;
+  templateDistributionUrl?: string;
+  templateWorkspaceName?: string;
 
   // Solution Type Configuration
   solutionType?: 'StandaloneWorkspaces' | 'Portfolio';
@@ -74,6 +76,18 @@ export class ConfigManager {
 
       // Optional: Template Workspace ID (no default - creates blank workspace if not specified)
       templateWorkspaceId: this.getOptionalNumber('TEMPLATE_WORKSPACE_ID'),
+
+      // Optional: Template Distribution URL
+      templateDistributionUrl: this.getOptional(
+        'TEMPLATE_DISTRIBUTION_URL',
+        'https://app.smartsheet.com/b/launch?lx=LK9cBN90Gip3Qo5lHDIGneqKwon7W423t4KaXJloEug'
+      ),
+
+      // Optional: Template Workspace Name
+      templateWorkspaceName: this.getOptional(
+        'TEMPLATE_WORKSPACE_NAME',
+        'Project Online Migration'
+      ),
 
       // Optional: Solution Type (defaults to StandaloneWorkspaces)
       solutionType: this.getSolutionType(),
@@ -321,6 +335,63 @@ export class ConfigManager {
   private maskToken(token: string): string {
     if (token.length <= 8) return '****';
     return `${token.substring(0, 4)}...${token.substring(token.length - 4)}`;
+  }
+
+  /**
+   * Update .env file with template workspace ID
+   * @param templateWorkspaceId - Workspace ID to persist
+   * @param envPath - Optional path to .env file (defaults to project root)
+   * @throws ConfigurationError if file cannot be updated
+   */
+  updateTemplateWorkspaceId(templateWorkspaceId: number, envPath?: string): void {
+    const resolvedPath = envPath ?? path.join(process.cwd(), '.env');
+
+    try {
+      let envContent = '';
+
+      // Read existing .env file if it exists
+      if (fs.existsSync(resolvedPath)) {
+        envContent = fs.readFileSync(resolvedPath, 'utf-8');
+      }
+
+      // Check if TEMPLATE_WORKSPACE_ID already exists (commented or not)
+      const templateIdRegex = /^#?\s*TEMPLATE_WORKSPACE_ID\s*=.*$/gm;
+      const hasTemplateId = templateIdRegex.test(envContent);
+
+      const timestamp = new Date().toISOString();
+      const newLine = `TEMPLATE_WORKSPACE_ID=${templateWorkspaceId}`;
+      const commentLine = `# Auto-configured on: ${timestamp}`;
+
+      if (hasTemplateId) {
+        // Update existing line (uncomment and replace value)
+        envContent = envContent.replace(templateIdRegex, `${commentLine}\n${newLine}`);
+        this.logger.debug(`Updated TEMPLATE_WORKSPACE_ID in ${resolvedPath}`);
+      } else {
+        // Append new configuration
+        const separator = envContent.endsWith('\n') || envContent === '' ? '' : '\n';
+        envContent += `${separator}\n# Template Workspace ID (auto-configured)\n${commentLine}\n${newLine}\n`;
+        this.logger.debug(`Appended TEMPLATE_WORKSPACE_ID to ${resolvedPath}`);
+      }
+
+      // Write updated content back to file
+      fs.writeFileSync(resolvedPath, envContent, 'utf-8');
+
+      // Update in-memory config if already loaded
+      if (this.config) {
+        this.config.templateWorkspaceId = templateWorkspaceId;
+      }
+
+      // Update environment variable for current process
+      process.env.TEMPLATE_WORKSPACE_ID = String(templateWorkspaceId);
+
+      this.logger.info(`✓ Updated .env file with template workspace ID: ${templateWorkspaceId}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ConfigurationError(
+        'Failed to update .env file',
+        `Could not write TEMPLATE_WORKSPACE_ID to ${resolvedPath}: ${errorMessage}`
+      );
+    }
   }
 
   /**
