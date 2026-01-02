@@ -20,8 +20,25 @@ import {
   createContactObject,
   createSheetName,
 } from './utils';
-import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
+import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist, getColumnMap } from '../util/SmartsheetHelpers';
 import { ConfigManager } from '../util/ConfigManager';
+
+/**
+ * Column header to project property mapping
+ */
+const PROJECT_COLUMN_MAPPING: Record<string, keyof ProjectOnlineProject> = {
+  'Project Online Project ID': 'Id',
+  'Project Name': 'Name',
+  'Description': 'Description',
+  'Owner': 'Owner', // Will handle Owner/OwnerEmail specially
+  'Start Date': 'StartDate',
+  'Finish Date': 'FinishDate',
+  'Status': 'ProjectStatus',
+  'Priority': 'Priority',
+  '% Complete': 'PercentComplete',
+  'Project Online Created Date': 'CreatedDate',
+  'Project Online Modified Date': 'ModifiedDate'
+};
 
 /**
  * Transform Project Online project to Smartsheet workspace
@@ -225,6 +242,94 @@ function createProjectSummaryRow(project: ProjectOnlineProject): SmartsheetRow {
     cells,
     toBottom: true,
   };
+}
+
+/**
+ * Format cell value based on column header type
+ */
+function formatCellValue(header: string, rawValue: any, project: ProjectOnlineProject): {
+  cellValue?: any;
+  objectValue?: any;
+} {
+  switch (header) {
+    case 'Owner':
+      const ownerContact = createContactObject(project.Owner, project.OwnerEmail);
+      if (ownerContact) {
+        return { objectValue: ownerContact };
+      } else {
+        return { cellValue: '' };
+      }
+    
+    case 'Start Date':
+    case 'Finish Date':
+    case 'Project Online Created Date':
+    case 'Project Online Modified Date':
+      return { cellValue: rawValue ? convertDateTimeToDate(rawValue as string) : '' };
+    
+    case 'Priority':
+      return { cellValue: rawValue !== undefined ? mapPriority(rawValue as number) : '' };
+    
+    case '% Complete':
+      return { cellValue: rawValue !== undefined ? `${rawValue}%` : '' };
+    
+    default:
+      return { cellValue: rawValue || '' };
+  }
+}
+
+/**
+ * Populate project data into an existing summary sheet
+ */
+export async function populateProjectSummary(
+  client: SmartsheetClient,
+  project: ProjectOnlineProject,
+  summarySheetId: number
+): Promise<{ rowsCreated: number }> {
+  // Get existing column structure
+  const columnMap = await getColumnMap(client, summarySheetId);
+  
+  // Get column headers from the mapping keys
+  const columnHeaders = Object.keys(PROJECT_COLUMN_MAPPING);
+
+  // Build cells using column IDs from the actual sheet
+  const cells: SmartsheetCell[] = [];
+
+  for (const header of columnHeaders) {
+    if (columnMap[header]) {
+      const projectKey = PROJECT_COLUMN_MAPPING[header];
+      const rawValue = project[projectKey];
+      
+      // Format value based on column header type
+      const { cellValue, objectValue } = formatCellValue(header, rawValue, project);
+
+      // Create cell object
+      const cell: SmartsheetCell = {
+        columnId: columnMap[header].id,
+      };
+
+      if (objectValue) {
+        cell.objectValue = objectValue;
+      } else {
+        cell.value = cellValue;
+      }
+
+      cells.push(cell);
+    }
+  }
+
+  // Create the row with project data
+  const row: SmartsheetRow = {
+    cells,
+    toBottom: true,
+  };
+
+  // Add the row to the sheet
+  await client.sheets?.addRows?.({
+    sheetId: summarySheetId,
+    body: [row],
+  });
+
+  return { rowsCreated: 1 };
 }
 
 /**

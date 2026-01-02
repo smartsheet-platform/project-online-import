@@ -1,5 +1,5 @@
 import { SmartsheetClient } from '../types/SmartsheetClient';
-import { SmartsheetSheet, SmartsheetColumn } from '../types/Smartsheet';
+import { SmartsheetColumn } from '../types/Smartsheet';
 import {
   ProjectOnlineProject,
   ProjectOnlineTask,
@@ -7,7 +7,7 @@ import {
   ProjectOnlineAssignment,
 } from '../types/ProjectOnline';
 import { ProjectOnlineClient, ProjectOnlineClientConfig } from './ProjectOnlineClient';
-import { configureProjectPicklistColumns } from '../transformers/ProjectTransformer';
+import { configureProjectPicklistColumns, populateProjectSummary } from '../transformers/ProjectTransformer';
 import { TaskTransformer } from '../transformers/TaskTransformer';
 import { ResourceTransformer } from '../transformers/ResourceTransformer';
 import { AssignmentTransformer } from '../transformers/AssignmentTransformer';
@@ -232,6 +232,15 @@ export class ProjectOnlineImporter {
       );
       progress.completeStage('Status and Priority picklists configured');
 
+      // Step 3.5: Populate project data into summary sheet
+      progress.startStage('Project Data Population');
+      await populateProjectSummary(
+        this.smartsheetClient,
+        data.project,
+        projectResult.sheets.summarySheet.id
+      );
+      progress.completeStage('Project data populated in summary sheet');
+
       // Step 4: Transform tasks
       let tasksImported = 0;
       if (data.tasks.length > 0) {
@@ -429,16 +438,13 @@ export class ProjectOnlineImporter {
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = this.smartsheetClient.sheets.getSheet;
-    const sheetResponse = await withBackoff(() => getSheet({ id: summarySheetId }));
-    console.log(`[DEBUG] Raw API response keys:`, Object.keys(sheetResponse || {}));
+    const sheet = await withBackoff(() => getSheet({ id: summarySheetId }));
+    console.log(`[DEBUG] Raw API response keys:`, Object.keys(sheet || {}));
     console.log(
       `[DEBUG] Response structure:`,
-      JSON.stringify(sheetResponse, null, 2).substring(0, 500)
+      JSON.stringify(sheet, null, 2).substring(0, 500)
     );
 
-    const sheet = (sheetResponse?.data ||
-      sheetResponse?.result ||
-      sheetResponse) as SmartsheetSheet;
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get summary sheet ${summarySheetId}`,
@@ -497,10 +503,8 @@ export class ProjectOnlineImporter {
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = this.smartsheetClient.sheets.getSheet;
-    const sheetResponse = await withBackoff(() => getSheet({ id: taskSheetId }));
-    const sheet = (sheetResponse?.data ||
-      sheetResponse?.result ||
-      sheetResponse) as SmartsheetSheet;
+    const sheet = await withBackoff(() => getSheet({ id: taskSheetId }));
+
     if (!sheet) {
       throw ErrorHandler.dataError(
         `Failed to get task sheet ${taskSheetId}`,

@@ -334,8 +334,7 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
         throw new Error('SmartsheetClient does not support getSheet');
       }
       const getSheet = client.sheets.getSheet;
-      const existingSheetResponse = await withBackoff(() => getSheet({ id: existingSheet.id! }));
-      const existingSheetData = existingSheetResponse?.data || existingSheetResponse?.result;
+      const existingSheetData = await withBackoff(() => getSheet({ id: existingSheet.id! }));
       const existingValues = new Set<string>();
       if (existingSheetData?.rows) {
         for (const row of existingSheetData.rows) {

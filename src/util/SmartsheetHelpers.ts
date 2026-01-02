@@ -82,7 +82,7 @@ export async function getOrCreateSheet(
 
   if (existingSheet) {
     // Sheet exists - fetch full details
-    const sheetResponse = await withBackoff(
+    const fullSheet = await withBackoff(
       () =>
         client.sheets!.getSheet!({
           id: existingSheet.id,
@@ -91,7 +91,6 @@ export async function getOrCreateSheet(
       undefined,
       logger
     );
-    const fullSheet = sheetResponse?.result || sheetResponse?.data;
 
     return {
       id: existingSheet.id,
@@ -138,7 +137,7 @@ export async function findColumnInSheet(
 ): Promise<{ id: number; title: string; type: string } | null> {
   try {
     // Get sheet with columns
-    const sheetResponse = await withBackoff(
+    const sheet = await withBackoff(
       () =>
         client.sheets!.getSheet!({
           id: sheetId,
@@ -148,7 +147,6 @@ export async function findColumnInSheet(
       logger
     );
 
-    const sheet = sheetResponse?.result || sheetResponse?.data;
     const columns = sheet?.columns || [];
 
     // Find column by title
@@ -252,7 +250,7 @@ export async function getColumnMap(
   sheetId: number,
   logger?: Logger
 ): Promise<Record<string, { id: number; type: string }>> {
-  const sheetResponse = await withBackoff(
+  const sheet = await withBackoff(
     () =>
       client.sheets!.getSheet!({
         id: sheetId,
@@ -262,7 +260,6 @@ export async function getColumnMap(
     logger
   );
 
-  const sheet = sheetResponse?.result || sheetResponse?.data;
   const columns = sheet?.columns || [];
 
   const columnMap: Record<string, { id: number; type: string }> = {};
@@ -299,13 +296,12 @@ export async function addColumnsIfNotExist(
   const results: Array<{ title: string; id: number; wasCreated: boolean }> = [];
 
   // OPTIMIZATION: Fetch sheet ONCE to get existing columns and determine next index
-  const sheetResponse = await withBackoff(
+  const sheet = await withBackoff(
     () => client.sheets!.getSheet!({ id: sheetId }),
     undefined,
     undefined,
     logger
   );
-  const sheet = sheetResponse?.result || sheetResponse?.data;
   const existingColumns = sheet?.columns || [];
 
   // Build map of existing column titles for O(1) lookup
@@ -534,7 +530,7 @@ export async function deleteAllRows(
 ): Promise<number> {
   try {
     // Get sheet to find all row IDs
-    const sheetResponse = await withBackoff(
+    const sheet = await withBackoff(
       () =>
         client.sheets!.getSheet!({
           id: sheetId,
@@ -544,7 +540,6 @@ export async function deleteAllRows(
       logger
     );
 
-    const sheet = sheetResponse?.result || sheetResponse?.data;
     const rows = sheet?.rows || [];
 
     if (rows.length === 0) {

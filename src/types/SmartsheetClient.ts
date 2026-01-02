@@ -75,7 +75,7 @@ export interface SmartsheetClient {
     ) => Promise<SmartsheetApiResponse<SmartsheetWorkspace[]>>;
   };
   sheets?: {
-    getSheet?: (options: SmartsheetApiOptions) => Promise<SmartsheetApiResponse<SmartsheetSheet>>;
+    getSheet?: (options: SmartsheetApiOptions) => Promise<SmartsheetSheet>;
     createSheet?: (
       options: SmartsheetApiOptions
     ) => Promise<SmartsheetApiResponse<SmartsheetSheet>>;
