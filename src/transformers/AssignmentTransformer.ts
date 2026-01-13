@@ -34,21 +34,45 @@ export class AssignmentTransformer {
     const resourceMap = new Map<string, ProjectOnlineResource>();
     resources.forEach((r) => resourceMap.set(r.Id, r));
 
-    // Find unique resources in assignments
-    const uniqueResourceIds = new Set<string>();
-    assignments.forEach((a) => uniqueResourceIds.add(a.ResourceId));
+    // Extract task-resource mappings from assignments
+    const taskResourceMappings = new Map<string, string[]>(); // TaskId -> ResourceIds[]
+    
+    // assignments.forEach((assignment) => {
+    //   // Extract Resource ID from deferred URI
+    //   const resourceUri = assignment.Resource?.__deferred?.uri;
+    //   const resourceMatch = resourceUri?.match(/ProjectResources\('([^']+)'\)/);
+    //   const resourceId = resourceMatch?.[1];
+      
+    //   // Extract Task ID from deferred URI  
+    //   const taskUri = assignment.Task?.__deferred?.uri;
+    //   const taskMatch = taskUri?.match(/Tasks\('([^']+)'\)/);
+    //   const taskId = taskMatch?.[1];
+      
+    //   if (resourceId && taskId) {
+    //     if (!taskResourceMappings.has(taskId)) {
+    //       taskResourceMappings.set(taskId, []);
+    //     }
+    //     taskResourceMappings.get(taskId)!.push(resourceId);
+    //   }
+    // });
 
-    // Group resources by type
+    // Get unique resources that are actually assigned to tasks
+    const assignedResourceIds = new Set<string>();
+    taskResourceMappings.forEach((resourceIds) => {
+      resourceIds.forEach((id) => assignedResourceIds.add(id));
+    });
+
+    // Group assigned resources by type
     const workResources: ProjectOnlineResource[] = [];
     const nonWorkResources: ProjectOnlineResource[] = [];
 
-    uniqueResourceIds.forEach((resourceId) => {
+    assignedResourceIds.forEach((resourceId) => {
       const resource = resourceMap.get(resourceId);
       if (resource) {
-        if (resource.ResourceType === 'Work') {
+        // Use CSOM DefaultBookingType: 1=Work, 2=Material, 3=Cost
+        if (resource.DefaultBookingType === 1) {
           workResources.push(resource);
         } else {
-          // Material or Cost
           nonWorkResources.push(resource);
         }
       }

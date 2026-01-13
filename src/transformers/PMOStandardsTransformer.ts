@@ -73,8 +73,7 @@ export async function ensureStandardReferenceSheet(
       throw new Error('SmartsheetClient does not support getSheet');
     }
     const getSheet = client.sheets.getSheet;
-    const existingSheet2Response = await withBackoff(() => getSheet({ id: existingSheet.id! }));
-    const existingSheet2 = existingSheet2Response?.data || existingSheet2Response?.result;
+    const existingSheet2 = await withBackoff(() => getSheet({ id: existingSheet.id! }));
     const existingValues = new Set<string>();
     if (existingSheet2?.rows) {
       for (const row of existingSheet2.rows) {

@@ -21,6 +21,12 @@ export interface ProjectOnlineProject {
   ProjectType?: string;
   Priority?: number; // 0-1000
   PercentComplete?: number; // 0-100
+  
+  // Navigation properties for $expand
+  Tasks?: ProjectOnlineTask[];
+  Resources?: ProjectOnlineResource[];
+  ProjectResources?: ProjectOnlineResource[];
+  Assignments?: ProjectOnlineAssignment[];
 }
 
 /**
@@ -30,7 +36,7 @@ export interface ProjectOnlineProject {
 export interface ProjectOnlineTask {
   Id: string; // Guid
   ProjectId: string; // Guid (FK)
-  TaskName: string;
+  Name: string;
   ParentTaskId?: string; // Guid (FK, self-reference)
   TaskIndex: number;
   OutlineLevel: number; // 0=root, 1=child, etc.
@@ -56,35 +62,66 @@ export interface ProjectOnlineTask {
 
 /**
  * Project Online Resource entity
- * oData Endpoint: /_api/ProjectData/Resources
+ * CSOM Endpoint: /_api/ProjectServer/Projects/ProjectResources
  */
 export interface ProjectOnlineResource {
   Id: string; // Guid
   Name: string;
   Email?: string;
-  ResourceType?: 'Work' | 'Material' | 'Cost';
-  MaxUnits?: number; // Decimal (1.0 = 100%)
+  
+  // Resource type - CSOM: 1=Work, 2=Material, 3=Cost
+  DefaultBookingType?: number;
+  
+  // Capacity - CSOM format
+  MaximumCapacity?: number; // Decimal (1.0 = 100%)
+  
+  // Rates
   StandardRate?: number; // Decimal
   OvertimeRate?: number; // Decimal
   CostPerUse?: number; // Decimal
-  BaseCalendar?: string;
-  IsActive: boolean;
-  IsGeneric: boolean;
-  Department?: string;
+  
+  // Status
+  CanLevel?: boolean; // CSOM: indicates if resource is active
+  IsGenericResource?: boolean; // CSOM: is generic resource
+  
+  // Organizational info
+  Group?: string; // CSOM: department/group
   Code?: string;
-  CreatedDate?: string; // ISO 8601 DateTime
-  ModifiedDate?: string; // ISO 8601 DateTime
+  
+  // Dates
+  Created?: string; // CSOM: ISO 8601 DateTime
+  Modified?: string; // CSOM: ISO 8601 DateTime
+  
+  // Additional useful CSOM properties
+  Initials?: string;
 }
 
 /**
  * Project Online Assignment entity
  * oData Endpoint: /_api/ProjectData/Assignments
+ * CSOM Endpoint: /_api/ProjectServer/Projects/Assignments
  */
 export interface ProjectOnlineAssignment {
   Id: string; // Guid
-  TaskId: string; // Guid (FK)
-  ResourceId: string; // Guid (FK)
-  ProjectId: string; // Guid (FK)
+  TaskId?: string; // Guid (FK) - may not be present in CSOM
+  ResourceId?: string; // Guid (FK) - OData format
+  ProjectId?: string; // Guid (FK) - may not be present in CSOM
+  
+  // CSOM navigation properties
+  Resource?: {
+    __deferred?: { uri: string };
+    Id?: string;
+    Name?: string;
+    ResourceType?: string;
+    Email?: string;
+    IsActive?: boolean;
+    IsGeneric?: boolean;
+  } | ProjectOnlineResource; // Can be either deferred or expanded
+  Task?: {
+    __deferred?: { uri: string };
+    Id?: string;
+    Name?: string;
+  } | ProjectOnlineTask; // Can be either deferred or expanded
   Start?: string; // ISO 8601 DateTime
   Finish?: string; // ISO 8601 DateTime
   Work?: string; // ISO 8601 Duration
