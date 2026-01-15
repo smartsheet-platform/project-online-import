@@ -211,7 +211,7 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
   });
 
   // Column 7: Max Units (handle both OData and CSOM formats)
-  const maxUnits = getMaxUnits(resource);
+  const maxUnits = resource.MaximumCapacity
   cells.push({
     columnId: 7,
     value: maxUnits !== undefined ? convertMaxUnits(maxUnits) : '',
@@ -236,7 +236,7 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
   });
 
   // Column 11: Department (handle both OData and CSOM formats)
-  const department = getDepartment(resource);
+  const department = resource.Group;
   cells.push({
     columnId: 11,
     value: department || '',
@@ -249,28 +249,28 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
   });
 
   // Column 13: Is Active (handle both OData and CSOM formats)
-  const isActive = getIsActive(resource);
+  const isActive = true;
   cells.push({
     columnId: 13,
     value: isActive,
   });
 
   // Column 14: Is Generic (handle both OData and CSOM formats)
-  const isGeneric = getIsGeneric(resource);
+  const isGeneric = resource.IsGenericResource ?? false;
   cells.push({
     columnId: 14,
     value: isGeneric,
   });
 
   // Column 15: Project Online Created Date (handle both formats)
-  const createdDate = getCreatedDate(resource);
+  const createdDate = resource.Created;
   cells.push({
     columnId: 15,
     value: createdDate ? convertDateTimeToDate(createdDate) : '',
   });
 
   // Column 16: Project Online Modified Date (handle both formats)
-  const modifiedDate = getModifiedDate(resource);
+  const modifiedDate = resource.Modified;
   cells.push({
     columnId: 16,
     value: modifiedDate ? convertDateTimeToDate(modifiedDate) : '',
@@ -308,48 +308,6 @@ function getResourceType(resource: ProjectOnlineResource): 'Work' | 'Material' |
 }
 
 /**
- * Get max units from CSOM MaximumCapacity
- */
-function getMaxUnits(resource: ProjectOnlineResource): number | undefined {
-  return resource.MaximumCapacity;
-}
-
-/**
- * Get department from CSOM Group
- */
-function getDepartment(resource: ProjectOnlineResource): string | undefined {
-  return resource.Group;
-}
-
-/**
- * Get isActive status from CSOM CanLevel
- */
-function getIsActive(resource: ProjectOnlineResource): boolean {
-  return resource.CanLevel ?? true;
-}
-
-/**
- * Get isGeneric status from CSOM IsGenericResource
- */
-function getIsGeneric(resource: ProjectOnlineResource): boolean {
-  return resource.IsGenericResource ?? false;
-}
-
-/**
- * Get created date from CSOM Created
- */
-function getCreatedDate(resource: ProjectOnlineResource): string | undefined {
-  return resource.Created;
-}
-
-/**
- * Get modified date from CSOM Modified
- */
-function getModifiedDate(resource: ProjectOnlineResource): string | undefined {
-  return resource.Modified;
-}
-
-/**
  * Discover unique department values from resources
  * Used to populate PMO Standards reference sheet
  */
@@ -357,7 +315,7 @@ export function discoverResourceDepartments(resources: ProjectOnlineResource[]):
   const departments = new Set<string>();
 
   for (const resource of resources) {
-    const department = getDepartment(resource);
+    const department = resource.Group;
     if (department && department.trim() !== '') {
       departments.add(department);
     }
@@ -445,7 +403,7 @@ export function validateResource(resource: ProjectOnlineResource): ResourceValid
   }
 
   // Warnings for overallocation
-  const maxUnits = getMaxUnits(resource);
+  const maxUnits = resource.MaximumCapacity;
   if (maxUnits !== undefined && maxUnits > 1.0) {
     warnings.push('Resource is overallocated (MaxUnits > 1.0)');
   }
@@ -639,7 +597,7 @@ export class ResourceTransformer {
 
     // Max Units (convert decimal to percentage) - only add if value exists
     if (columnMap['Max Units']) {
-      const maxUnits = getMaxUnits(resource);
+      const maxUnits = resource.MaximumCapacity;
       if (maxUnits !== undefined) {
         cells.push({
           columnId: columnMap['Max Units'],
@@ -674,7 +632,7 @@ export class ResourceTransformer {
 
     // Department - only add if value exists
     if (columnMap['Department']) {
-      const department = getDepartment(resource);
+      const department = resource.Group;
       if (department) {
         cells.push({
           columnId: columnMap['Department'],
@@ -695,7 +653,7 @@ export class ResourceTransformer {
     if (columnMap['Is Active']) {
       cells.push({
         columnId: columnMap['Is Active'],
-        value: getIsActive(resource),
+        value: true,
       });
     }
 
@@ -703,13 +661,13 @@ export class ResourceTransformer {
     if (columnMap['Is Generic']) {
       cells.push({
         columnId: columnMap['Is Generic'],
-        value: getIsGeneric(resource),
+        value: resource.IsGenericResource ?? false,
       });
     }
 
     // Project Online Created Date - only add if value exists
     if (columnMap['Project Online Created Date']) {
-      const createdDate = getCreatedDate(resource);
+      const createdDate = resource.Created;
       if (createdDate) {
         cells.push({
           columnId: columnMap['Project Online Created Date'],
@@ -720,7 +678,7 @@ export class ResourceTransformer {
 
     // Project Online Modified Date - only add if value exists
     if (columnMap['Project Online Modified Date']) {
-      const modifiedDate = getModifiedDate(resource);
+      const modifiedDate = resource.Modified;
       if (modifiedDate) {
         cells.push({
           columnId: columnMap['Project Online Modified Date'],
