@@ -62,7 +62,6 @@ export interface ProjectOnlineTask {
 
 /**
  * Project Online Resource entity
- * CSOM Endpoint: /_api/ProjectServer/Projects/ProjectResources
  */
 export interface ProjectOnlineResource {
   Id: string; // Guid

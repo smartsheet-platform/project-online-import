@@ -177,13 +177,9 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
     // Column 3: Team Members (CONTACT_LIST for Work resources)
     const contact = createContactObject(resource.Name, resource.Email);
     if (contact) {
-      // CONTACT_LIST requires objectType: "CONTACT" wrapper
       cells.push({
         columnId: 3,
-        objectValue: {
-          objectType: 'CONTACT',
-          ...contact,
-        },
+        objectValue: contact,
       });
     }
     // Columns 4-5: Materials and Cost Resources left empty
@@ -547,13 +543,10 @@ export class ResourceTransformer {
       if (columnMap['Team Members']) {
         const contact = createContactObject(resource.Name, resource.Email);
         if (contact) {
-          // CONTACT_LIST requires objectType: "CONTACT" wrapper
+          // CONTACT_LIST column - createContactObject already includes objectType
           cells.push({
             columnId: columnMap['Team Members'],
-            objectValue: {
-              objectType: 'CONTACT',
-              ...contact,
-            },
+            objectValue: contact,
           });
         }
         // If no contact, omit the cell entirely (Smartsheet treats as empty)

@@ -400,7 +400,7 @@ export class ProjectOnlineClient {
     try {
       const projectsResponse = await this.getProjects({
         $filter: `Id eq guid'${projectId}'`,
-        $expand: ['Assignments', 'Tasks', 'ProjectResources'], // Expand Resource and Task within Assignments
+        $expand: ['Assignments', 'Tasks', 'ProjectResources', 'Owner'], // Expand Resource and Task within Assignments
         $top: 1,
       });
 
@@ -416,9 +416,12 @@ export class ProjectOnlineClient {
         Tasks?: { results?: ProjectOnlineTask[] } | ProjectOnlineTask[];
         Assignments?: { results?: ProjectOnlineAssignment[] } | ProjectOnlineAssignment[];
         ProjectResources?: { results?: ProjectOnlineResource[] } | ProjectOnlineResource[];
+        Owner?: any;
       };
       const project = projectWithExpanded;
-
+      project.OwnerEmail = projectWithExpanded.Owner?.UserPrincipalName;
+      project.Owner = projectWithExpanded.Owner?.Title || '';
+      
       this.logger.success(`✓ Project: ${project.Name}`);
 
       // Extract expanded entities - handle both verbose format (with 'results') and direct arrays
@@ -444,7 +447,6 @@ export class ProjectOnlineClient {
       this.logger.success(`✓ Tasks: ${tasks.length} (via $expand)`);
       this.logger.success(`✓ Assignments: ${assignments.length} (via $expand)`);
       this.logger.success(`✓ Resources: ${resources.length} (via $expand)`);
-     
       return {
         project,
         tasks,

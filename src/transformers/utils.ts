@@ -197,10 +197,12 @@ export function convertMaxUnits(maxUnits: number): string {
 export function createContactObject(
   name?: string,
   email?: string
-): { name?: string; email?: string } | null {
+): { objectType: 'CONTACT'; name?: string; email?: string } | null {
   if (!name && !email) return null;
 
-  const contact: { name?: string; email?: string } = {};
+  const contact: { objectType: 'CONTACT'; name?: string; email?: string } = {
+    objectType: "CONTACT"
+  };
   if (email) contact.email = email;
   if (name) contact.name = name;
 

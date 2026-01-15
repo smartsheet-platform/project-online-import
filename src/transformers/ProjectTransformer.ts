@@ -30,7 +30,7 @@ const PROJECT_COLUMN_MAPPING: Record<string, keyof ProjectOnlineProject> = {
   'Project Online Project ID': 'Id',
   'Project Name': 'Name',
   'Description': 'Description',
-  // 'Owner': 'Owner', // Will handle Owner/OwnerEmail specially
+  'Owner': 'Owner',
   'Start Date': 'StartDate',
   'Finish Date': 'FinishDate',
   'Status': 'ProjectStatus',
