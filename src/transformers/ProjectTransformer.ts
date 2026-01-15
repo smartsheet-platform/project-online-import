@@ -30,14 +30,14 @@ const PROJECT_COLUMN_MAPPING: Record<string, keyof ProjectOnlineProject> = {
   'Project Online Project ID': 'Id',
   'Project Name': 'Name',
   'Description': 'Description',
-  'Owner': 'Owner', // Will handle Owner/OwnerEmail specially
+  // 'Owner': 'Owner', // Will handle Owner/OwnerEmail specially
   'Start Date': 'StartDate',
   'Finish Date': 'FinishDate',
   'Status': 'ProjectStatus',
   'Priority': 'Priority',
   '% Complete': 'PercentComplete',
   'Project Online Created Date': 'CreatedDate',
-  'Project Online Modified Date': 'ModifiedDate'
+  'Project Online Modified Date': 'LastSavedDate',
 };
 
 /**
@@ -231,7 +231,7 @@ function createProjectSummaryRow(project: ProjectOnlineProject): SmartsheetRow {
   // Column 10: Project Online Modified Date
   cells.push({
     columnId: 10,
-    value: convertDateTimeToDate(project.ModifiedDate),
+    value: convertDateTimeToDate(project.LastSavedDate),
   });
 
   // Columns 11-14: System-generated (Created Date, Modified Date, Created By, Modified By)
@@ -414,12 +414,12 @@ export function validateProject(project: ProjectOnlineProject): ProjectValidatio
     errors.push('Project CreatedDate is required');
   }
 
-  if (!project.ModifiedDate) {
+  if (!project.LastSavedDate) {
     errors.push('Project ModifiedDate is required');
   }
 
   // Warnings for missing optional but important fields
-  if (!project.Owner && !project.OwnerEmail) {
+  if (!project.Owner) {
     warnings.push('Project has no owner information');
   }
 

@@ -16,7 +16,7 @@ export interface ProjectOnlineProject {
   StartDate?: string; // ISO 8601 DateTime
   FinishDate?: string; // ISO 8601 DateTime
   CreatedDate: string; // ISO 8601 DateTime
-  ModifiedDate: string; // ISO 8601 DateTime
+  LastSavedDate: string; // ISO 8601 DateTime
   ProjectStatus?: string;
   ProjectType?: string;
   Priority?: number; // 0-1000
