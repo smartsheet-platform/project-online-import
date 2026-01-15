@@ -67,61 +67,28 @@ export interface ProjectOnlineTask {
 export interface ProjectOnlineResource {
   Id: string; // Guid
   Name: string;
-  Email?: string;
-  
-  // Resource type - CSOM: 1=Work, 2=Material, 3=Cost
-  DefaultBookingType?: number;
-  
-  // Capacity - CSOM format
+  Email?: string;  
+  DefaultBookingType?: number;  
   MaximumCapacity?: number; // Decimal (1.0 = 100%)
-  
-  // Rates
   StandardRate?: number; // Decimal
   OvertimeRate?: number; // Decimal
   CostPerUse?: number; // Decimal
-  
-  // Status
-  CanLevel?: boolean; // CSOM: indicates if resource is active
-  IsGenericResource?: boolean; // CSOM: is generic resource
-  
-  // Organizational info
-  Group?: string; // CSOM: department/group
-  Code?: string;
-  
-  // Dates
-  Created?: string; // CSOM: ISO 8601 DateTime
-  Modified?: string; // CSOM: ISO 8601 DateTime
-  
-  // Additional useful CSOM properties
+  CanLevel?: boolean; 
+  IsGenericResource?: boolean;
+  Group?: string; 
+  Code?: string;  
+  Created?: string; 
+  Modified?: string; 
   Initials?: string;
 }
 
 /**
  * Project Online Assignment entity
  * oData Endpoint: /_api/ProjectData/Assignments
- * CSOM Endpoint: /_api/ProjectServer/Projects/Assignments
  */
 export interface ProjectOnlineAssignment {
   Id: string; // Guid
-  TaskId?: string; // Guid (FK) - may not be present in CSOM
-  ResourceId?: string; // Guid (FK) - OData format
   ProjectId?: string; // Guid (FK) - may not be present in CSOM
-  
-  // CSOM navigation properties
-  Resource?: {
-    __deferred?: { uri: string };
-    Id?: string;
-    Name?: string;
-    ResourceType?: string;
-    Email?: string;
-    IsActive?: boolean;
-    IsGeneric?: boolean;
-  } | ProjectOnlineResource; // Can be either deferred or expanded
-  Task?: {
-    __deferred?: { uri: string };
-    Id?: string;
-    Name?: string;
-  } | ProjectOnlineTask; // Can be either deferred or expanded
   Start?: string; // ISO 8601 DateTime
   Finish?: string; // ISO 8601 DateTime
   Work?: string; // ISO 8601 Duration
@@ -133,6 +100,8 @@ export interface ProjectOnlineAssignment {
   ActualCost?: number; // Decimal
   RemainingCost?: number; // Decimal
   AssignmentNotes?: string;
+  Resource?: ProjectOnlineResource; // Expanded Resource
+  Task?: ProjectOnlineTask; // Expanded Task
 }
 
 /**
