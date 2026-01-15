@@ -10,7 +10,7 @@ export class ODataTaskBuilder {
   private task: Partial<ProjectOnlineTask> = {
     Id: randomUUID(),
     ProjectId: '',
-    TaskName: 'Test Task',
+    Name: 'Test Task',
     TaskIndex: 1,
     OutlineLevel: 1,
     IsMilestone: false,
@@ -24,7 +24,7 @@ export class ODataTaskBuilder {
     this.task = {
       Id: randomUUID(),
       ProjectId: '',
-      TaskName: 'Basic Test Task',
+      Name: 'Basic Test Task',
       TaskIndex: 1,
       OutlineLevel: 1,
       IsMilestone: false,
@@ -112,7 +112,7 @@ export class ODataTaskBuilder {
    * Set task name
    */
   withName(name: string): this {
-    this.task.TaskName = name;
+    this.task.Name = name;
     return this;
   }
 
@@ -182,7 +182,7 @@ export class ODataTaskBuilder {
     return {
       Id: this.task.Id!,
       ProjectId: this.task.ProjectId!,
-      TaskName: this.task.TaskName!,
+      Name: this.task.Name!,
       TaskIndex: this.task.TaskIndex!,
       OutlineLevel: this.task.OutlineLevel!,
       IsMilestone: this.task.IsMilestone!,

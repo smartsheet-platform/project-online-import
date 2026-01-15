@@ -36,7 +36,7 @@ export class AssignmentTransformer {
 
     // Find unique resources in assignments
     const uniqueResourceIds = new Set<string>();
-    assignments.forEach((a) => uniqueResourceIds.add(a.ResourceId));
+    assignments.forEach((a) => uniqueResourceIds.add(a.Id));
 
     // Group resources by type
     const workResources: ProjectOnlineResource[] = [];
@@ -45,7 +45,7 @@ export class AssignmentTransformer {
     uniqueResourceIds.forEach((resourceId) => {
       const resource = resourceMap.get(resourceId);
       if (resource) {
-        if (resource.ResourceType === 'Work') {
+        if (resource.DefaultBookingType === 1) {
           workResources.push(resource);
         } else {
           // Material or Cost

@@ -252,7 +252,7 @@ export function createTaskRow(
   if (columnMap['Task Name']) {
     cells.push({
       columnId: columnMap['Task Name'],
-      value: task.TaskName,
+      value: task.Name,
     });
   }
 
@@ -712,7 +712,7 @@ export function validateTask(task: ProjectOnlineTask): ValidationResult {
   const warnings: string[] = [];
 
   // Required fields
-  if (!task.TaskName || task.TaskName.trim() === '') {
+  if (!task.Name || task.Name.trim() === '') {
     errors.push('Task Name is required');
   }
 
@@ -763,7 +763,7 @@ export class TaskTransformer {
     for (const task of tasks) {
       const validation = validateTask(task);
       if (!validation.isValid) {
-        throw new Error(`Invalid task ${task.TaskName}: ${validation.errors.join(', ')}`);
+        throw new Error(`Invalid task ${task.Name}: ${validation.errors.join(', ')}`);
       }
     }
 
@@ -815,7 +815,7 @@ export class TaskTransformer {
       const cells: SmartsheetCell[] = [];
 
       if (columnMap['Task Name']) {
-        cells.push({ columnId: columnMap['Task Name'], value: task.TaskName });
+        cells.push({ columnId: columnMap['Task Name'], value: task.Name });
       }
       if (columnMap['Project Online Task ID']) {
         cells.push({ columnId: columnMap['Project Online Task ID'], value: task.Id });

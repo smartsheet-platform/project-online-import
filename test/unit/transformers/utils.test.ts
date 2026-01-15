@@ -153,6 +153,7 @@ describe('Transformation Utils', () => {
   describe('createContactObject', () => {
     it('should create contact with name and email', () => {
       expect(createContactObject('John Doe', 'john@example.com')).toEqual({
+        objectType: 'CONTACT',
         name: 'John Doe',
         email: 'john@example.com',
       });
@@ -160,12 +161,14 @@ describe('Transformation Utils', () => {
 
     it('should create contact with email only', () => {
       expect(createContactObject(undefined, 'john@example.com')).toEqual({
+        objectType: 'CONTACT',
         email: 'john@example.com',
       });
     });
 
     it('should create contact with name only', () => {
       expect(createContactObject('John Doe', undefined)).toEqual({
+        objectType: 'CONTACT',
         name: 'John Doe',
       });
     });

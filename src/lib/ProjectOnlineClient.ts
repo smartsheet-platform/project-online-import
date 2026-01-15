@@ -400,7 +400,7 @@ export class ProjectOnlineClient {
     try {
       const projectsResponse = await this.getProjects({
         $filter: `Id eq guid'${projectId}'`,
-        $expand: ['Assignments', 'Tasks'],
+        $expand: ['Assignments', 'Tasks', 'ProjectResources', 'Owner'], // Expand Resource and Task within Assignments
         $top: 1,
       });
 
@@ -411,13 +411,17 @@ export class ProjectOnlineClient {
         );
       }
 
-      // Get project with expanded entities (Tasks and Assignments may be in 'results' or direct array)
+      // Get project with expanded entities (Tasks, Assignments, and Resources may be in 'results' or direct array)
       const projectWithExpanded = projectsResponse.value[0] as ProjectOnlineProject & {
         Tasks?: { results?: ProjectOnlineTask[] } | ProjectOnlineTask[];
         Assignments?: { results?: ProjectOnlineAssignment[] } | ProjectOnlineAssignment[];
+        ProjectResources?: { results?: ProjectOnlineResource[] } | ProjectOnlineResource[];
+        Owner?: any;
       };
       const project = projectWithExpanded;
-
+      project.OwnerEmail = projectWithExpanded.Owner?.UserPrincipalName;
+      project.Owner = projectWithExpanded.Owner?.Title || '';
+      
       this.logger.success(`✓ Project: ${project.Name}`);
 
       // Extract expanded entities - handle both verbose format (with 'results') and direct arrays
@@ -433,21 +437,20 @@ export class ProjectOnlineClient {
           projectWithExpanded.Assignments.results) ||
         (Array.isArray(projectWithExpanded.Assignments) ? projectWithExpanded.Assignments : []);
 
+      // Try to extract resources from $expand first
+      const resources =
+        (projectWithExpanded.ProjectResources &&
+          'results' in projectWithExpanded.ProjectResources &&
+          projectWithExpanded.ProjectResources.results) ||
+        (Array.isArray(projectWithExpanded.ProjectResources) ? projectWithExpanded.ProjectResources : []);
+
       this.logger.success(`✓ Tasks: ${tasks.length} (via $expand)`);
       this.logger.success(`✓ Assignments: ${assignments.length} (via $expand)`);
-
-      // Extract unique resources from assignments
-      // The /Resources endpoint doesn't exist as standalone, but we can derive from assignments
-      this.logger.info('Extracting resources from assignments...');
-      const resourceIds = new Set(assignments.map((a) => a.ResourceId).filter(Boolean));
-      this.logger.success(`✓ Resources: ${resourceIds.size} (derived from assignments)`);
-
-      // Return extracted data with empty resources array for now
-      // Resources would need to be fetched via a different method or expanded differently
+      this.logger.success(`✓ Resources: ${resources.length} (via $expand)`);
       return {
         project,
         tasks,
-        resources: [], // Project Server API doesn't expose standalone /Resources endpoint
+        resources,
         assignments,
       };
     } catch (error) {

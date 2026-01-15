@@ -16,11 +16,17 @@ export interface ProjectOnlineProject {
   StartDate?: string; // ISO 8601 DateTime
   FinishDate?: string; // ISO 8601 DateTime
   CreatedDate: string; // ISO 8601 DateTime
-  ModifiedDate: string; // ISO 8601 DateTime
+  LastSavedDate: string; // ISO 8601 DateTime
   ProjectStatus?: string;
   ProjectType?: string;
   Priority?: number; // 0-1000
   PercentComplete?: number; // 0-100
+  
+  // Navigation properties for $expand
+  Tasks?: ProjectOnlineTask[];
+  Resources?: ProjectOnlineResource[];
+  ProjectResources?: ProjectOnlineResource[];
+  Assignments?: ProjectOnlineAssignment[];
 }
 
 /**
@@ -30,7 +36,7 @@ export interface ProjectOnlineProject {
 export interface ProjectOnlineTask {
   Id: string; // Guid
   ProjectId: string; // Guid (FK)
-  TaskName: string;
+  Name: string;
   ParentTaskId?: string; // Guid (FK, self-reference)
   TaskIndex: number;
   OutlineLevel: number; // 0=root, 1=child, etc.
@@ -56,24 +62,23 @@ export interface ProjectOnlineTask {
 
 /**
  * Project Online Resource entity
- * oData Endpoint: /_api/ProjectData/Resources
  */
 export interface ProjectOnlineResource {
   Id: string; // Guid
   Name: string;
-  Email?: string;
-  ResourceType?: 'Work' | 'Material' | 'Cost';
-  MaxUnits?: number; // Decimal (1.0 = 100%)
+  Email?: string;  
+  DefaultBookingType?: number;  
+  MaximumCapacity?: number; // Decimal (1.0 = 100%)
   StandardRate?: number; // Decimal
   OvertimeRate?: number; // Decimal
   CostPerUse?: number; // Decimal
-  BaseCalendar?: string;
-  IsActive: boolean;
-  IsGeneric: boolean;
-  Department?: string;
-  Code?: string;
-  CreatedDate?: string; // ISO 8601 DateTime
-  ModifiedDate?: string; // ISO 8601 DateTime
+  CanLevel?: boolean; 
+  IsGenericResource?: boolean;
+  Group?: string; 
+  Code?: string;  
+  Created?: string; 
+  Modified?: string; 
+  Initials?: string;
 }
 
 /**
@@ -82,9 +87,7 @@ export interface ProjectOnlineResource {
  */
 export interface ProjectOnlineAssignment {
   Id: string; // Guid
-  TaskId: string; // Guid (FK)
-  ResourceId: string; // Guid (FK)
-  ProjectId: string; // Guid (FK)
+  ProjectId?: string; // Guid (FK) - may not be present in CSOM
   Start?: string; // ISO 8601 DateTime
   Finish?: string; // ISO 8601 DateTime
   Work?: string; // ISO 8601 Duration
@@ -96,6 +99,8 @@ export interface ProjectOnlineAssignment {
   ActualCost?: number; // Decimal
   RemainingCost?: number; // Decimal
   AssignmentNotes?: string;
+  Resource?: ProjectOnlineResource; // Expanded Resource
+  Task?: ProjectOnlineTask; // Expanded Task
 }
 
 /**

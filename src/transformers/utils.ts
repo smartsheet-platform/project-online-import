@@ -34,12 +34,43 @@ export function sanitizeWorkspaceName(projectName: string): string {
  * Uses UTC methods to avoid timezone conversion issues
  */
 export function convertDateTimeToDate(isoDateTime: string): string {
-  // Parse datetime and extract date portion using UTC methods
-  const date = new Date(isoDateTime);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  // Handle null/empty dates
+  if (!isoDateTime) {
+    return '';
+  }
+
+  // Handle Project Online's "null" date representation
+  // '0001-01-01T00:00:00' is used to represent unset/null dates
+  if (isoDateTime.startsWith('0001-01-01')) {
+    return '';
+  }
+
+  try {
+    // Normalize the datetime string for better parsing
+    let normalizedDateTime = isoDateTime.trim();
+    
+    // If no timezone info, assume it's UTC by adding 'Z'
+    if (!normalizedDateTime.includes('Z') && !normalizedDateTime.includes('+') && !normalizedDateTime.includes('-', 10)) {
+      normalizedDateTime += 'Z';
+    }
+
+    // Parse datetime and extract date portion using UTC methods
+    const date = new Date(normalizedDateTime);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.warn(`Invalid date encountered: ${isoDateTime} (normalized: ${normalizedDateTime})`);
+      return '';
+    }
+
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.warn(`Error parsing date: ${isoDateTime}`, error);
+    return '';
+  }
 }
 
 /**
@@ -166,10 +197,12 @@ export function convertMaxUnits(maxUnits: number): string {
 export function createContactObject(
   name?: string,
   email?: string
-): { name?: string; email?: string } | null {
+): { objectType: 'CONTACT'; name?: string; email?: string } | null {
   if (!name && !email) return null;
 
-  const contact: { name?: string; email?: string } = {};
+  const contact: { objectType: 'CONTACT'; name?: string; email?: string } = {
+    objectType: "CONTACT"
+  };
   if (email) contact.email = email;
   if (name) contact.name = name;
 
