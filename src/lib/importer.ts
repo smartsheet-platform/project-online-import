@@ -10,7 +10,6 @@ import { ProjectOnlineClient, ProjectOnlineClientConfig } from './ProjectOnlineC
 import { configureProjectPicklistColumns, populateProjectSummary } from '../transformers/ProjectTransformer';
 import { TaskTransformer } from '../transformers/TaskTransformer';
 import { ResourceTransformer } from '../transformers/ResourceTransformer';
-import { AssignmentTransformer } from '../transformers/AssignmentTransformer';
 import { PMOStandardsWorkspaceInfo } from '../transformers/PMOStandardsTransformer';
 import { WorkspaceFactory, WorkspaceFactoryProvider } from '../factories';
 import { Logger } from '../util/Logger';
@@ -243,6 +242,7 @@ export class ProjectOnlineImporter {
 
       // Step 4: Transform tasks
       let tasksImported = 0;
+      let assignmentsImported = 0;
       if (data.tasks.length > 0) {
         progress.startStage('Task Import');
         const taskTransformer = new TaskTransformer(this.smartsheetClient, this.logger);
@@ -251,7 +251,8 @@ export class ProjectOnlineImporter {
           projectResult.sheets.taskSheet.id
         );
         tasksImported = taskResult.rowsCreated;
-        progress.completeStage(`${tasksImported} tasks imported`);
+        assignmentsImported = taskResult.assignmentsProcessed;
+        progress.completeStage(`${tasksImported} tasks imported, ${assignmentsImported} assignments processed`);
 
         // Step 5: Configure task sheet picklists
         progress.startStage('Task Sheet Configuration');
@@ -275,19 +276,7 @@ export class ProjectOnlineImporter {
         progress.completeStage(`${resourcesImported} resources imported`);
       }
 
-      // Step 7: Transform assignments
-      let assignmentsImported = 0;
-      if (data.assignments.length > 0 && data.resources.length > 0) {
-        progress.startStage('Assignment Column Creation');
-        const assignmentTransformer = new AssignmentTransformer(this.smartsheetClient);
-        const assignmentResult = await assignmentTransformer.transformAssignments(
-          data.assignments,
-          data.resources,
-          projectResult.sheets.taskSheet.id
-        );
-        assignmentsImported = assignmentResult.columnsCreated;
-        progress.completeStage(`${assignmentsImported} assignment columns created`);
-      }
+      // Assignment data is now handled within task transformation
 
       // Print summary
       progress.printSummary();
@@ -303,7 +292,7 @@ export class ProjectOnlineImporter {
         projectsImported: 1,
         tasksImported,
         resourcesImported,
-        assignmentsImported,
+        assignmentsImported
       };
     } catch (error) {
       this.errorHandler.handle(error, 'Project Import');

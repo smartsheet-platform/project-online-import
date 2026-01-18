@@ -12,6 +12,7 @@ export class ODataTaskBuilder {
     ProjectId: '',
     Name: 'Test Task',
     TaskIndex: 1,
+    OutlinePosition: '1',
     OutlineLevel: 1,
     IsMilestone: false,
     IsActive: true,
@@ -26,6 +27,7 @@ export class ODataTaskBuilder {
       ProjectId: '',
       Name: 'Basic Test Task',
       TaskIndex: 1,
+      OutlinePosition: '1',
       OutlineLevel: 1,
       IsMilestone: false,
       IsActive: true,
@@ -36,9 +38,9 @@ export class ODataTaskBuilder {
   /**
    * Set hierarchy information
    */
-  withHierarchy(outlineLevel: number, parentId?: string): this {
+  withHierarchy(outlineLevel: number, outlinePosition?: string): this {
     this.task.OutlineLevel = outlineLevel;
-    this.task.ParentTaskId = parentId;
+    this.task.OutlinePosition = outlinePosition || outlineLevel.toString();
     return this;
   }
 
@@ -184,10 +186,10 @@ export class ODataTaskBuilder {
       ProjectId: this.task.ProjectId!,
       Name: this.task.Name!,
       TaskIndex: this.task.TaskIndex!,
-      OutlineLevel: this.task.OutlineLevel!,
+      OutlinePosition: this.task.OutlinePosition!,
+      OutlineLevel: this.task.OutlineLevel,
       IsMilestone: this.task.IsMilestone!,
       IsActive: this.task.IsActive!,
-      ParentTaskId: this.task.ParentTaskId,
       Start: this.task.Start,
       Finish: this.task.Finish,
       Duration: this.task.Duration,

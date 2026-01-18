@@ -211,6 +211,12 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
       type: 'DATE',
       width: 120,
     },
+    // Assignment resources
+    {
+      title: 'Resources',
+      type: 'MULTI_CONTACT_LIST',
+      width: 200,
+    },
   ];
 }
 
@@ -758,14 +764,15 @@ export class TaskTransformer {
   async transformTasks(
     tasks: ProjectOnlineTask[],
     sheetId: number
-  ): Promise<{ rowsCreated: number; sheetId: number }> {
-    // Validate all tasks
+  ): Promise<{ rowsCreated: number; sheetId: number; assignmentsProcessed: number }> {
+
     for (const task of tasks) {
       const validation = validateTask(task);
       if (!validation.isValid) {
         throw new Error(`Invalid task ${task.Name}: ${validation.errors.join(', ')}`);
       }
     }
+    let totalAssignmentsProcessed = 0;
 
     // The sheet was created by ProjectTransformer with only a primary "Task Name" column
     // We need to add all the task columns before we can add rows
@@ -813,6 +820,27 @@ export class TaskTransformer {
     // Helper function to build cells for a task
     const buildCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
       const cells: SmartsheetCell[] = [];
+
+      if (columnMap['Resources'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+        const workAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && a.Resource.DefaultBookingType === 1);
+        totalAssignmentsProcessed += workAssignments.length;
+        
+        const contacts = workAssignments.map(a => ({
+          objectType: 'CONTACT' as const,
+          name: a.Resource!.Name,
+          email: a.Resource!.Email
+        }));
+                
+        if (contacts.length > 0) {
+          cells.push({
+            columnId: columnMap['Resources'],
+            objectValue: {
+              objectType: 'MULTI_CONTACT',
+              values: contacts
+            }
+          });
+        }
+      }
 
       if (columnMap['Task Name']) {
         cells.push({ columnId: columnMap['Task Name'], value: task.Name });
@@ -908,7 +936,7 @@ export class TaskTransformer {
       const tasksAtLevel = tasks.filter((t) => (t.OutlineLevel || 1) === level);
       if (tasksAtLevel.length === 0) continue;
 
-      // Group tasks by their parent ID (or 'NO_PARENT' for level 1 or missing parents)
+      // Group tasks by their parent ID (using expanded Parent object)
       const tasksByParent = new Map<string, ProjectOnlineTask[]>();
 
       for (const task of tasksAtLevel) {
@@ -916,7 +944,13 @@ export class TaskTransformer {
         if (level === 1) {
           groupKey = 'NO_PARENT';
         } else {
-          const parentRowId = task.ParentTaskId ? taskIdToRowId[task.ParentTaskId] : null;
+          // Use expanded Parent object to get parent ID
+          let parentTaskId: string | null = null;
+          if (task.Parent && task.Parent.Id) {
+            parentTaskId = task.Parent.Id;
+          }
+          
+          const parentRowId = parentTaskId ? taskIdToRowId[parentTaskId] : null;
           groupKey = parentRowId ? `PARENT_${parentRowId}` : 'NO_PARENT';
         }
 
@@ -977,6 +1011,7 @@ export class TaskTransformer {
     return {
       rowsCreated: totalRowsCreated,
       sheetId,
+      assignmentsProcessed: totalAssignmentsProcessed,
     };
   }
 }

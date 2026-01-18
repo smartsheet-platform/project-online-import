@@ -32,7 +32,7 @@ describe('ResourceTransformer', () => {
     Department: 'Engineering',
     Code: 'ENG-001',
     CreatedDate: '2024-03-01T00:00:00Z',
-    ModifiedDate: '2024-03-15T00:00:00Z',
+    Modified: '2024-03-15T00:00:00Z',
   };
 
   describe('createResourcesSheet', () => {

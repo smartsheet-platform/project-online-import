@@ -11,7 +11,7 @@ export class ODataProjectBuilder {
     Id: randomUUID(),
     Name: 'Test Project',
     CreatedDate: new Date().toISOString(),
-    ModifiedDate: new Date().toISOString(),
+    LastSavedDate: new Date().toISOString(),
   };
 
   /**
@@ -22,7 +22,7 @@ export class ODataProjectBuilder {
       Id: randomUUID(),
       Name: 'Basic Test Project',
       CreatedDate: '2024-01-01T09:00:00Z',
-      ModifiedDate: '2024-01-01T09:00:00Z',
+      LastSavedDate: '2024-01-01T09:00:00Z',
     };
     return this;
   }
@@ -143,7 +143,7 @@ export class ODataProjectBuilder {
       Id: this.project.Id!,
       Name: this.project.Name!,
       CreatedDate: this.project.CreatedDate!,
-      ModifiedDate: this.project.ModifiedDate!,
+      LastSavedDate: this.project.LastSavedDate!,
       Description: this.project.Description,
       Owner: this.project.Owner,
       OwnerEmail: this.project.OwnerEmail,
