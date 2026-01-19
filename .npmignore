@@ -1,0 +1,62 @@
+# Development and testing files
+test/
+coverage/
+*.test.ts
+*.spec.ts
+jest.config.js
+tsconfig.json
+
+# Environment files
+.env
+.env.*
+!.env.sample
+!.env.test.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Internal tooling (not for public distribution)
+.claude/
+.roo/
+.roomodes
+.sdlc-version
+memory-bank/
+sdlc/
+
+# Build artifacts
+src/
+*.ts
+!*.d.ts
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD (keep workflows but exclude internal configs)
+.gitlab-ci.yml
+
+# Documentation source (keep generated docs)
+docs/src/
+
+# Scripts (dev only)
+scripts/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp

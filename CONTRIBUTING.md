@@ -1,6 +1,8 @@
 # Contributing to Project Online Import
 
-Thank you for considering contributing to this project! We welcome contributions from the community.
+> **⚠️ Smartsheet Internal Repository** - This guide is for Smartsheet team members only.
+
+Thank you for contributing to this project! This guide will help you get started with development.
 
 ## Table of Contents
 
@@ -38,14 +40,40 @@ Enhancement suggestions are tracked as GitHub issues. Include:
 
 ### Pull Requests
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes
+**For Smartsheet Team Members:**
+
+1. Clone the repository (if not already done):
+   ```bash
+   git clone git@github.com:smartsheet/project-online-import.git
+   ```
+
+2. Create a feature branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. Make your changes following coding standards
+
 4. Write or update tests
-5. Run the full test suite
+
+5. Run the full test suite:
+   ```bash
+   npm run typecheck
+   npm run lint
+   npm run format:check
+   npm run test:unit
+   ```
+
 6. Commit your changes (see commit message guidelines below)
-7. Push to your fork
-8. Submit a pull request
+
+7. Push to GitHub:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+8. Create a pull request on GitHub
+
+**Note:** For private repositories, we work on branches directly rather than forks.
 
 ## Development Setup
 
@@ -53,9 +81,10 @@ Enhancement suggestions are tracked as GitHub issues. Include:
 
 - Node.js >= 18.0.0
 - npm >= 9.0.0
+- Access to Smartsheet GitHub organization (private repository)
 - Access to:
   - Microsoft Project Online instance (for testing)
-  - Smartsheet account (for testing)
+  - Smartsheet account with API token (for integration testing)
 
 ### Installation
 
