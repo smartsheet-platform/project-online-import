@@ -201,7 +201,7 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
     },
     {
       title: 'Duration',
-      type: 'DURATION',
+      type: 'TEXT_NUMBER',
       width: 80,
     },
     // Task properties
@@ -378,12 +378,16 @@ export function createTaskRow(
     });
   }
 
-  // Duration (decimal days for project sheet)
-  if (columnMap['Duration'] && task.Duration) {
-    cells.push({
-      columnId: columnMap['Duration'],
-      value: convertDurationToDecimalDays(task.Duration),
-    });
+  // Duration (readable format like "5d" or "40h")
+  if (columnMap['Duration']) {
+    // Try DurationTimeSpan first (ISO8601 format), then Duration (simple format)
+    const durationValue = task.DurationTimeSpan || task.Duration;
+    if (durationValue) {
+      cells.push({
+        columnId: columnMap['Duration'],
+        value: convertDurationToReadableString(durationValue),
+      });
+    }
   }
 
   // % Complete
@@ -479,7 +483,7 @@ export function createTaskRow(
 
   // Critical path fields
   if (columnMap['Late Start']) {
-    const lateStart = safeConvertDate(task.LateStart);
+    const lateStart = safeConvertDate(task.LatestStart);
     if (lateStart !== null) {
       cells.push({
         columnId: columnMap['Late Start'],
@@ -489,7 +493,7 @@ export function createTaskRow(
   }
 
   if (columnMap['Late Finish']) {
-    const lateFinish = safeConvertDate(task.LateFinish);
+    const lateFinish = safeConvertDate(task.LatestFinish);
     if (lateFinish !== null) {
       cells.push({
         columnId: columnMap['Late Finish'],
@@ -519,18 +523,18 @@ export function createTaskRow(
   }
 
   // Project Online Created Date
-  if (columnMap['Project Online Created Date'] && task.CreatedDate) {
+  if (columnMap['Project Online Created Date'] && task.Created) {
     cells.push({
       columnId: columnMap['Project Online Created Date'],
-      value: convertDateTimeToDate(task.CreatedDate),
+      value: convertDateTimeToDate(task.Created),
     });
   }
 
   // Project Online Modified Date
-  if (columnMap['Project Online Modified Date'] && task.ModifiedDate) {
+  if (columnMap['Project Online Modified Date'] && task.Modified) {
     cells.push({
       columnId: columnMap['Project Online Modified Date'],
-      value: convertDateTimeToDate(task.ModifiedDate),
+      value: convertDateTimeToDate(task.Modified),
     });
   }
 
@@ -557,6 +561,25 @@ export function createTaskRow(
 }
 
 /**
+ * Convert ISO8601 duration to readable string format for Duration column
+ * Examples: PT40H → "5d", PT8H → "1d", PT4H → "0.5d"
+ */
+function convertDurationToReadableString(isoDuration: string): string {
+  // Parse ISO8601 duration to hours
+  const hours = parseHoursFromISO8601(isoDuration);
+
+  // Convert to days (8-hour workday)
+  const days = hours / 8;
+
+  // Format based on whether it's a whole day or not
+  if (days === Math.floor(days)) {
+    return `${days}d`;
+  } else {
+    return `${Math.round(days * 100) / 100}d`;
+  }
+}
+
+/**
  * Convert ISO8601 duration to decimal days for project sheet Duration column
  */
 function convertDurationToDecimalDays(isoDuration: string): number {
@@ -570,16 +593,32 @@ function convertDurationToDecimalDays(isoDuration: string): number {
 }
 
 /**
- * Parse hours from ISO8601 duration string
+ * Parse hours from ISO8601 duration string or simple duration format
  */
 function parseHoursFromISO8601(duration: string): number {
-  // Handle common patterns: PT40H, P5D, PT480M
+  // Handle simple formats first: 4d, 32h, 480m
+  if (/^\d+d$/.test(duration)) {
+    const days = parseFloat(duration.replace('d', ''));
+    return days * 8; // Assume 8-hour workday
+  }
+  
+  if (/^\d+h$/.test(duration)) {
+    const hours = parseFloat(duration.replace('h', ''));
+    return hours;
+  }
+  
+  if (/^\d+m$/.test(duration)) {
+    const minutes = parseFloat(duration.replace('m', ''));
+    return minutes / 60;
+  }
+
+  // Handle ISO8601 patterns: PT40H, P5D, PT480M, P1DT8H
   if (duration.startsWith('PT') && duration.includes('H')) {
     const hours = parseFloat(duration.replace('PT', '').replace('H', ''));
     return hours;
   }
 
-  if (duration.startsWith('P') && duration.includes('D')) {
+  if (duration.startsWith('P') && duration.includes('D') && !duration.includes('T')) {
     const days = parseFloat(duration.replace('P', '').replace('D', ''));
     return days * 8; // Assume 8-hour workday
   }
@@ -587,6 +626,17 @@ function parseHoursFromISO8601(duration: string): number {
   if (duration.startsWith('PT') && duration.includes('M')) {
     const minutes = parseFloat(duration.replace('PT', '').replace('M', ''));
     return minutes / 60;
+  }
+
+  // Handle complex ISO8601 format like P1DT8H (1 day + 8 hours)
+  if (duration.startsWith('P') && duration.includes('DT') && duration.includes('H')) {
+    const daysPart = duration.split('DT')[0].replace('P', '');
+    const hoursPart = duration.split('DT')[1].replace('H', '');
+    
+    const days = daysPart ? parseFloat(daysPart) : 0;
+    const hours = hoursPart ? parseFloat(hoursPart) : 0;
+    
+    return (days * 8) + hours; // Convert days to hours + additional hours
   }
 
   return 0;
@@ -697,12 +747,12 @@ export function parseTaskPredecessors(predecessorStr: string): PredecessorInfo[]
  */
 function getAssignmentResourceType(resource: ProjectOnlineResource): 'Work' | 'Material' | 'Cost' {
   // Check for Material resource indicators
-  if (resource.MaterialLabel && resource.MaterialLabel !== null) {
+  if (resource.MaterialLabel && resource.MaterialLabel.trim() !== '') {
     return 'Material';
   }
   
   // Check for Cost resource indicators
-  const isNotMaterial = !resource.MaterialLabel || resource.MaterialLabel === null;
+  const isNotMaterial = !resource.MaterialLabel || resource.MaterialLabel.trim() === '';
   
   // Not a typical Work resource (no email, can't be leveled)
   const isNotWorkResource = !resource.Email && !resource.CanLevel;
@@ -713,13 +763,7 @@ function getAssignmentResourceType(resource: ProjectOnlineResource): 'Work' | 'M
     return 'Cost';
   }
   
-  // CSOM format - DefaultBookingType: 1=Work, 2=Material, 3=Cost
-  switch (resource.DefaultBookingType) {
-    case 1: return 'Work';
-    case 2: return 'Material'; 
-    case 3: return 'Cost';
-    default: return 'Work';
-  }
+  return 'Work';
 }
 
 /**
@@ -1177,11 +1221,26 @@ export class TaskTransformer {
       if (columnMap['End Date'] && task.Finish) {
         cells.push({ columnId: columnMap['End Date'], value: convertDateTimeToDate(task.Finish) });
       }
-      // NOTE: Duration is auto-calculated by Smartsheet from Start/End dates
-      // Do NOT set it directly - it will cause a 500 error
-      // if (columnMap['Duration'] && task.Duration) {
-      //   cells.push({ columnId: columnMap['Duration'], value: convertDurationToDecimalDays(task.Duration) });
-      // }
+      // Duration (readable format like "5d" or "40h")
+      if (columnMap['Duration']) {
+        // Try DurationTimeSpan first (ISO8601 format), then Duration (simple format)
+        const durationValue = task.DurationTimeSpan || task.Duration;
+        this.logger?.debug(`Task ${task.Name} - Duration field found, durationValue: ${durationValue}`);
+        if (durationValue) {
+          const convertedDuration = convertDurationToReadableString(durationValue);
+          this.logger?.debug(`Task ${task.Name} - Converted duration: ${convertedDuration}`);
+          cells.push({
+            columnId: columnMap['Duration'],
+            value: convertedDuration,
+          });
+        } else {
+          console.log(`Task ${task.Name} - No duration value found in DurationTimeSpan or Duration fields`);
+          this.logger?.debug(`Task ${task.Name} - No duration value found in DurationTimeSpan or Duration fields`);
+        }
+      } else {
+        this.logger?.debug(`Duration column not found in columnMap. Available columns: ${Object.keys(columnMap).join(', ')}`);
+        console.log(`Duration column not found in columnMap. Available columns: ${Object.keys(columnMap).join(', ')}`);
+      }
       if (columnMap['% Complete'] && task.PercentComplete !== undefined) {
         cells.push({ columnId: columnMap['% Complete'], value: `${task.PercentComplete}%` });
       }
@@ -1235,7 +1294,7 @@ export class TaskTransformer {
       }
       // Critical path fields - with safe validation
       if (columnMap['Late Start']) {
-        const lateStart = safeConvertDate(task.LateStart);
+        const lateStart = safeConvertDate(task.LatestStart);
         if (lateStart !== null) {
           cells.push({
             columnId: columnMap['Late Start'],
@@ -1244,7 +1303,7 @@ export class TaskTransformer {
         }
       }
       if (columnMap['Late Finish']) {
-        const lateFinish = safeConvertDate(task.LateFinish);
+        const lateFinish = safeConvertDate(task.LatestFinish);
         if (lateFinish !== null) {
           cells.push({
             columnId: columnMap['Late Finish'],
@@ -1270,16 +1329,16 @@ export class TaskTransformer {
           });
         }
       }
-      if (columnMap['Project Online Created Date'] && task.CreatedDate) {
+      if (columnMap['Project Online Created Date'] && task.Created) {
         cells.push({
           columnId: columnMap['Project Online Created Date'],
-          value: convertDateTimeToDate(task.CreatedDate),
+          value: convertDateTimeToDate(task.Created),
         });
       }
-      if (columnMap['Project Online Modified Date'] && task.ModifiedDate) {
+      if (columnMap['Project Online Modified Date'] && task.Modified) {
         cells.push({
           columnId: columnMap['Project Online Modified Date'],
-          value: convertDateTimeToDate(task.ModifiedDate),
+          value: convertDateTimeToDate(task.Modified),
         });
       }
 

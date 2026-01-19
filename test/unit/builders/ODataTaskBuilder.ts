@@ -206,8 +206,8 @@ export class ODataTaskBuilder {
    * Set created and modified dates
    */
   withMetadataDates(created: string, modified: string): this {
-    this.task.CreatedDate = created;
-    this.task.ModifiedDate = modified;
+    this.task.Created = created;
+    this.task.Modified = modified;
     return this;
   }
 
@@ -238,8 +238,8 @@ export class ODataTaskBuilder {
       ConstraintDate: this.task.ConstraintDate,
       Deadline: this.task.Deadline,
       ResourceNames: this.task.ResourceNames,
-      CreatedDate: this.task.CreatedDate,
-      ModifiedDate: this.task.ModifiedDate,
+      Created: this.task.Created,
+      Modified: this.task.Modified,
     };
   }
 }

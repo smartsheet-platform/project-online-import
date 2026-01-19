@@ -245,9 +245,7 @@ describe('PMO Standards Integration Tests', () => {
           const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
             id: summarySheet!.id!,
           });
-          const sheet = (sheetResponse?.data ||
-            sheetResponse?.result ||
-            sheetResponse) as SmartsheetSheet;
+          const sheet = sheetResponse as SmartsheetSheet;
 
           // Verify Status column exists and is configured as PICKLIST
           const statusColumn = sheet?.columns?.find((c: SmartsheetColumn) => c.title === 'Status');
@@ -307,9 +305,7 @@ describe('PMO Standards Integration Tests', () => {
           const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
             id: taskSheet!.id!,
           });
-          const sheet = (sheetResponse?.data ||
-            sheetResponse?.result ||
-            sheetResponse) as SmartsheetSheet;
+          const sheet = sheetResponse as SmartsheetSheet;
 
           // Verify Status column exists and is configured as PICKLIST
           const statusColumn = sheet?.columns?.find((c: SmartsheetColumn) => c.title === 'Status');
@@ -363,9 +359,7 @@ describe('PMO Standards Integration Tests', () => {
           const sheetResponse = await smartsheetClient.sheets?.getSheet?.({
             id: taskSheet!.id!,
           });
-          const sheet = (sheetResponse?.data ||
-            sheetResponse?.result ||
-            sheetResponse) as SmartsheetSheet;
+          const sheet = sheetResponse as SmartsheetSheet;
 
           // Verify Status column has expected values
           const statusColumn = sheet?.columns?.find((c: SmartsheetColumn) => c.title === 'Status');

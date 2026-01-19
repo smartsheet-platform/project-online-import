@@ -24,7 +24,8 @@ export class ODataAssignmentBuilder {
    * Link assignment to a task
    */
   forTask(taskId: string): this {
-    this.assignment.TaskId = taskId;
+    // Store the taskId for later reference and create a minimal task object
+    this.assignment.Task = { Id: taskId } as any; // We'll populate full task later if needed
     return this;
   }
 
@@ -32,7 +33,8 @@ export class ODataAssignmentBuilder {
    * Link assignment to a resource
    */
   forResource(resourceId: string): this {
-    this.assignment.ResourceId = resourceId;
+    // Store the resourceId for later reference and create a minimal resource object
+    this.assignment.Resource = { Id: resourceId } as any; // We'll populate full resource later if needed
     return this;
   }
 
@@ -162,14 +164,14 @@ export class ODataAssignmentBuilder {
    * Build the assignment object
    */
   build(): ProjectOnlineAssignment {
-    if (!this.assignment.TaskId || !this.assignment.ResourceId) {
-      throw new Error('Assignment must have both TaskId and ResourceId');
+    if (!this.assignment.Task?.Id || !this.assignment.Resource?.Id) {
+      throw new Error('Assignment must have both Task and Resource');
     }
 
     return {
       Id: this.assignment.Id!,
-      TaskId: this.assignment.TaskId,
-      ResourceId: this.assignment.ResourceId,
+      Task: this.assignment.Task,
+      Resource: this.assignment.Resource,
       ProjectId: this.assignment.ProjectId!,
       Work: this.assignment.Work,
       Units: this.assignment.Units,
