@@ -57,7 +57,7 @@
   "homepage": "https://github.com/smar-shikhar-krishna/project-online-import#readme",
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.19",
+    "@types/node": "^25.0.9",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
