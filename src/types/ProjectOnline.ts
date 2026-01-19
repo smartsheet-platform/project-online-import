@@ -72,6 +72,11 @@ export interface ProjectOnlineTask {
   Assignments?: {results: ProjectOnlineAssignment[]};
   Parent?: ProjectOnlineTask;
   Predecessors?: {results: TaskLink[]};
+  // Critical path fields
+  LateStart?: string; // ISO 8601 DateTime
+  LateFinish?: string; // ISO 8601 DateTime
+  TotalSlack?: string; // ISO 8601 Duration (e.g., "PT8H" for 8 hours)
+  FreeSlack?: string; // ISO 8601 Duration
 }
 
 /**
@@ -92,11 +97,11 @@ export interface ProjectOnlineResource {
   IsGenericResource?: boolean;
   IsActive?: boolean;
   IsGeneric?: boolean; // Alternative name for IsGenericResource
-  Group?: string; 
+  Group?: string;
   Code?: string;  
   Created?: string; 
   CreatedDate?: string; // Alternative name for Created
-  Modified?: string; 
+  Modified?: string;
   Initials?: string;
   Department?: string;
   BaseCalendar?: string;

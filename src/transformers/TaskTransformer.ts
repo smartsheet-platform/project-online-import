@@ -260,6 +260,27 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
       type: 'DATE',
       width: 120,
     },
+    // Critical path fields
+    {
+      title: 'Late Start',
+      type: 'DATE',
+      width: 120,
+    },
+    {
+      title: 'Late Finish',
+      type: 'DATE',
+      width: 120,
+    },
+    {
+      title: 'Total Slack (days)',
+      type: 'TEXT_NUMBER',
+      width: 120,
+    },
+    {
+      title: 'Free Slack (days)',
+      type: 'TEXT_NUMBER',
+      width: 120,
+    },
     // Project Online metadata
     {
       title: 'Project Online Created Date',
@@ -456,6 +477,47 @@ export function createTaskRow(
     });
   }
 
+  // Critical path fields
+  if (columnMap['Late Start']) {
+    const lateStart = safeConvertDate(task.LateStart);
+    if (lateStart !== null) {
+      cells.push({
+        columnId: columnMap['Late Start'],
+        value: lateStart,
+      });
+    }
+  }
+
+  if (columnMap['Late Finish']) {
+    const lateFinish = safeConvertDate(task.LateFinish);
+    if (lateFinish !== null) {
+      cells.push({
+        columnId: columnMap['Late Finish'],
+        value: lateFinish,
+      });
+    }
+  }
+
+  if (columnMap['Total Slack (days)']) {
+    const totalSlack = safeDurationToDays(task.TotalSlack);
+    if (totalSlack !== null) {
+      cells.push({
+        columnId: columnMap['Total Slack (days)'],
+        value: totalSlack,
+      });
+    }
+  }
+
+  if (columnMap['Free Slack (days)']) {
+    const freeSlack = safeDurationToDays(task.FreeSlack);
+    if (freeSlack !== null) {
+      cells.push({
+        columnId: columnMap['Free Slack (days)'],
+        value: freeSlack,
+      });
+    }
+  }
+
   // Project Online Created Date
   if (columnMap['Project Online Created Date'] && task.CreatedDate) {
     cells.push({
@@ -528,6 +590,45 @@ function parseHoursFromISO8601(duration: string): number {
   }
 
   return 0;
+}
+
+/**
+ * Safely convert ISO8601 duration to decimal days
+ * Returns null if the value is invalid or cannot be converted
+ */
+function safeDurationToDays(duration: string | undefined | null): number | null {
+  if (!duration || typeof duration !== 'string' || duration.trim() === '') {
+    return null;
+  }
+  try {
+    const value = convertDurationToDecimalDays(duration);
+    if (isFinite(value) && value >= 0) {
+      return value;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Safely convert date string to Smartsheet date format
+ * Returns null if the value is invalid or cannot be converted
+ */
+function safeConvertDate(dateStr: string | undefined | null): string | null {
+  if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') {
+    return null;
+  }
+  try {
+    const value = convertDateTimeToDate(dateStr);
+    // Check if the conversion resulted in a valid date string
+    if (value && value !== 'Invalid Date' && value.length > 0) {
+      return value;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1131,6 +1232,43 @@ export class TaskTransformer {
           columnId: columnMap['Deadline'],
           value: convertDateTimeToDate(task.Deadline),
         });
+      }
+      // Critical path fields - with safe validation
+      if (columnMap['Late Start']) {
+        const lateStart = safeConvertDate(task.LateStart);
+        if (lateStart !== null) {
+          cells.push({
+            columnId: columnMap['Late Start'],
+            value: lateStart,
+          });
+        }
+      }
+      if (columnMap['Late Finish']) {
+        const lateFinish = safeConvertDate(task.LateFinish);
+        if (lateFinish !== null) {
+          cells.push({
+            columnId: columnMap['Late Finish'],
+            value: lateFinish,
+          });
+        }
+      }
+      if (columnMap['Total Slack (days)']) {
+        const totalSlack = safeDurationToDays(task.TotalSlack);
+        if (totalSlack !== null) {
+          cells.push({
+            columnId: columnMap['Total Slack (days)'],
+            value: totalSlack,
+          });
+        }
+      }
+      if (columnMap['Free Slack (days)']) {
+        const freeSlack = safeDurationToDays(task.FreeSlack);
+        if (freeSlack !== null) {
+          cells.push({
+            columnId: columnMap['Free Slack (days)'],
+            value: freeSlack,
+          });
+        }
       }
       if (columnMap['Project Online Created Date'] && task.CreatedDate) {
         cells.push({
