@@ -34,3 +34,13 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# Internal tooling and documentation (not for public release)
+memory-bank/
+sdlc/
+.roo/
+.roomodes
+.sdlc-version
+
+# Test fixtures with sensitive data
+test/integration/fixtures/real-data/
