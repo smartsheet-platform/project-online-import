@@ -124,6 +124,7 @@ export class TemplateAcquisitionHelper {
 
   /**
    * Find workspace by name using Smartsheet API
+   * Handles pagination to check all pages of workspaces
    * @param client - Smartsheet client
    * @param workspaceName - Name of workspace to find
    * @param logger - Optional logger
@@ -140,41 +141,73 @@ export class TemplateAcquisitionHelper {
       }
 
       const listWorkspaces = client.workspaces.listWorkspaces;
+      const allMatches: SmartsheetWorkspace[] = [];
+      let pageToken: string | undefined = undefined;
+      let pageCount = 0;
+      let totalWorkspacesChecked = 0;
 
-      // Use exponential backoff for API resilience
-      const response = await withBackoff(
-        () =>
-          listWorkspaces({
-            queryParameters: { paginationType: 'token' },
-          }),
-        undefined,
-        undefined,
-        logger
-      );
+      // Fetch pages and search incrementally - return early if found
+      do {
+        pageCount++;
+        logger?.debug(`Fetching workspaces page ${pageCount}${pageToken ? ` (token: ${pageToken.slice(0, 10)}...)` : ''}`);
 
-      const workspaces: SmartsheetWorkspace[] = response.data || response.result || [];
-      logger?.debug(`Found ${workspaces.length} workspaces`);
+        // Use exponential backoff for API resilience
+        const response = await withBackoff(
+          () =>
+            listWorkspaces({
+              queryParameters: {
+                paginationType: 'token',
+                ...(pageToken && { lastKey: pageToken })
+              },
+            }),
+          undefined,
+          undefined,
+          logger
+        );
 
-      // Search for exact name match
-      const matches = workspaces.filter((ws) => ws.name === workspaceName);
+        const workspaces: SmartsheetWorkspace[] = response.data || response.result || [];
+        totalWorkspacesChecked += workspaces.length;
+        logger?.debug(`  Page ${pageCount}: ${workspaces.length} workspaces (total checked: ${totalWorkspacesChecked})`);
 
-      if (matches.length === 0) {
+        // Search for exact name match in current page
+        const matches = workspaces.filter((ws) => ws.name === workspaceName);
+
+        if (matches.length > 0) {
+          allMatches.push(...matches);
+          logger?.debug(`  Found ${matches.length} matching workspace(s) on page ${pageCount}`);
+
+          // If we found exactly one match, return immediately (optimization)
+          if (allMatches.length === 1 && matches.length === 1) {
+            logger?.debug(`Found single workspace: ${matches[0].name} (ID: ${matches[0].id})`);
+            return matches[0].id!;
+          }
+        }
+
+        // Get next page token from response - Smartsheet uses 'lastKey' as the pagination token
+        pageToken = (response as any).lastKey || undefined;
+      } while (pageToken);
+
+      logger?.debug(`Completed searching ${totalWorkspacesChecked} workspaces across ${pageCount} page(s)`);
+
+      // No matches found
+      if (allMatches.length === 0) {
         logger?.debug(`No workspace found with name: ${workspaceName}`);
         return null;
       }
 
-      if (matches.length === 1) {
-        logger?.debug(`Found single workspace: ${matches[0].name} (ID: ${matches[0].id})`);
-        return matches[0].id!;
+      // Single match found (shouldn't reach here due to early return, but kept for safety)
+      if (allMatches.length === 1) {
+        logger?.debug(`Found single workspace: ${allMatches[0].name} (ID: ${allMatches[0].id})`);
+        return allMatches[0].id!;
       }
 
       // Multiple matches - use most recently created
       // Sort by ID (higher IDs are typically newer)
-      matches.sort((a, b) => (b.id || 0) - (a.id || 0));
-      const selected = matches[0];
+      allMatches.sort((a, b) => (b.id || 0) - (a.id || 0));
+      const selected = allMatches[0];
 
       logger?.info(
-        `Found ${matches.length} workspaces named "${workspaceName}". ` +
+        `Found ${allMatches.length} workspaces named "${workspaceName}". ` +
           `Using most recent (ID: ${selected.id})`
       );
 
