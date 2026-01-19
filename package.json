@@ -49,12 +49,12 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/smartsheet/project-online-import.git"
+    "url": "https://github.com/smar-shikhar-krishna/project-online-import.git"
   },
   "bugs": {
-    "url": "https://github.com/smartsheet/project-online-import/issues"
+    "url": "https://github.com/smar-shikhar-krishna/project-online-import/issues"
   },
-  "homepage": "https://github.com/smartsheet/project-online-import#readme",
+  "homepage": "https://github.com/smar-shikhar-krishna/project-online-import#readme",
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.19",

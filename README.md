@@ -10,22 +10,22 @@ A TypeScript CLI tool for importing Project Online data to Smartsheet.
 
 ### Option 1: Install from GitHub Release (Recommended)
 ```bash
-# Download tarball from: https://github.com/smartsheet/project-online-import/releases/latest
+# Download tarball from: https://github.com/smar-shikhar-krishna/project-online-import/releases/latest
 npm install -g ./project-online-import-1.0.0.tgz
 ```
 
 ### Option 2: Install Directly from GitHub
 ```bash
-# Requires Smartsheet GitHub organization access
-npm install -g git+ssh://git@github.com/smartsheet/project-online-import.git
+# Requires repository access
+npm install -g git+ssh://git@github.com/smar-shikhar-krishna/project-online-import.git
 
 # Or with HTTPS (requires GitHub token)
-npm install -g git+https://github.com/smartsheet/project-online-import.git
+npm install -g git+https://github.com/smar-shikhar-krishna/project-online-import.git
 ```
 
 ### Option 3: Clone and Build Locally
 ```bash
-git clone git@github.com:smartsheet/project-online-import.git
+git clone git@github.com:smar-shikhar-krishna/project-online-import.git
 cd project-online-import
 npm install
 npm run build
@@ -42,9 +42,9 @@ npm link  # Makes CLI globally available
 
 ### Setup
 
-1. Clone the repository (requires Smartsheet GitHub access):
+1. Clone the repository:
    ```bash
-   git clone git@github.com:smartsheet/project-online-import.git
+   git clone git@github.com:smar-shikhar-krishna/project-online-import.git
    cd project-online-import
    ```
 
