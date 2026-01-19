@@ -100,6 +100,7 @@ export interface ProjectOnlineResource {
   Initials?: string;
   Department?: string;
   BaseCalendar?: string;
+  MaterialLabel?: string; // Material resource specific field
 }
 
 /**

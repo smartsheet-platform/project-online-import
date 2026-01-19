@@ -1,5 +1,6 @@
 import {
   ProjectOnlineTask,
+  ProjectOnlineResource,
   PMOStandardsWorkspaceInfo,
   SmartsheetColumn,
   SmartsheetRow,
@@ -46,7 +47,8 @@ export async function createTasksSheet(
   workspaceId: number,
   projectName: string,
   tasks: ProjectOnlineTask[],
-  pmoStandards: PMOStandardsWorkspaceInfo
+  pmoStandards: PMOStandardsWorkspaceInfo,
+  resourcesSheetId?: number
 ): Promise<TasksSheetResult> {
   const sheetName = `${projectName} - Tasks`;
 
@@ -99,6 +101,64 @@ export async function createTasksSheet(
     constraintColumnId,
     pmoStandards
   );
+
+  // Configure resource assignment columns to reference Resources sheet if provided
+  if (resourcesSheetId) {
+    const workResourceColumnId = columnMap['Work Resource'];
+    const materialResourceColumnId = columnMap['Material Resource'];
+    const costResourceColumnId = columnMap['Cost Resource'];
+
+    // Configure Work Resource column (MULTI_CONTACT_LIST)
+    if (workResourceColumnId) {
+      await client.columns?.updateColumn?.({
+        sheetId,
+        columnId: workResourceColumnId,
+        body: {
+          type: 'MULTI_CONTACT_LIST',
+          contactOptions: [{
+            sheetId: resourcesSheetId,
+            columnId: 4, // Team Members column in Resources sheet
+          }],
+        },
+      });
+    }
+
+    // Configure Material Resource column (MULTI_PICKLIST)
+    if (materialResourceColumnId) {
+      await client.columns?.updateColumn?.({
+        sheetId,
+        columnId: materialResourceColumnId,
+        body: {
+          type: 'MULTI_PICKLIST',
+          options: [{
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: resourcesSheetId,
+              columnId: 5, // Materials column in Resources sheet
+            },
+          }],
+        },
+      });
+    }
+
+    // Configure Cost Resource column (MULTI_PICKLIST)
+    if (costResourceColumnId) {
+      await client.columns?.updateColumn?.({
+        sheetId,
+        columnId: costResourceColumnId,
+        body: {
+          type: 'MULTI_PICKLIST',
+          options: [{
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: resourcesSheetId,
+              columnId: 6, // Cost Resources column in Resources sheet
+            },
+          }],
+        },
+      });
+    }
+  }
 
   return {
     sheetId,
@@ -213,8 +273,18 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
     },
     // Assignment resources
     {
-      title: 'Resources',
+      title: 'Work Resource',
       type: 'MULTI_CONTACT_LIST',
+      width: 200,
+    },
+    {
+      title: 'Material Resource',
+      type: 'MULTI_PICKLIST', 
+      width: 200,
+    },
+    {
+      title: 'Cost Resource',
+      type: 'MULTI_PICKLIST',
       width: 200,
     },
   ];
@@ -519,6 +589,36 @@ export function parseTaskPredecessors(predecessorStr: string): PredecessorInfo[]
   }
 
   return predecessors;
+}
+
+/**
+ * Get resource type for assignment filtering
+ */
+function getAssignmentResourceType(resource: ProjectOnlineResource): 'Work' | 'Material' | 'Cost' {
+  // Check for Material resource indicators
+  if (resource.MaterialLabel && resource.MaterialLabel !== null) {
+    return 'Material';
+  }
+  
+  // Check for Cost resource indicators
+  const isNotMaterial = !resource.MaterialLabel || resource.MaterialLabel === null;
+  
+  // Not a typical Work resource (no email, can't be leveled)
+  const isNotWorkResource = !resource.Email && !resource.CanLevel;
+  
+  // May have IsBudgeted flag set
+  // Cost resources often have zero rates and no work values
+  if (isNotMaterial && isNotWorkResource) {
+    return 'Cost';
+  }
+  
+  // CSOM format - DefaultBookingType: 1=Work, 2=Material, 3=Cost
+  switch (resource.DefaultBookingType) {
+    case 1: return 'Work';
+    case 2: return 'Material'; 
+    case 3: return 'Cost';
+    default: return 'Work';
+  }
 }
 
 /**
@@ -908,8 +1008,9 @@ export class TaskTransformer {
     const buildCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
       const cells: SmartsheetCell[] = [];
 
-      if (columnMap['Resources'] && task.Assignments?.results && task.Assignments.results.length > 0) {
-        const workAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && a.Resource.DefaultBookingType === 1);
+      // Handle Work Resources (MULTI_CONTACT_LIST)
+      if (columnMap['Work Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+        const workAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Work');
         totalAssignmentsProcessed += workAssignments.length;
         
         const contacts = workAssignments.map(a => ({
@@ -920,10 +1021,44 @@ export class TaskTransformer {
                 
         if (contacts.length > 0) {
           cells.push({
-            columnId: columnMap['Resources'],
+            columnId: columnMap['Work Resource'],
             objectValue: {
               objectType: 'MULTI_CONTACT',
               values: contacts
+            }
+          });
+        }
+      }
+
+      // Handle Material Resources (MULTI_PICKLIST)
+      if (columnMap['Material Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+        const materialAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Material');
+        
+        const materialNames = materialAssignments.map(a => a.Resource!.Name).filter(Boolean);
+        
+        if (materialNames.length > 0) {
+          cells.push({
+            columnId: columnMap['Material Resource'],
+            objectValue: {
+              objectType: 'MULTI_PICKLIST',
+              values: materialNames
+            }
+          });
+        }
+      }
+
+      // Handle Cost Resources (MULTI_PICKLIST) 
+      if (columnMap['Cost Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+        const costAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Cost');
+        
+        const costNames = costAssignments.map(a => a.Resource!.Name).filter(Boolean);
+        
+        if (costNames.length > 0) {
+          cells.push({
+            columnId: columnMap['Cost Resource'],
+            objectValue: {
+              objectType: 'MULTI_PICKLIST',
+              values: costNames
             }
           });
         }

@@ -161,10 +161,10 @@ export class StandaloneWorkspacesFactory implements WorkspaceFactory {
     workspace.id = newWorkspace.id;
     workspace.permalink = newWorkspace.permalink;
 
-    // Create the three required sheets
+    // Create the three required sheets (resource sheet first for task sheet reference)
     const summarySheet = await this.createSummarySheet(client, workspace.id, workspace.name);
-    const taskSheet = await this.createTaskSheet(client, workspace.id, workspace.name);
     const resourceSheet = await this.createResourceSheet(client, workspace.id, workspace.name);
+    const taskSheet = await this.createTaskSheet(client, workspace.id, workspace.name);
 
     return {
       workspace,

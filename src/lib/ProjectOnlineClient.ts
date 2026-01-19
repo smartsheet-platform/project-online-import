@@ -400,7 +400,14 @@ export class ProjectOnlineClient {
     try {
       const projectsResponse = await this.getProjects({
         $filter: `Id eq guid'${projectId}'`,
-        $expand: ['Assignments',  'Tasks/Parent', 'Tasks/Predecessors', 'Tasks/Assignments/Resource', 'ProjectResources', 'Owner'], // Expand Resource and Task within Assignments
+        $expand: [
+          'Assignments',  
+          'Tasks/Parent', 
+          'Tasks/Predecessors', 
+          'Tasks/Assignments/Resource', 
+          'ProjectResources', 
+          'Owner'
+        ], // Expand Resource and Task within Assignments
         $top: 1,
       });
 
@@ -431,9 +438,6 @@ export class ProjectOnlineClient {
           projectWithExpanded.Tasks.results) ||
         (Array.isArray(projectWithExpanded.Tasks) ? projectWithExpanded.Tasks : []);
       
-
-      console.log(tasks[1]?.Predecessors?.results);
-
       const assignments =
         (projectWithExpanded.Assignments &&
           'results' in projectWithExpanded.Assignments &&

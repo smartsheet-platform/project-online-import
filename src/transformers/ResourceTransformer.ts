@@ -291,16 +291,28 @@ function convertMaxUnits(maxUnits: number): string {
 }
 
 /**
- * Get resource type from CSOM DefaultBookingType
+ * Get resource type from CSOM DefaultBookingType and additional material/cost indicators
  */
 function getResourceType(resource: ProjectOnlineResource): 'Work' | 'Material' | 'Cost' {
-  // CSOM format - DefaultBookingType: 1=Work, 2=Material, 3=Cost
-  switch (resource.DefaultBookingType) {
-    case 1: return 'Work';
-    case 2: return 'Material'; 
-    case 3: return 'Cost';
-    default: return 'Work';
+  // Check for Material resource indicators
+  if (resource.MaterialLabel && resource.MaterialLabel !== null) {
+    return 'Material';
   }
+  
+  // Check for Cost resource indicators
+  const isNotMaterial = !resource.MaterialLabel || resource.MaterialLabel === null;
+  
+  // Not a typical Work resource (no email, can't be leveled)
+  const isNotWorkResource = !resource.Email && !resource.CanLevel;
+  
+  // May have IsBudgeted flag set
+  // Cost resources often have zero rates and no work values
+  if (isNotMaterial && isNotWorkResource) {
+    return 'Cost';
+  }
+  
+  // CSOM format - DefaultBookingType: 1=Work, 2=Material, 3=Cost
+  return 'Work';
 }
 
 /**
