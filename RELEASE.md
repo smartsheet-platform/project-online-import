@@ -33,7 +33,7 @@ From your local repository:
 git remote add github git@github.com:smartsheet/project-online-import.git
 
 # OR if using HTTPS:
-# git remote add github https://github.com/smartsheet/project-online-import.git
+# git remote add github https://github.com/smar-shikhar-krishna/project-online-import.git
 
 # Push the feat/open-source branch
 git push github feat/open-source:main
@@ -103,7 +103,7 @@ git push github v1.0.0
 
 ### 2.3 Create GitHub Release (with Tarball Attachment)
 
-1. Go to: https://github.com/smartsheet/project-online-import/releases/new
+1. Go to: https://github.com/smar-shikhar-krishna/project-online-import/releases/new
 2. Select tag: `v1.0.0`
 3. Release title: `v1.0.0 - Initial Release (Internal)`
 4. Description:
@@ -145,12 +145,12 @@ npm install -g ./project-online-import-1.0.0.tgz
 
 **Option 2: Install directly from GitHub**
 ```bash
-npm install -g git+https://github.com/smartsheet/project-online-import.git#v1.0.0
+npm install -g git+https://github.com/smar-shikhar-krishna/project-online-import.git#v1.0.0
 ```
 
 **Option 3: Clone and build locally**
 ```bash
-git clone https://github.com/smartsheet/project-online-import.git
+git clone https://github.com/smar-shikhar-krishna/project-online-import.git
 cd project-online-import
 git checkout v1.0.0
 npm install
@@ -190,7 +190,7 @@ Smartsheet team members: See [CONTRIBUTING.md](CONTRIBUTING.md) for development 
 
 Team members download from releases page:
 ```bash
-# Go to: https://github.com/smartsheet/project-online-import/releases/latest
+# Go to: https://github.com/smar-shikhar-krishna/project-online-import/releases/latest
 # Download: project-online-import-1.0.0.tgz
 npm install -g ./project-online-import-1.0.0.tgz
 ```
@@ -199,7 +199,7 @@ npm install -g ./project-online-import-1.0.0.tgz
 
 Team members install from git:
 ```bash
-npm install -g git+https://github.com/smartsheet/project-online-import.git
+npm install -g git+https://github.com/smar-shikhar-krishna/project-online-import.git
 ```
 
 ### Method C: Clone and Build
@@ -306,13 +306,13 @@ Team members need to authenticate:
 # Scopes: repo (all)
 
 npm config set //npm.pkg.github.com/:_authToken YOUR_GITHUB_TOKEN
-npm install git+https://github.com/smartsheet/project-online-import.git
+npm install git+https://github.com/smar-shikhar-krishna/project-online-import.git
 ```
 
 **Via SSH (easier):**
 ```bash
 # Use SSH URL instead
-npm install git+ssh://git@github.com/smartsheet/project-online-import.git
+npm install git+ssh://git@github.com/smar-shikhar-krishna/project-online-import.git
 ```
 
 ---
