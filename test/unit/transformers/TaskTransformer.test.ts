@@ -60,8 +60,8 @@ describe('TaskTransformer', () => {
           ConstraintDate: undefined,
           Deadline: '2024-04-01T17:00:00Z',
           ResourceNames: 'John Doe, Jane Smith',
-          CreatedDate: '2024-03-01T08:00:00Z',
-          ModifiedDate: '2024-03-15T10:00:00Z',
+          Created: '2024-03-01T08:00:00Z',
+          Modified: '2024-03-15T10:00:00Z',
         },
       ];
 
@@ -77,7 +77,7 @@ describe('TaskTransformer', () => {
       expect(result.sheetName).toContain('Tasks');
       expect(result.rowsCreated).toBe(1);
       expect(result.columns).toBeDefined();
-      expect(result.columns.length).toBe(21);
+      expect(result.columns.length).toBe(25);
     });
 
     it('should enable Gantt and dependencies on project sheet', async () => {
@@ -103,7 +103,7 @@ describe('TaskTransformer', () => {
       const projectName = 'Test Project';
       const columns = createTasksSheetColumns(projectName);
 
-      expect(columns.length).toBe(21);
+      expect(columns.length).toBe(25);
 
       // Verify column order
       expect(columns[0].title).toBe('Task Name');
@@ -206,8 +206,8 @@ describe('TaskTransformer', () => {
         ConstraintDate: undefined,
         Deadline: '2024-04-01T17:00:00Z',
         ResourceNames: 'John Doe, Jane Smith',
-        CreatedDate: '2024-03-01T08:00:00Z',
-        ModifiedDate: '2024-03-15T10:00:00Z',
+        Created: '2024-03-01T08:00:00Z',
+        Modified: '2024-03-15T10:00:00Z',
       };
 
       const columnMap = {

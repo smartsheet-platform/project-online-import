@@ -275,6 +275,12 @@ export class ProjectOnlineImporter {
         assignmentsImported = taskResult.assignmentsProcessed;
         progress.completeStage(`${tasksImported} tasks imported, ${assignmentsImported} assignments processed`);
 
+        // Complete assignment column creation stage if it was defined
+        if (data.assignments.length > 0 && data.resources.length > 0) {
+          progress.startStage('Assignment Column Creation');
+          progress.completeStage(`${assignmentsImported} assignment columns configured`);
+        }
+
         // Step 5: Configure task sheet picklists
         progress.startStage('Task Sheet Configuration');
         await this.configureTaskPicklists(

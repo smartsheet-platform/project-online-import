@@ -279,24 +279,24 @@ export function tasksWithPredecessors(projectId: string): ProjectOnlineTask[] {
       .withProjectId(projectId)
       .withName('Task B (FS from A)')
       .withId('task-b')
-      .withPredecessors('2FS')
+      .withPredecessorString('2FS')
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Task C (SS from A, +2d lag)')
       .withId('task-c')
-      .withPredecessors('2SS+2d')
+      .withPredecessorString('2SS+2d')
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Task D (FF from B)')
       .withId('task-d')
-      .withPredecessors('3FF')
+      .withPredecessorString('3FF')
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Task E (SF from C, -1d lag)')
-      .withPredecessors('4SF-1d')
+      .withPredecessorString('4SF-1d')
       .build(),
   ];
 }
@@ -365,7 +365,7 @@ export function completeTask(projectId: string): ProjectOnlineTask {
     .withPriority(600) // Higher priority
     .withPercentComplete(45) // 45% complete
     .withConstraint('SNET', '2024-03-15T08:00:00Z') // Start No Earlier Than
-    .withPredecessors('1FS+2d') // Predecessor with lag
+    .withPredecessorString('1FS+2d') // Predecessor with lag
     .withWork('PT80H', 'PT36H') // 80 hours of work, 36 hours actual
     .withNotes(
       'This is a comprehensive task with detailed notes.\nMulti-line text.\n\nSpecial characters: & < > " \' / \\ | ? * : 日本語 🎯'

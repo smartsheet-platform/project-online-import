@@ -54,7 +54,8 @@ export interface ProjectOnlineTask {
   OutlineLevel?: number; // Numeric level: 1=root, 2=first indent, 3=second indent, etc.
   Start?: string; // ISO 8601 DateTime
   Finish?: string; // ISO 8601 DateTime
-  Duration?: string; // ISO 8601 Duration (e.g., "PT40H")
+  Duration?: string; // Simple format (e.g., "4d") or ISO 8601 Duration (e.g., "PT40H")
+  DurationTimeSpan?: string; // ISO 8601 Duration (e.g., "P1DT8H")
   Work?: string; // ISO 8601 Duration
   ActualWork?: string; // ISO 8601 Duration
   PercentComplete?: number; // 0-100
@@ -67,14 +68,14 @@ export interface ProjectOnlineTask {
   ConstraintDate?: string; // ISO 8601 DateTime
   Deadline?: string; // ISO 8601 DateTime
   ResourceNames?: string;
-  CreatedDate?: string; // ISO 8601 DateTime
-  ModifiedDate?: string; // ISO 8601 DateTime
+  Created?: string; // ISO 8601 DateTime
+  Modified?: string; // ISO 8601 DateTime
   Assignments?: {results: ProjectOnlineAssignment[]};
   Parent?: ProjectOnlineTask;
   Predecessors?: {results: TaskLink[]};
   // Critical path fields
-  LateStart?: string; // ISO 8601 DateTime
-  LateFinish?: string; // ISO 8601 DateTime
+  LatestStart?: string; // ISO 8601 DateTime
+  LatestFinish?: string; // ISO 8601 DateTime
   TotalSlack?: string; // ISO 8601 Duration (e.g., "PT8H" for 8 hours)
   FreeSlack?: string; // ISO 8601 Duration
 }

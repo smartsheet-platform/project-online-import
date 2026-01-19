@@ -19,7 +19,9 @@ export class ODataResourceBuilder {
    */
   asWorkResource(): this {
     this.resource.ResourceType = 'Work';
-    this.resource.Email = 'test.resource@example.com';
+    this.resource.Email = 'test.resource@example.com'; // Work resources have email
+    this.resource.CanLevel = true; // Work resources can be leveled
+    this.resource.MaterialLabel = undefined; // Work resources don't have material label
     return this;
   }
 
@@ -29,6 +31,8 @@ export class ODataResourceBuilder {
   asMaterialResource(): this {
     this.resource.ResourceType = 'Material';
     this.resource.Email = undefined; // Material resources don't have email
+    this.resource.CanLevel = false; // Material resources can't be leveled
+    this.resource.MaterialLabel = 'units'; // Material resources have a material label
     return this;
   }
 
@@ -38,6 +42,8 @@ export class ODataResourceBuilder {
   asCostResource(): this {
     this.resource.ResourceType = 'Cost';
     this.resource.Email = undefined; // Cost resources don't have email
+    this.resource.CanLevel = false; // Cost resources can't be leveled
+    this.resource.MaterialLabel = undefined; // Cost resources don't have material label
     return this;
   }
 

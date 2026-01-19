@@ -20,6 +20,58 @@ import * as resourceScenarios from '../scenarios/resource-scenarios';
 import * as assignmentScenarios from '../scenarios/assignment-scenarios';
 
 /**
+ * Helper function to link assignments to tasks by populating task.Assignments.results
+ */
+function linkAssignmentsToTasks(
+  tasks: ProjectOnlineTask[], 
+  assignments: ProjectOnlineAssignment[], 
+  resources: ProjectOnlineResource[]
+): void {
+  // Create lookup maps
+  const resourceMap = new Map<string, ProjectOnlineResource>();
+  resources.forEach(resource => resourceMap.set(resource.Id, resource));
+  
+  const taskMap = new Map<string, ProjectOnlineTask>();
+  tasks.forEach(task => taskMap.set(task.Id, task));
+
+  // Group assignments by task ID and populate expanded objects
+  const assignmentsByTask = new Map<string, ProjectOnlineAssignment[]>();
+  assignments.forEach(assignment => {
+    // Get task ID - prioritize Task object over TaskId
+    const taskId = assignment.Task?.Id ;
+    const resourceId = assignment.Resource?.Id;
+    
+    if (!taskId || !resourceId) {
+      return; // Skip assignments without required IDs
+    }
+
+    if (!assignmentsByTask.has(taskId)) {
+      assignmentsByTask.set(taskId, []);
+    }
+    
+    // Populate the expanded objects with FULL resource properties
+    const resource = resourceMap.get(resourceId);
+    const task = taskMap.get(taskId);
+    
+    if (resource) {
+      // Copy all properties from the full resource object
+      assignment.Resource = { ...resource };
+    }
+    if (task) {
+      assignment.Task = { ...task };
+    }
+    
+    assignmentsByTask.get(taskId)!.push(assignment);
+  });
+
+  // Populate task.Assignments.results for each task
+  tasks.forEach(task => {
+    const taskAssignments = assignmentsByTask.get(task.Id) || [];
+    task.Assignments = { results: taskAssignments };
+  });
+}
+
+/**
  * Complete test data set for a simple project
  */
 export interface SimpleProjectFixture {
@@ -205,6 +257,9 @@ export function createResourceTypeProject(): CompleteProjectFixture {
 
   // Create mixed resource types
   const resources = resourceScenarios.mixedResourceTypes();
+  
+  // Create a flat array of all resources for linking
+  const allResources = [...resources.work, ...resources.material, ...resources.cost];
 
   // Create assignments that test column type distinction
   const assignmentData = assignmentScenarios.assignmentsByResourceType(tasks, resources);
@@ -214,6 +269,9 @@ export function createResourceTypeProject(): CompleteProjectFixture {
     ...assignmentData.costAssignments,
     ...assignmentData.mixedAssignments,
   ];
+
+  // Link assignments to tasks with full resource properties
+  linkAssignmentsToTasks(tasks, assignments, allResources);
 
   return { project, tasks, resources, assignments };
 }
