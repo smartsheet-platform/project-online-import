@@ -20,7 +20,7 @@ describe('ProjectTransformer', () => {
     StartDate: '2024-03-15T09:00:00Z',
     FinishDate: '2024-06-30T17:00:00Z',
     CreatedDate: '2024-03-01T10:00:00Z',
-    ModifiedDate: '2024-03-15T14:30:00Z',
+    LastSavedDate: '2024-03-15T14:30:00Z',
     ProjectStatus: 'Active',
     ProjectType: 'Website',
     Priority: 800,
@@ -133,7 +133,7 @@ describe('ProjectTransformer', () => {
         Id: 'minimal-id',
         Name: 'Minimal Project',
         CreatedDate: '2024-01-15T12:00:00Z',
-        ModifiedDate: '2024-01-15T12:00:00Z',
+        LastSavedDate: '2024-01-15T12:00:00Z',
       };
 
       const sheet = createProjectSummarySheet(minimalProject, 'Minimal Project');
@@ -164,7 +164,7 @@ describe('ProjectTransformer', () => {
         Id: 'test-id',
         Name: 'Test Project',
         CreatedDate: '2024-01-15T12:00:00Z',
-        ModifiedDate: '2024-01-15T12:00:00Z',
+        LastSavedDate: '2024-01-15T12:00:00Z',
         // Missing Description, Owner, StartDate, FinishDate, Status, Priority, PercentComplete
       };
 
@@ -207,7 +207,7 @@ describe('ProjectTransformer', () => {
         Id: 'test-id',
         // Missing Name (required)
         CreatedDate: '2024-01-01T00:00:00Z',
-        ModifiedDate: '2024-01-01T00:00:00Z',
+        LastSavedDate: '2024-01-01T00:00:00Z',
       } as ProjectOnlineProject;
 
       const result = validateProject(invalidProject);
@@ -233,7 +233,7 @@ describe('ProjectTransformer', () => {
         Id: 'test-id',
         Name: 'Test Project',
         CreatedDate: '2024-01-01T00:00:00Z',
-        ModifiedDate: '2024-01-01T00:00:00Z',
+        LastSavedDate: '2024-01-01T00:00:00Z',
         // Missing Owner, StartDate, FinishDate
       };
 
@@ -255,7 +255,7 @@ describe('ProjectTransformer', () => {
         StartDate: '2024-01-01T00:00:00Z',
         FinishDate: '2024-12-31T00:00:00Z',
         CreatedDate: '2024-01-01T00:00:00Z',
-        ModifiedDate: '2024-01-01T00:00:00Z',
+        LastSavedDate: '2024-01-01T00:00:00Z',
       };
 
       const result = validateProject(minimalValidProject);

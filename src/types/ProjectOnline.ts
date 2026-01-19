@@ -30,6 +30,17 @@ export interface ProjectOnlineProject {
 }
 
 /**
+ * Project Online Task Link entity (for predecessors/successors)
+ */
+export interface TaskLink {
+  PredecessorTaskId: string;
+  SuccessorTaskId: string;
+  DependencyType: number; // 0=FF, 1=FS, 2=SF, 3=SS
+  LinkLag?: number;
+  LinkLagDuration?: string; // ISO 8601 duration
+}
+
+/**
  * Project Online Task entity
  * oData Endpoint: /_api/ProjectData/Tasks
  */
@@ -60,7 +71,7 @@ export interface ProjectOnlineTask {
   ModifiedDate?: string; // ISO 8601 DateTime
   Assignments?: {results: ProjectOnlineAssignment[]};
   Parent?: ProjectOnlineTask;
-  Predecessors?: {results: ProjectOnlineAssignment[]};
+  Predecessors?: {results: TaskLink[]};
 }
 
 /**

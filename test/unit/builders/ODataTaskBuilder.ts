@@ -79,10 +79,44 @@ export class ODataTaskBuilder {
   }
 
   /**
-   * Set predecessors string (e.g., "5FS", "3SS+2d")
+   * Set predecessors as TaskLink objects
    */
-  withPredecessors(predecessors: string): this {
-    this.task.Predecessors = predecessors;
+  withPredecessors(predecessors: any[]): this {
+    this.task.Predecessors = { results: predecessors };
+    return this;
+  }
+
+  /**
+   * Set predecessors from string format (helper for backward compatibility)
+   */
+  withPredecessorString(predecessorStr: string): this {
+    // For test purposes, create a simple TaskLink structure
+    // In real usage, this would come from Project Online API
+    if (!predecessorStr) {
+      this.task.Predecessors = { results: [] };
+      return this;
+    }
+    
+    // Simple parser for test data like "1FS,2SS+1d"
+    const predecessorLinks = predecessorStr.split(',').map(pred => {
+      const match = pred.trim().match(/^(\d+)(\w{2})([+-]\d+[dhm])?$/);
+      if (match) {
+        const [, taskNum, type, lag] = match;
+        const dependencyTypeMap: Record<string, number> = {
+          'FF': 0, 'FS': 1, 'SF': 2, 'SS': 3
+        };
+        return {
+          PredecessorTaskId: `task-${taskNum}`,
+          SuccessorTaskId: this.task.Id || 'unknown',
+          DependencyType: dependencyTypeMap[type] || 1,
+          LinkLag: lag ? parseInt(lag.slice(1)) : 0,
+          LinkLagDuration: lag ? `PT${Math.abs(parseInt(lag.slice(1)))}D` : undefined
+        };
+      }
+      return null;
+    }).filter((link): link is NonNullable<typeof link> => link !== null);
+    
+    this.task.Predecessors = { results: predecessorLinks };
     return this;
   }
 

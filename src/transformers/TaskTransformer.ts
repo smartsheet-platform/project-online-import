@@ -81,7 +81,7 @@ export async function createTasksSheet(
   });
 
   // Create rows for all tasks
-  const rows = tasks.map((task) => createTaskRow(task, columnMap));
+  const rows = tasks.map((task) => createTaskRow(task, columnMap, tasks));
   if (rows.length > 0) {
     await client.addRows?.(sheetId, rows);
   }
@@ -250,7 +250,8 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
  */
 export function createTaskRow(
   task: ProjectOnlineTask,
-  columnMap: Record<string, number>
+  columnMap: Record<string, number>,
+  allTasks: ProjectOnlineTask[] = []
 ): SmartsheetRow {
   const cells: SmartsheetCell[] = [];
 
@@ -350,12 +351,15 @@ export function createTaskRow(
     });
   }
 
-  // Predecessors (will be populated separately if needed)
-  if (columnMap['Predecessors'] && task.Predecessors) {
-    cells.push({
-      columnId: columnMap['Predecessors'],
-      value: task.Predecessors,
-    });
+  // Predecessors - convert from Project Online to Smartsheet format
+  if (columnMap['Predecessors'] && task.Predecessors?.results?.length) {
+    const predecessorValue = mapPredecessorsToSmartsheet(task.Predecessors.results, allTasks);
+    if (predecessorValue) {
+      cells.push({
+        columnId: columnMap['Predecessors'],
+        value: predecessorValue,
+      });
+    }
   }
 
   // Constraint Type
@@ -417,6 +421,7 @@ export function createTaskRow(
   }
 
   return row;
+
 }
 
 /**
@@ -514,6 +519,88 @@ export function parseTaskPredecessors(predecessorStr: string): PredecessorInfo[]
   }
 
   return predecessors;
+}
+
+/**
+ * Map Project Online predecessors to Smartsheet predecessor format
+ * Project Online predecessors contain task references, we need to convert to row numbers
+ */
+export function mapPredecessorsToSmartsheet(
+  predecessors: any[],
+  allTasks: ProjectOnlineTask[]
+): string | null {
+  if (!predecessors || predecessors.length === 0) {
+    return null;
+  }
+
+  const predecessorStrings: string[] = [];
+  
+  // Map DependencyType values to Smartsheet format
+  const linkTypeMap: Record<number, string> = {
+    0: 'FF',  // Finish-to-Finish
+    1: 'FS',  // Finish-to-Start
+    2: 'SF',  // Start-to-Finish
+    3: 'SS'   // Start-to-Start
+  };
+  
+  for (const predecessor of predecessors) {
+    // Find the predecessor task index in the tasks array (1-based for Smartsheet)
+    const taskIndex = allTasks.findIndex(task => task.Id === predecessor.PredecessorTaskId);
+    if (taskIndex >= 0) {
+      // Smartsheet uses 1-based row numbers
+      const rowNumber = taskIndex + 1;
+      
+      // Get dependency type (default to FS if not specified)
+      const linkType = linkTypeMap[predecessor.DependencyType] || 'FS';
+      
+      // Build predecessor string with lag if present
+      let predecessorStr = `${rowNumber}${linkType}`;
+      
+      // Add lag duration if present
+      if (predecessor.LinkLag && predecessor.LinkLagDuration) {
+        // Convert LinkLagDuration (ISO 8601 duration) to Smartsheet format
+        const lagStr = parseLagDuration(predecessor.LinkLagDuration);
+        if (lagStr) {
+          const sign = predecessor.LinkLag >= 0 ? '+' : '';
+          predecessorStr += `${sign}${lagStr}`;
+        }
+      }
+      
+      predecessorStrings.push(predecessorStr);
+    }
+  }
+
+  return predecessorStrings.length > 0 ? predecessorStrings.join(',') : null;
+}
+
+/**
+ * Parse ISO 8601 duration to Smartsheet lag format
+ * Examples: PT1H -> 1h, PT2D -> 2d, PT8H -> 1d (8h = 1 workday)
+ */
+function parseLagDuration(duration: string): string | null {
+  if (!duration) return null;
+  
+  // Simple parsing - you may need to adjust based on your needs
+  const match = duration.match(/PT(\d+)([DHMS])/i);
+  if (match) {
+    const value = match[1];
+    const unit = match[2].toLowerCase();
+    
+    switch (unit) {
+      case 'd': return `${value}d`;
+      case 'h': 
+        // Convert hours to days if 8+ hours (assuming 8-hour workday)
+        const hours = parseInt(value);
+        if (hours >= 8 && hours % 8 === 0) {
+          return `${hours / 8}d`;
+        }
+        return `${value}h`;
+      case 'm': return `${value}m`;
+      default: return `${value}d`; // Default to days
+    }
+  }
+  
+  return null;
 }
 
 /**
@@ -773,7 +860,7 @@ export class TaskTransformer {
       }
     }
     let totalAssignmentsProcessed = 0;
-
+   
     // The sheet was created by ProjectTransformer with only a primary "Task Name" column
     // We need to add all the task columns before we can add rows
     // For re-run resiliency, we check if columns exist before adding
@@ -889,8 +976,11 @@ export class TaskTransformer {
       if (columnMap['Notes'] && task.TaskNotes) {
         cells.push({ columnId: columnMap['Notes'], value: task.TaskNotes });
       }
-      if (columnMap['Predecessors'] && task.Predecessors) {
-        cells.push({ columnId: columnMap['Predecessors'], value: task.Predecessors });
+      if (columnMap['Predecessors'] && task.Predecessors?.results?.length) {
+        const predecessorValue = mapPredecessorsToSmartsheet(task.Predecessors.results, tasks);
+        if (predecessorValue) {
+          cells.push({ columnId: columnMap['Predecessors'], value: predecessorValue });
+        }
       }
       if (columnMap['Constraint Type'] && task.ConstraintType) {
         cells.push({ columnId: columnMap['Constraint Type'], value: task.ConstraintType });
