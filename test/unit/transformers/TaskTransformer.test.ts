@@ -77,7 +77,7 @@ describe('TaskTransformer', () => {
       expect(result.sheetName).toContain('Tasks');
       expect(result.rowsCreated).toBe(1);
       expect(result.columns).toBeDefined();
-      expect(result.columns.length).toBe(19);
+      expect(result.columns.length).toBe(21);
     });
 
     it('should enable Gantt and dependencies on project sheet', async () => {
@@ -103,7 +103,7 @@ describe('TaskTransformer', () => {
       const projectName = 'Test Project';
       const columns = createTasksSheetColumns(projectName);
 
-      expect(columns.length).toBe(19);
+      expect(columns.length).toBe(21);
 
       // Verify column order
       expect(columns[0].title).toBe('Task Name');

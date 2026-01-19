@@ -107,6 +107,7 @@ describe('ProjectTransformer', () => {
       expect(row.cells![3].objectValue).toEqual({
         name: 'John Doe',
         email: 'john.doe@example.com',
+        objectType: 'CONTACT',
       });
     });
 
