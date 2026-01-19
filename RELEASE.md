@@ -44,20 +44,14 @@ git push github --tags
 
 ### 1.3 Configure Repository Settings
 
-1. **Branch Protection** (Settings → Branches → Add rule):
+1. **Branch Protection** (Settings → Branches → Add rule - Optional):
    - Branch name pattern: `main`
    - ✅ Require pull request reviews before merging
-   - ✅ Require status checks to pass (CI, CodeQL)
-   - ✅ Require branches to be up to date
 
-2. **Enable GitHub Actions** (Settings → Actions → General):
-   - ✅ Allow all actions and reusable workflows
-   - Verify workflows run successfully on first push
-
-3. **Add Topics** (Repository homepage → About → Settings):
+2. **Add Topics** (Repository homepage → About → Settings):
    - `project-online`, `smartsheet`, `cli`, `etl`, `migration`, `typescript`, `internal`
 
-4. **Configure Access** (Settings → Collaborators and teams):
+3. **Configure Access** (Settings → Collaborators and teams):
    - Add relevant Smartsheet teams with appropriate permissions
    - Typically: `smartsheet/engineering` with Write access
 
@@ -241,7 +235,6 @@ npm pack
 ## Post-Release Checklist
 
 ### Immediate
-- [ ] Verify GitHub Actions run successfully
 - [ ] Test installation from GitHub release tarball
 - [ ] Test git-based installation
 - [ ] Update internal wiki/documentation with installation instructions
