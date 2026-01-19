@@ -6,7 +6,7 @@ import {
   createTaskRow,
   deriveTaskStatus,
   mapTaskPriority,
-  parseTaskPredecessors,
+  mapPredecessorsToSmartsheet,
   configureTaskPicklistColumns,
   discoverAssignmentColumns,
   configureAssignmentColumns,
@@ -40,9 +40,10 @@ describe('TaskTransformer', () => {
         {
           Id: 'task-1',
           ProjectId: 'proj-1',
-          TaskName: 'Design Homepage',
+          Name: 'Design Homepage',
           TaskIndex: 1,
-          OutlineLevel: 0,
+          OutlinePosition: '1',
+          OutlineLevel: 1,
           Start: '2024-03-15T09:00:00Z',
           Finish: '2024-03-22T17:00:00Z',
           Duration: 'PT40H',
@@ -54,7 +55,7 @@ describe('TaskTransformer', () => {
           IsMilestone: false,
           IsActive: true,
           TaskNotes: 'Initial design phase',
-          Predecessors: '',
+          Predecessors: { results: [] },
           ConstraintType: 'ASAP',
           ConstraintDate: undefined,
           Deadline: '2024-04-01T17:00:00Z',
@@ -76,7 +77,7 @@ describe('TaskTransformer', () => {
       expect(result.sheetName).toContain('Tasks');
       expect(result.rowsCreated).toBe(1);
       expect(result.columns).toBeDefined();
-      expect(result.columns.length).toBe(18);
+      expect(result.columns.length).toBe(21);
     });
 
     it('should enable Gantt and dependencies on project sheet', async () => {
@@ -102,7 +103,7 @@ describe('TaskTransformer', () => {
       const projectName = 'Test Project';
       const columns = createTasksSheetColumns(projectName);
 
-      expect(columns.length).toBe(18);
+      expect(columns.length).toBe(21);
 
       // Verify column order
       expect(columns[0].title).toBe('Task Name');
@@ -185,9 +186,10 @@ describe('TaskTransformer', () => {
       const task: ProjectOnlineTask = {
         Id: 'task-1',
         ProjectId: 'proj-1',
-        TaskName: 'Design Homepage',
+        Name: 'Design Homepage',
         TaskIndex: 1,
-        OutlineLevel: 0,
+        OutlinePosition: '1',
+        OutlineLevel: 1,
         Start: '2024-03-15T09:00:00Z',
         Finish: '2024-03-22T17:00:00Z',
         Duration: 'PT40H',
@@ -199,7 +201,7 @@ describe('TaskTransformer', () => {
         IsMilestone: false,
         IsActive: true,
         TaskNotes: 'Initial design phase',
-        Predecessors: '',
+        Predecessors: { results: [] },
         ConstraintType: 'ASAP',
         ConstraintDate: undefined,
         Deadline: '2024-04-01T17:00:00Z',
@@ -229,7 +231,7 @@ describe('TaskTransformer', () => {
         'Project Online Modified Date': 18,
       };
 
-      const row = createTaskRow(task, columnMap);
+      const row = createTaskRow(task, columnMap, [task]);
 
       expect(row.cells).toBeDefined();
       expect(row.cells?.length).toBeGreaterThan(0);
@@ -259,9 +261,10 @@ describe('TaskTransformer', () => {
       const task: ProjectOnlineTask = {
         Id: 'task-2',
         ProjectId: 'proj-1',
-        TaskName: 'Top-level Task',
+        Name: 'Top-level Task',
         TaskIndex: 2,
-        OutlineLevel: 1, // Top level (Project Online: 1 = top level)
+        OutlinePosition: '1', // Top level (Project Online: "1" = top level)
+        OutlineLevel: 1, // Numeric level 1
         Start: '2024-03-15T09:00:00Z',
         Finish: '2024-03-17T17:00:00Z',
         Duration: 'PT16H',
@@ -272,7 +275,7 @@ describe('TaskTransformer', () => {
       };
 
       const columnMap = { 'Task Name': 1 };
-      const row = createTaskRow(task, columnMap);
+      const row = createTaskRow(task, columnMap, [task]);
 
       expect(row.toBottom).toBe(true);
       expect(row.indent).toBeUndefined();
@@ -282,9 +285,10 @@ describe('TaskTransformer', () => {
       const task: ProjectOnlineTask = {
         Id: 'task-3',
         ProjectId: 'proj-1',
-        TaskName: 'Child Task',
+        Name: 'Child Task',
         TaskIndex: 3,
-        OutlineLevel: 2, // First indent level (Project Online: 2 = first child)
+        OutlinePosition: '1.1', // Child position (Project Online: "1.1" = first child)
+        OutlineLevel: 2, // Numeric level 2
         Start: '2024-03-15T09:00:00Z',
         Finish: '2024-03-17T17:00:00Z',
         Duration: 'PT16H',
@@ -295,7 +299,7 @@ describe('TaskTransformer', () => {
       };
 
       const columnMap = { 'Task Name': 1 };
-      const row = createTaskRow(task, columnMap);
+      const row = createTaskRow(task, columnMap, [task]);
 
       expect(row.indent).toBe(1); // OutlineLevel 2 -> indent 1
       expect(row.toBottom).toBeUndefined();
@@ -340,42 +344,78 @@ describe('TaskTransformer', () => {
     });
   });
 
-  describe('parseTaskPredecessors', () => {
-    it('should parse single predecessor', () => {
-      const predecessorStr = '5';
-      const result = parseTaskPredecessors(predecessorStr);
+  describe('mapPredecessorsToSmartsheet', () => {
+    const allTasks: ProjectOnlineTask[] = [
+      { Id: 'task-1', Name: 'Task 1' } as ProjectOnlineTask,
+      { Id: 'task-2', Name: 'Task 2' } as ProjectOnlineTask,
+      { Id: 'task-3', Name: 'Task 3' } as ProjectOnlineTask,
+    ];
 
-      expect(result).toEqual([{ rowNumber: 5, type: 'FS', lag: null }]);
+    it('should map single predecessor', () => {
+      const predecessors = [{
+        PredecessorTaskId: 'task-1',
+        SuccessorTaskId: 'task-2',
+        DependencyType: 1, // FS
+        LinkLag: 0,
+        LinkLagDuration: null
+      }];
+      const result = mapPredecessorsToSmartsheet(predecessors, allTasks);
+      expect(result).toBe('1FS');
     });
 
-    it('should parse predecessor with relationship type', () => {
-      const predecessorStr = '5FS';
-      const result = parseTaskPredecessors(predecessorStr);
-
-      expect(result).toEqual([{ rowNumber: 5, type: 'FS', lag: null }]);
+    it('should map predecessor with different dependency type', () => {
+      const predecessors = [{
+        PredecessorTaskId: 'task-1',
+        SuccessorTaskId: 'task-3',
+        DependencyType: 3, // SS
+        LinkLag: 0,
+        LinkLagDuration: null
+      }];
+      const result = mapPredecessorsToSmartsheet(predecessors, allTasks);
+      expect(result).toBe('1SS');
     });
 
-    it('should parse predecessor with lag', () => {
-      const predecessorStr = '5FS+2d';
-      const result = parseTaskPredecessors(predecessorStr);
-
-      expect(result).toEqual([{ rowNumber: 5, type: 'FS', lag: '+2d' }]);
+    it('should map predecessor with lag', () => {
+      const predecessors = [{
+        PredecessorTaskId: 'task-2',
+        SuccessorTaskId: 'task-3',
+        DependencyType: 1, // FS
+        LinkLag: 2,
+        LinkLagDuration: 'PT2D'
+      }];
+      const result = mapPredecessorsToSmartsheet(predecessors, allTasks);
+      expect(result).toBe('2FS+2d');
     });
 
-    it('should parse multiple predecessors', () => {
-      const predecessorStr = '5FS, 8SS+1d, 3FF-2d';
-      const result = parseTaskPredecessors(predecessorStr);
-
-      expect(result).toEqual([
-        { rowNumber: 5, type: 'FS', lag: null },
-        { rowNumber: 8, type: 'SS', lag: '+1d' },
-        { rowNumber: 3, type: 'FF', lag: '-2d' },
-      ]);
+    it('should map multiple predecessors', () => {
+      const predecessors = [
+        {
+          PredecessorTaskId: 'task-1',
+          SuccessorTaskId: 'task-3',
+          DependencyType: 1, // FS
+          LinkLag: 0,
+          LinkLagDuration: null
+        },
+        {
+          PredecessorTaskId: 'task-2',
+          SuccessorTaskId: 'task-3',
+          DependencyType: 3, // SS
+          LinkLag: 1,
+          LinkLagDuration: 'PT1D'
+        }
+      ];
+      const result = mapPredecessorsToSmartsheet(predecessors, allTasks);
+      expect(result).toBe('1FS,2SS+1d');
     });
 
-    it('should handle empty predecessor string', () => {
-      const result = parseTaskPredecessors('');
-      expect(result).toEqual([]);
+    it('should handle empty predecessors array', () => {
+      const result = mapPredecessorsToSmartsheet([], allTasks);
+      expect(result).toBeNull();
+    });
+
+    it('should handle null predecessors', () => {
+      const result = mapPredecessorsToSmartsheet(null as any, allTasks);
+      expect(result).toBeNull();
     });
   });
 
@@ -732,9 +772,10 @@ describe('TaskTransformer', () => {
       const task: ProjectOnlineTask = {
         Id: 'task-1',
         ProjectId: 'proj-1',
-        TaskName: 'Design Homepage',
+        Name: 'Design Homepage',
         TaskIndex: 1,
-        OutlineLevel: 0,
+        OutlinePosition: '1',
+        OutlineLevel: 1,
         Start: '2024-03-15T09:00:00Z',
         Finish: '2024-03-22T17:00:00Z',
         Duration: 'PT40H',
@@ -750,12 +791,13 @@ describe('TaskTransformer', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should return error for missing TaskName', () => {
+    it('should return error for missing Name', () => {
       const task = {
         Id: 'task-1',
         ProjectId: 'proj-1',
         TaskIndex: 1,
-        OutlineLevel: 0,
+        OutlinePosition: '1',
+        OutlineLevel: 1,
       } as ProjectOnlineTask;
 
       const result = validateTask(task);
@@ -768,9 +810,10 @@ describe('TaskTransformer', () => {
       const task: ProjectOnlineTask = {
         Id: 'task-1',
         ProjectId: 'proj-1',
-        TaskName: 'Test Task',
+        Name: 'Test Task',
         TaskIndex: 1,
-        OutlineLevel: 0,
+        OutlinePosition: '1',
+        OutlineLevel: 1,
         PercentComplete: 0,
         Priority: -100, // Invalid
         IsMilestone: false,

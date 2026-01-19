@@ -128,7 +128,7 @@ export class ODataResourceBuilder {
    */
   withMetadataDates(created: string, modified: string): this {
     this.resource.CreatedDate = created;
-    this.resource.ModifiedDate = modified;
+    this.resource.Modified = modified;
     return this;
   }
 
@@ -151,7 +151,7 @@ export class ODataResourceBuilder {
       Department: this.resource.Department,
       Code: this.resource.Code,
       CreatedDate: this.resource.CreatedDate,
-      ModifiedDate: this.resource.ModifiedDate,
+      Modified: this.resource.Modified,
     };
   }
 }

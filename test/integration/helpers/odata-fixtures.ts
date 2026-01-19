@@ -119,9 +119,9 @@ export function createHierarchyProject(): SimpleProjectFixture {
   const tasks = taskScenarios.complexHierarchy(project.Id);
   const resources = [resourceScenarios.workResourceWithEmail()];
 
-  // Assign resource to leaf tasks only
+  // Assign resource to leaf tasks only (tasks with highest OutlineLevel)
   const leafTasks = tasks.filter(
-    (t) => t.OutlineLevel === Math.max(...tasks.map((t) => t.OutlineLevel!))
+    (t) => t.OutlineLevel === Math.max(...tasks.map((t) => t.OutlineLevel || 1))
   );
   const assignments = leafTasks.map((task) =>
     assignmentScenarios.singleWorkAssignment(task.Id, resources[0].Id)

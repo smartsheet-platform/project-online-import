@@ -597,6 +597,23 @@ export class ProjectTransformer {
 
     await addColumnsIfNotExist(this.client, createdSummary.id, columnsToEnsure);
 
+    // Get or create resource sheet first (will be populated by ResourceTransformer)
+    // If re-running, this will use the existing sheet
+    const resourceSheet = await getOrCreateSheet(this.client, workspaceId, {
+      name: createSheetName(workspace.name, 'Resources'),
+      columns: [
+        {
+          title: 'Resource Name',
+          type: 'TEXT_NUMBER',
+          primary: true,
+        },
+      ],
+    });
+
+    if (!resourceSheet?.id) {
+      throw new Error('Failed to get or create resource sheet');
+    }
+
     // Get or create task sheet (will be populated by TaskTransformer)
     // If re-running, this will use the existing sheet
     const taskSheet = await getOrCreateSheet(this.client, workspaceId, {
@@ -612,23 +629,6 @@ export class ProjectTransformer {
 
     if (!taskSheet?.id) {
       throw new Error('Failed to get or create task sheet');
-    }
-
-    // Get or create resource sheet (will be populated by ResourceTransformer)
-    // If re-running, this will use the existing sheet
-    const resourceSheet = await getOrCreateSheet(this.client, workspaceId, {
-      name: createSheetName(workspace.name, 'Resources'),
-      columns: [
-        {
-          title: 'Resource Name',
-          type: 'TEXT_NUMBER',
-          primary: true,
-        },
-      ],
-    });
-
-    if (!resourceSheet?.id) {
-      throw new Error('Failed to get or create resource sheet');
     }
 
     return {

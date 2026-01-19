@@ -1,5 +1,6 @@
 import {
   ProjectOnlineTask,
+  ProjectOnlineResource,
   PMOStandardsWorkspaceInfo,
   SmartsheetColumn,
   SmartsheetRow,
@@ -46,7 +47,8 @@ export async function createTasksSheet(
   workspaceId: number,
   projectName: string,
   tasks: ProjectOnlineTask[],
-  pmoStandards: PMOStandardsWorkspaceInfo
+  pmoStandards: PMOStandardsWorkspaceInfo,
+  resourcesSheetId?: number
 ): Promise<TasksSheetResult> {
   const sheetName = `${projectName} - Tasks`;
 
@@ -81,7 +83,7 @@ export async function createTasksSheet(
   });
 
   // Create rows for all tasks
-  const rows = tasks.map((task) => createTaskRow(task, columnMap));
+  const rows = tasks.map((task) => createTaskRow(task, columnMap, tasks));
   if (rows.length > 0) {
     await client.addRows?.(sheetId, rows);
   }
@@ -99,6 +101,64 @@ export async function createTasksSheet(
     constraintColumnId,
     pmoStandards
   );
+
+  // Configure resource assignment columns to reference Resources sheet if provided
+  if (resourcesSheetId) {
+    const workResourceColumnId = columnMap['Work Resource'];
+    const materialResourceColumnId = columnMap['Material Resource'];
+    const costResourceColumnId = columnMap['Cost Resource'];
+
+    // Configure Work Resource column (MULTI_CONTACT_LIST)
+    if (workResourceColumnId) {
+      await client.columns?.updateColumn?.({
+        sheetId,
+        columnId: workResourceColumnId,
+        body: {
+          type: 'MULTI_CONTACT_LIST',
+          contactOptions: [{
+            sheetId: resourcesSheetId,
+            columnId: 4, // Team Members column in Resources sheet
+          }],
+        },
+      });
+    }
+
+    // Configure Material Resource column (MULTI_PICKLIST)
+    if (materialResourceColumnId) {
+      await client.columns?.updateColumn?.({
+        sheetId,
+        columnId: materialResourceColumnId,
+        body: {
+          type: 'MULTI_PICKLIST',
+          options: [{
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: resourcesSheetId,
+              columnId: 5, // Materials column in Resources sheet
+            },
+          }],
+        },
+      });
+    }
+
+    // Configure Cost Resource column (MULTI_PICKLIST)
+    if (costResourceColumnId) {
+      await client.columns?.updateColumn?.({
+        sheetId,
+        columnId: costResourceColumnId,
+        body: {
+          type: 'MULTI_PICKLIST',
+          options: [{
+            value: {
+              objectType: 'CELL_LINK',
+              sheetId: resourcesSheetId,
+              columnId: 6, // Cost Resources column in Resources sheet
+            },
+          }],
+        },
+      });
+    }
+  }
 
   return {
     sheetId,
@@ -211,6 +271,22 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
       type: 'DATE',
       width: 120,
     },
+    // Assignment resources
+    {
+      title: 'Work Resource',
+      type: 'MULTI_CONTACT_LIST',
+      width: 200,
+    },
+    {
+      title: 'Material Resource',
+      type: 'MULTI_PICKLIST', 
+      width: 200,
+    },
+    {
+      title: 'Cost Resource',
+      type: 'MULTI_PICKLIST',
+      width: 200,
+    },
   ];
 }
 
@@ -244,7 +320,8 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
  */
 export function createTaskRow(
   task: ProjectOnlineTask,
-  columnMap: Record<string, number>
+  columnMap: Record<string, number>,
+  allTasks: ProjectOnlineTask[] = []
 ): SmartsheetRow {
   const cells: SmartsheetCell[] = [];
 
@@ -344,12 +421,15 @@ export function createTaskRow(
     });
   }
 
-  // Predecessors (will be populated separately if needed)
-  if (columnMap['Predecessors'] && task.Predecessors) {
-    cells.push({
-      columnId: columnMap['Predecessors'],
-      value: task.Predecessors,
-    });
+  // Predecessors - convert from Project Online to Smartsheet format
+  if (columnMap['Predecessors'] && task.Predecessors?.results?.length) {
+    const predecessorValue = mapPredecessorsToSmartsheet(task.Predecessors.results, allTasks);
+    if (predecessorValue) {
+      cells.push({
+        columnId: columnMap['Predecessors'],
+        value: predecessorValue,
+      });
+    }
   }
 
   // Constraint Type
@@ -411,6 +491,7 @@ export function createTaskRow(
   }
 
   return row;
+
 }
 
 /**
@@ -508,6 +589,118 @@ export function parseTaskPredecessors(predecessorStr: string): PredecessorInfo[]
   }
 
   return predecessors;
+}
+
+/**
+ * Get resource type for assignment filtering
+ */
+function getAssignmentResourceType(resource: ProjectOnlineResource): 'Work' | 'Material' | 'Cost' {
+  // Check for Material resource indicators
+  if (resource.MaterialLabel && resource.MaterialLabel !== null) {
+    return 'Material';
+  }
+  
+  // Check for Cost resource indicators
+  const isNotMaterial = !resource.MaterialLabel || resource.MaterialLabel === null;
+  
+  // Not a typical Work resource (no email, can't be leveled)
+  const isNotWorkResource = !resource.Email && !resource.CanLevel;
+  
+  // May have IsBudgeted flag set
+  // Cost resources often have zero rates and no work values
+  if (isNotMaterial && isNotWorkResource) {
+    return 'Cost';
+  }
+  
+  // CSOM format - DefaultBookingType: 1=Work, 2=Material, 3=Cost
+  switch (resource.DefaultBookingType) {
+    case 1: return 'Work';
+    case 2: return 'Material'; 
+    case 3: return 'Cost';
+    default: return 'Work';
+  }
+}
+
+/**
+ * Map Project Online predecessors to Smartsheet predecessor format
+ * Project Online predecessors contain task references, we need to convert to row numbers
+ */
+export function mapPredecessorsToSmartsheet(
+  predecessors: any[],
+  allTasks: ProjectOnlineTask[]
+): string | null {
+  if (!predecessors || predecessors.length === 0) {
+    return null;
+  }
+
+  const predecessorStrings: string[] = [];
+  
+  // Map DependencyType values to Smartsheet format
+  const linkTypeMap: Record<number, string> = {
+    0: 'FF',  // Finish-to-Finish
+    1: 'FS',  // Finish-to-Start
+    2: 'SF',  // Start-to-Finish
+    3: 'SS'   // Start-to-Start
+  };
+  
+  for (const predecessor of predecessors) {
+    // Find the predecessor task index in the tasks array (1-based for Smartsheet)
+    const taskIndex = allTasks.findIndex(task => task.Id === predecessor.PredecessorTaskId);
+    if (taskIndex >= 0) {
+      // Smartsheet uses 1-based row numbers
+      const rowNumber = taskIndex + 1;
+      
+      // Get dependency type (default to FS if not specified)
+      const linkType = linkTypeMap[predecessor.DependencyType] || 'FS';
+      
+      // Build predecessor string with lag if present
+      let predecessorStr = `${rowNumber}${linkType}`;
+      
+      // Add lag duration if present
+      if (predecessor.LinkLag && predecessor.LinkLagDuration) {
+        // Convert LinkLagDuration (ISO 8601 duration) to Smartsheet format
+        const lagStr = parseLagDuration(predecessor.LinkLagDuration);
+        if (lagStr) {
+          const sign = predecessor.LinkLag >= 0 ? '+' : '';
+          predecessorStr += `${sign}${lagStr}`;
+        }
+      }
+      
+      predecessorStrings.push(predecessorStr);
+    }
+  }
+
+  return predecessorStrings.length > 0 ? predecessorStrings.join(',') : null;
+}
+
+/**
+ * Parse ISO 8601 duration to Smartsheet lag format
+ * Examples: PT1H -> 1h, PT2D -> 2d, PT8H -> 1d (8h = 1 workday)
+ */
+function parseLagDuration(duration: string): string | null {
+  if (!duration) return null;
+  
+  // Simple parsing - you may need to adjust based on your needs
+  const match = duration.match(/PT(\d+)([DHMS])/i);
+  if (match) {
+    const value = match[1];
+    const unit = match[2].toLowerCase();
+    
+    switch (unit) {
+      case 'd': return `${value}d`;
+      case 'h': 
+        // Convert hours to days if 8+ hours (assuming 8-hour workday)
+        const hours = parseInt(value);
+        if (hours >= 8 && hours % 8 === 0) {
+          return `${hours / 8}d`;
+        }
+        return `${value}h`;
+      case 'm': return `${value}m`;
+      default: return `${value}d`; // Default to days
+    }
+  }
+  
+  return null;
 }
 
 /**
@@ -758,15 +951,16 @@ export class TaskTransformer {
   async transformTasks(
     tasks: ProjectOnlineTask[],
     sheetId: number
-  ): Promise<{ rowsCreated: number; sheetId: number }> {
-    // Validate all tasks
+  ): Promise<{ rowsCreated: number; sheetId: number; assignmentsProcessed: number }> {
+
     for (const task of tasks) {
       const validation = validateTask(task);
       if (!validation.isValid) {
         throw new Error(`Invalid task ${task.Name}: ${validation.errors.join(', ')}`);
       }
     }
-
+    let totalAssignmentsProcessed = 0;
+   
     // The sheet was created by ProjectTransformer with only a primary "Task Name" column
     // We need to add all the task columns before we can add rows
     // For re-run resiliency, we check if columns exist before adding
@@ -813,6 +1007,62 @@ export class TaskTransformer {
     // Helper function to build cells for a task
     const buildCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
       const cells: SmartsheetCell[] = [];
+
+      // Handle Work Resources (MULTI_CONTACT_LIST)
+      if (columnMap['Work Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+        const workAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Work');
+        totalAssignmentsProcessed += workAssignments.length;
+        
+        const contacts = workAssignments.map(a => ({
+          objectType: 'CONTACT' as const,
+          name: a.Resource!.Name,
+          email: a.Resource!.Email
+        }));
+                
+        if (contacts.length > 0) {
+          cells.push({
+            columnId: columnMap['Work Resource'],
+            objectValue: {
+              objectType: 'MULTI_CONTACT',
+              values: contacts
+            }
+          });
+        }
+      }
+
+      // Handle Material Resources (MULTI_PICKLIST)
+      if (columnMap['Material Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+        const materialAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Material');
+        
+        const materialNames = materialAssignments.map(a => a.Resource!.Name).filter(Boolean);
+        
+        if (materialNames.length > 0) {
+          cells.push({
+            columnId: columnMap['Material Resource'],
+            objectValue: {
+              objectType: 'MULTI_PICKLIST',
+              values: materialNames
+            }
+          });
+        }
+      }
+
+      // Handle Cost Resources (MULTI_PICKLIST) 
+      if (columnMap['Cost Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+        const costAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Cost');
+        
+        const costNames = costAssignments.map(a => a.Resource!.Name).filter(Boolean);
+        
+        if (costNames.length > 0) {
+          cells.push({
+            columnId: columnMap['Cost Resource'],
+            objectValue: {
+              objectType: 'MULTI_PICKLIST',
+              values: costNames
+            }
+          });
+        }
+      }
 
       if (columnMap['Task Name']) {
         cells.push({ columnId: columnMap['Task Name'], value: task.Name });
@@ -861,8 +1111,11 @@ export class TaskTransformer {
       if (columnMap['Notes'] && task.TaskNotes) {
         cells.push({ columnId: columnMap['Notes'], value: task.TaskNotes });
       }
-      if (columnMap['Predecessors'] && task.Predecessors) {
-        cells.push({ columnId: columnMap['Predecessors'], value: task.Predecessors });
+      if (columnMap['Predecessors'] && task.Predecessors?.results?.length) {
+        const predecessorValue = mapPredecessorsToSmartsheet(task.Predecessors.results, tasks);
+        if (predecessorValue) {
+          cells.push({ columnId: columnMap['Predecessors'], value: predecessorValue });
+        }
       }
       if (columnMap['Constraint Type'] && task.ConstraintType) {
         cells.push({ columnId: columnMap['Constraint Type'], value: task.ConstraintType });
@@ -908,7 +1161,7 @@ export class TaskTransformer {
       const tasksAtLevel = tasks.filter((t) => (t.OutlineLevel || 1) === level);
       if (tasksAtLevel.length === 0) continue;
 
-      // Group tasks by their parent ID (or 'NO_PARENT' for level 1 or missing parents)
+      // Group tasks by their parent ID (using expanded Parent object)
       const tasksByParent = new Map<string, ProjectOnlineTask[]>();
 
       for (const task of tasksAtLevel) {
@@ -916,7 +1169,13 @@ export class TaskTransformer {
         if (level === 1) {
           groupKey = 'NO_PARENT';
         } else {
-          const parentRowId = task.ParentTaskId ? taskIdToRowId[task.ParentTaskId] : null;
+          // Use expanded Parent object to get parent ID
+          let parentTaskId: string | null = null;
+          if (task.Parent && task.Parent.Id) {
+            parentTaskId = task.Parent.Id;
+          }
+          
+          const parentRowId = parentTaskId ? taskIdToRowId[parentTaskId] : null;
           groupKey = parentRowId ? `PARENT_${parentRowId}` : 'NO_PARENT';
         }
 
@@ -977,6 +1236,7 @@ export class TaskTransformer {
     return {
       rowsCreated: totalRowsCreated,
       sheetId,
+      assignmentsProcessed: totalAssignmentsProcessed,
     };
   }
 }

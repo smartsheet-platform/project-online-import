@@ -207,7 +207,7 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
   });
 
   // Column 7: Max Units (handle both OData and CSOM formats)
-  const maxUnits = resource.MaximumCapacity
+  const maxUnits = resource.MaximumCapacity ?? resource.MaxUnits;
   cells.push({
     columnId: 7,
     value: maxUnits !== undefined ? convertMaxUnits(maxUnits) : '',
@@ -232,7 +232,7 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
   });
 
   // Column 11: Department (handle both OData and CSOM formats)
-  const department = resource.Group;
+  const department = resource.Group ?? resource.Department;
   cells.push({
     columnId: 11,
     value: department || '',
@@ -259,7 +259,7 @@ export function createResourceRow(resource: ProjectOnlineResource): SmartsheetRo
   });
 
   // Column 15: Project Online Created Date (handle both formats)
-  const createdDate = resource.Created;
+  const createdDate = resource.Created ?? resource.CreatedDate;
   cells.push({
     columnId: 15,
     value: createdDate ? convertDateTimeToDate(createdDate) : '',
@@ -291,16 +291,33 @@ function convertMaxUnits(maxUnits: number): string {
 }
 
 /**
- * Get resource type from CSOM DefaultBookingType
+ * Get resource type from CSOM DefaultBookingType and additional material/cost indicators
  */
 function getResourceType(resource: ProjectOnlineResource): 'Work' | 'Material' | 'Cost' {
-  // CSOM format - DefaultBookingType: 1=Work, 2=Material, 3=Cost
-  switch (resource.DefaultBookingType) {
-    case 1: return 'Work';
-    case 2: return 'Material'; 
-    case 3: return 'Cost';
-    default: return 'Work';
+  // Check explicit ResourceType property first (for test data and certain APIs)
+  if (resource.ResourceType === 'Material' || resource.ResourceType === 'Cost' || resource.ResourceType === 'Work') {
+    return resource.ResourceType;
   }
+  
+  // Check for Material resource indicators
+  if (resource.MaterialLabel && resource.MaterialLabel !== null) {
+    return 'Material';
+  }
+  
+  // Check for Cost resource indicators
+  const isNotMaterial = !resource.MaterialLabel || resource.MaterialLabel === null;
+  
+  // Not a typical Work resource (no email, can't be leveled)
+  const isNotWorkResource = !resource.Email && !resource.CanLevel;
+  
+  // May have IsBudgeted flag set
+  // Cost resources often have zero rates and no work values
+  if (isNotMaterial && isNotWorkResource) {
+    return 'Cost';
+  }
+  
+  // CSOM format - DefaultBookingType: 1=Work, 2=Material, 3=Cost
+  return 'Work';
 }
 
 /**
@@ -311,7 +328,7 @@ export function discoverResourceDepartments(resources: ProjectOnlineResource[]):
   const departments = new Set<string>();
 
   for (const resource of resources) {
-    const department = resource.Group;
+    const department = resource.Group ?? resource.Department;
     if (department && department.trim() !== '') {
       departments.add(department);
     }
@@ -399,7 +416,7 @@ export function validateResource(resource: ProjectOnlineResource): ResourceValid
   }
 
   // Warnings for overallocation
-  const maxUnits = resource.MaximumCapacity;
+  const maxUnits = resource.MaximumCapacity ?? resource.MaxUnits;
   if (maxUnits !== undefined && maxUnits > 1.0) {
     warnings.push('Resource is overallocated (MaxUnits > 1.0)');
   }

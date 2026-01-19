@@ -465,7 +465,7 @@ export class MockSmartsheetClient implements SmartsheetClient {
         throw new Error('getSheet requires "id" parameter (not "sheetId")');
       }
       const sheet = await this.getSheet(options.id);
-      return { result: sheet };
+      return sheet; // Return the sheet directly, not wrapped
     },
     createSheetInWorkspace: async (options: SmartsheetApiOptions) => {
       const sheet = await this.createSheetInWorkspace(

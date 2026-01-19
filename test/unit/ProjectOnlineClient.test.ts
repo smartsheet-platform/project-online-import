@@ -107,8 +107,8 @@ describe('ProjectOnlineClient', () => {
 
         // Assert
         expect(response.value).toHaveLength(2);
-        expect(response.value[0].TaskName).toBe('Design Phase');
-        expect(response.value[1].TaskName).toBe('Development Phase');
+        expect(response.value[0].Name).toBe('Design Phase');
+        expect(response.value[1].Name).toBe('Development Phase');
       });
 
       it('should filter tasks by project ID', async () => {
@@ -164,9 +164,9 @@ describe('ProjectOnlineClient', () => {
         const response = await mockClient.getTasks(projectId);
 
         // Assert
-        expect(response.value[0].TaskName).toBe('First Task');
-        expect(response.value[1].TaskName).toBe('Second Task');
-        expect(response.value[2].TaskName).toBe('Third Task');
+        expect(response.value[0].Name).toBe('First Task');
+        expect(response.value[1].Name).toBe('Second Task');
+        expect(response.value[2].Name).toBe('Third Task');
       });
     });
 

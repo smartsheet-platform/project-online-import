@@ -30,6 +30,17 @@ export interface ProjectOnlineProject {
 }
 
 /**
+ * Project Online Task Link entity (for predecessors/successors)
+ */
+export interface TaskLink {
+  PredecessorTaskId: string;
+  SuccessorTaskId: string;
+  DependencyType: number; // 0=FF, 1=FS, 2=SF, 3=SS
+  LinkLag?: number;
+  LinkLagDuration?: string; // ISO 8601 duration
+}
+
+/**
  * Project Online Task entity
  * oData Endpoint: /_api/ProjectData/Tasks
  */
@@ -39,7 +50,8 @@ export interface ProjectOnlineTask {
   Name: string;
   ParentTaskId?: string; // Guid (FK, self-reference)
   TaskIndex: number;
-  OutlineLevel: number; // 0=root, 1=child, etc.
+  OutlinePosition: string; // String position like "1", "1.1", "1.1.1", "2", etc.
+  OutlineLevel?: number; // Numeric level: 1=root, 2=first indent, 3=second indent, etc.
   Start?: string; // ISO 8601 DateTime
   Finish?: string; // ISO 8601 DateTime
   Duration?: string; // ISO 8601 Duration (e.g., "PT40H")
@@ -51,13 +63,15 @@ export interface ProjectOnlineTask {
   IsMilestone: boolean;
   IsActive: boolean;
   TaskNotes?: string;
-  Predecessors?: string;
   ConstraintType?: string;
   ConstraintDate?: string; // ISO 8601 DateTime
   Deadline?: string; // ISO 8601 DateTime
   ResourceNames?: string;
   CreatedDate?: string; // ISO 8601 DateTime
   ModifiedDate?: string; // ISO 8601 DateTime
+  Assignments?: {results: ProjectOnlineAssignment[]};
+  Parent?: ProjectOnlineTask;
+  Predecessors?: {results: TaskLink[]};
 }
 
 /**
@@ -67,18 +81,26 @@ export interface ProjectOnlineResource {
   Id: string; // Guid
   Name: string;
   Email?: string;  
-  DefaultBookingType?: number;  
+  ResourceType?: string; // Work, Material, Cost
+  DefaultBookingType?: number;
   MaximumCapacity?: number; // Decimal (1.0 = 100%)
+  MaxUnits?: number; // Decimal (1.0 = 100%) - alternative name for MaximumCapacity
   StandardRate?: number; // Decimal
   OvertimeRate?: number; // Decimal
   CostPerUse?: number; // Decimal
   CanLevel?: boolean; 
   IsGenericResource?: boolean;
+  IsActive?: boolean;
+  IsGeneric?: boolean; // Alternative name for IsGenericResource
   Group?: string; 
   Code?: string;  
   Created?: string; 
+  CreatedDate?: string; // Alternative name for Created
   Modified?: string; 
   Initials?: string;
+  Department?: string;
+  BaseCalendar?: string;
+  MaterialLabel?: string; // Material resource specific field
 }
 
 /**
