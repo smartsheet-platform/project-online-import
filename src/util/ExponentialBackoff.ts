@@ -205,8 +205,8 @@ function isRetryableError(error: unknown): boolean {
  * - Non-retryable errors (401, 403, 4xx) are thrown immediately without retry
  *
  * @param operationFunction - Async function to execute with retry logic
- * @param maximumNumberOfTries - Maximum retry attempts (default: from RETRY_MAX_RETRIES env or 5)
- * @param initialBackoffMilliseconds - Initial delay in milliseconds (default: from RETRY_INITIAL_DELAY_MS env or 1000)
+ * @param maximumNumberOfTries - Maximum retry attempts (default: from MAX_RETRIES env or 3)
+ * @param initialBackoffMilliseconds - Initial delay in milliseconds (default: from RETRY_DELAY env or 1000)
  * @param logger - Optional logger for retry messages
  * @returns Promise resolving to the operation result
  * @throws Error immediately for non-retryable errors, or after exhausting retries for retryable errors
@@ -223,8 +223,8 @@ function isRetryableError(error: unknown): boolean {
  */
 export async function tryWith<T>(
   operationFunction: () => Promise<T>,
-  maximumNumberOfTries: number = parseInt(process.env.RETRY_MAX_RETRIES || '5', 10),
-  initialBackoffMilliseconds: number = parseInt(process.env.RETRY_INITIAL_DELAY_MS || '1000', 10),
+  maximumNumberOfTries: number = parseInt(process.env.MAX_RETRIES || '5', 10),
+  initialBackoffMilliseconds: number = parseInt(process.env.RETRY_DELAY || '1000', 10),
   logger?: Logger
 ): Promise<T> {
   const backoff = new ExponentialBackoff(maximumNumberOfTries, initialBackoffMilliseconds, logger);
