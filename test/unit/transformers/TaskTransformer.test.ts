@@ -56,8 +56,8 @@ describe('TaskTransformer', () => {
           IsActive: true,
           TaskNotes: 'Initial design phase',
           Predecessors: { results: [] },
-          ConstraintType: 'ASAP',
-          ConstraintDate: undefined,
+          ConstraintType: 0, // ASAP
+          ConstraintStartEnd: undefined,
           Deadline: '2024-04-01T17:00:00Z',
           ResourceNames: 'John Doe, Jane Smith',
           Created: '2024-03-01T08:00:00Z',
@@ -139,7 +139,7 @@ describe('TaskTransformer', () => {
       const columns = createTasksSheetColumns(projectName);
 
       const durationColumn = columns.find((c) => c.title === 'Duration');
-      expect(durationColumn?.type).toBe('DURATION');
+      expect(durationColumn?.type).toBe('TEXT_NUMBER');
     });
 
     it('should create PICKLIST columns for Status, Priority, Constraint Type', () => {
@@ -202,8 +202,8 @@ describe('TaskTransformer', () => {
         IsActive: true,
         TaskNotes: 'Initial design phase',
         Predecessors: { results: [] },
-        ConstraintType: 'ASAP',
-        ConstraintDate: undefined,
+        ConstraintType: 0, // ASAP
+        ConstraintStartEnd: undefined,
         Deadline: '2024-04-01T17:00:00Z',
         ResourceNames: 'John Doe, Jane Smith',
         Created: '2024-03-01T08:00:00Z',
@@ -225,7 +225,7 @@ describe('TaskTransformer', () => {
         Notes: 12,
         Predecessors: 13,
         'Constraint Type': 14,
-        'Constraint Date': 15,
+        'ConstraintStartEnd': 15,
         Deadline: 16,
         'Project Online Created Date': 17,
         'Project Online Modified Date': 18,
@@ -244,9 +244,9 @@ describe('TaskTransformer', () => {
       const startDateCell = row.cells?.find((c) => c.columnId === columnMap['Start Date']);
       expect(startDateCell?.value).toBe('2024-03-15');
 
-      // Verify Duration (decimal days for project sheet)
+      // Verify Duration (readable format like "5d")
       const durationCell = row.cells?.find((c) => c.columnId === columnMap['Duration']);
-      expect(durationCell?.value).toBe(5.0); // 40 hours / 8 = 5 days
+      expect(durationCell?.value).toBe('5d'); // 40 hours = 5 days
 
       // Verify % Complete
       const percentCell = row.cells?.find((c) => c.columnId === columnMap['% Complete']);

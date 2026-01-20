@@ -251,7 +251,7 @@ export function createTasksSheetColumns(_projectName: string): SmartsheetColumn[
       width: 120,
     },
     {
-      title: 'Constraint Date',
+      title: 'ConstraintStartEnd',
       type: 'DATE',
       width: 120,
     },
@@ -458,18 +458,21 @@ export function createTaskRow(
   }
 
   // Constraint Type
-  if (columnMap['Constraint Type'] && task.ConstraintType) {
-    cells.push({
-      columnId: columnMap['Constraint Type'],
-      value: task.ConstraintType,
-    });
+  if (columnMap['Constraint Type'] && task.ConstraintType !== undefined && task.ConstraintType !== null) {
+    const constraintTypeText = mapConstraintTypeToAbbreviation(task.ConstraintType);
+    if (constraintTypeText) {
+      cells.push({
+        columnId: columnMap['Constraint Type'],
+        value: constraintTypeText,
+      });
+    }
   }
 
-  // Constraint Date
-  if (columnMap['Constraint Date'] && task.ConstraintDate) {
+  // ConstraintStartEnd
+  if (columnMap['ConstraintStartEnd'] && task.ConstraintStartEnd) {
     cells.push({
-      columnId: columnMap['Constraint Date'],
-      value: convertDateTimeToDate(task.ConstraintDate),
+      columnId: columnMap['ConstraintStartEnd'],
+      value: convertDateTimeToDate(task.ConstraintStartEnd),
     });
   }
 
@@ -764,6 +767,33 @@ function getAssignmentResourceType(resource: ProjectOnlineResource): 'Work' | 'M
   }
   
   return 'Work';
+}
+
+/**
+ * Map Project Online constraint type numeric value to abbreviated string for PMO Standards
+ * Project Online uses numeric values 0-7, PMO Standards uses abbreviated strings
+ */
+export function mapConstraintTypeToAbbreviation(constraintType: number): string {
+  switch (constraintType) {
+    case 0:
+      return 'ASAP'; // As Soon As Possible
+    case 1:
+      return 'ALAP'; // As Late As Possible
+    case 2:
+      return 'MSO';  // Must Start On
+    case 3:
+      return 'MFO';  // Must Finish On
+    case 4:
+      return 'SNET'; // Start No Earlier Than
+    case 5:
+      return 'SNLT'; // Start No Later Than
+    case 6:
+      return 'FNET'; // Finish No Earlier Than
+    case 7:
+      return 'FNLT'; // Finish No Later Than
+    default:
+      return 'ALAP';
+  }
 }
 
 /**
@@ -1277,13 +1307,14 @@ export class TaskTransformer {
           cells.push({ columnId: columnMap['Predecessors'], value: predecessorValue });
         }
       }
-      if (columnMap['Constraint Type'] && task.ConstraintType) {
-        cells.push({ columnId: columnMap['Constraint Type'], value: task.ConstraintType });
+      if (columnMap['Constraint Type'] && task.ConstraintType !== undefined && task.ConstraintType !== null) {
+        const constraintValue = mapConstraintTypeToAbbreviation(task.ConstraintType);
+        cells.push({ columnId: columnMap['Constraint Type'], value: constraintValue });
       }
-      if (columnMap['Constraint Date'] && task.ConstraintDate) {
+      if (columnMap['ConstraintStartEnd'] && task.ConstraintStartEnd) {
         cells.push({
-          columnId: columnMap['Constraint Date'],
-          value: convertDateTimeToDate(task.ConstraintDate),
+          columnId: columnMap['ConstraintStartEnd'],
+          value: convertDateTimeToDate(task.ConstraintStartEnd),
         });
       }
       if (columnMap['Deadline'] && task.Deadline) {
