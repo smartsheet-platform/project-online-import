@@ -38,9 +38,24 @@ export class ODataTaskBuilder {
   /**
    * Set hierarchy information
    */
-  withHierarchy(outlineLevel: number, outlinePosition?: string): this {
+  withHierarchy(outlineLevel: number, parentTaskId?: string): this {
     this.task.OutlineLevel = outlineLevel;
-    this.task.OutlinePosition = outlinePosition || outlineLevel.toString();
+    this.task.ParentTaskId = parentTaskId;
+    // Build outline position based on hierarchy
+    if (outlineLevel === 1) {
+      this.task.OutlinePosition = '1';
+    } else {
+      this.task.OutlinePosition = `1.${'1.'.repeat(outlineLevel - 2)}1`;
+    }
+    return this;
+  }
+
+  /**
+   * Set parent task for hierarchy (required for Smartsheet hierarchy)
+   */
+  withParent(parentTask: ProjectOnlineTask): this {
+    this.task.Parent = parentTask;
+    this.task.ParentTaskId = parentTask.Id;
     return this;
   }
 
@@ -71,10 +86,24 @@ export class ODataTaskBuilder {
 
   /**
    * Set constraint type and date
+   * @param type - Numeric constraint type (0-7) or string abbreviation for backward compatibility
+   * @param date - Optional constraint date
    */
-  withConstraint(type: string, date?: string): this {
-    this.task.ConstraintType = type;
-    this.task.ConstraintDate = date;
+  withConstraint(type: number | string, date?: string): this {
+    // Convert string abbreviations to numeric for consistency with Project Online API
+    let numericType: number;
+    if (typeof type === 'string') {
+      const stringToNumeric: Record<string, number> = {
+        'ASAP': 0, 'ALAP': 1, 'MSO': 2, 'MFO': 3,
+        'SNET': 4, 'SNLT': 5, 'FNET': 6, 'FNLT': 7
+      };
+      numericType = stringToNumeric[type] ?? 0;
+    } else {
+      numericType = type;
+    }
+    
+    this.task.ConstraintType = numericType;
+    this.task.ConstraintStartEnd = date;
     return this;
   }
 
@@ -215,6 +244,9 @@ export class ODataTaskBuilder {
    * Build the task object
    */
   build(): ProjectOnlineTask {
+    // Provide default duration if none specified (1 day = PT8H)
+    const defaultDuration = this.task.IsMilestone ? 'PT0H' : 'PT8H';
+    
     return {
       Id: this.task.Id!,
       ProjectId: this.task.ProjectId!,
@@ -226,7 +258,7 @@ export class ODataTaskBuilder {
       IsActive: this.task.IsActive!,
       Start: this.task.Start,
       Finish: this.task.Finish,
-      Duration: this.task.Duration,
+      Duration: this.task.Duration || defaultDuration,
       Work: this.task.Work,
       ActualWork: this.task.ActualWork,
       PercentComplete: this.task.PercentComplete,
@@ -235,11 +267,13 @@ export class ODataTaskBuilder {
       TaskNotes: this.task.TaskNotes,
       Predecessors: this.task.Predecessors,
       ConstraintType: this.task.ConstraintType,
-      ConstraintDate: this.task.ConstraintDate,
+      ConstraintStartEnd: this.task.ConstraintStartEnd,
       Deadline: this.task.Deadline,
       ResourceNames: this.task.ResourceNames,
       Created: this.task.Created,
       Modified: this.task.Modified,
+      Parent: this.task.Parent,
+      ParentTaskId: this.task.ParentTaskId,
     };
   }
 }

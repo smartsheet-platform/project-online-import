@@ -64,8 +64,8 @@ export interface ProjectOnlineTask {
   IsMilestone: boolean;
   IsActive: boolean;
   TaskNotes?: string;
-  ConstraintType?: string;
-  ConstraintDate?: string; // ISO 8601 DateTime
+  ConstraintType?: number; // 0-7 enum (Project Online constraint types)
+  ConstraintStartEnd?: string; // ISO 8601 DateTime
   Deadline?: string; // ISO 8601 DateTime
   ResourceNames?: string;
   Created?: string; // ISO 8601 DateTime

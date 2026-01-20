@@ -90,6 +90,14 @@ export class ODataResourceBuilder {
   }
 
   /**
+   * Set group (alternative to department for certain Project Online setups)
+   */
+  withGroup(group: string): this {
+    this.resource.Group = group;
+    return this;
+  }
+
+  /**
    * Set resource code
    */
   withCode(code: string): this {

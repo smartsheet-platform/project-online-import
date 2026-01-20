@@ -137,27 +137,27 @@ export function resourcesWithDepartments(): ProjectOnlineResource[] {
     new ODataResourceBuilder()
       .asWorkResource()
       .withName('Engineering Resource 1')
-      .withDepartment('Engineering')
+      .withGroup('Engineering')
       .build(),
     new ODataResourceBuilder()
       .asWorkResource()
       .withName('Engineering Resource 2')
-      .withDepartment('Engineering')
+      .withGroup('Engineering')
       .build(),
     new ODataResourceBuilder()
       .asWorkResource()
       .withName('Marketing Resource')
-      .withDepartment('Marketing')
+      .withGroup('Marketing')
       .build(),
     new ODataResourceBuilder()
       .asWorkResource()
       .withName('Sales Resource')
-      .withDepartment('Sales')
+      .withGroup('Sales')
       .build(),
     new ODataResourceBuilder()
       .asWorkResource()
       .withName('Operations Resource')
-      .withDepartment('Operations')
+      .withGroup('Operations')
       .build(),
   ];
 }

@@ -25,22 +25,31 @@ export function flatTaskList(projectId: string, count: number = 5): ProjectOnlin
  * Scenario 2: Simple 2-level hierarchy
  */
 export function simpleHierarchy(projectId: string): ProjectOnlineTask[] {
+  const parentTask = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Parent Task 1')
+    .withHierarchy(1)
+    .withId('parent-1')
+    .withDuration('PT40H') // 5 days
+    .build();
+
   return [
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Parent Task 1')
-      .withHierarchy(1)
-      .withId('parent-1')
-      .build(),
+    parentTask,
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Child Task 1.1')
       .withHierarchy(2, 'parent-1')
+      .withId('child-1-1')
+      .withDuration('PT16H') // 2 days
+      .withParent(parentTask)
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Child Task 1.2')
       .withHierarchy(2, 'parent-1')
+      .withId('child-1-2')
+      .withDuration('PT24H') // 3 days
+      .withParent(parentTask)
       .build(),
   ];
 }
@@ -49,35 +58,52 @@ export function simpleHierarchy(projectId: string): ProjectOnlineTask[] {
  * Scenario 3: Deep hierarchy (5+ levels)
  */
 export function deepHierarchy(projectId: string): ProjectOnlineTask[] {
+  const level1 = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Level 1')
+    .withHierarchy(1)
+    .withId('level-1')
+    .withDuration('PT40H') // 5 days
+    .build();
+    
+  const level2 = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Level 2')
+    .withHierarchy(2, 'level-1')
+    .withId('level-2')
+    .withDuration('PT32H') // 4 days
+    .withParent(level1)
+    .build();
+    
+  const level3 = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Level 3')
+    .withHierarchy(3, 'level-2')
+    .withId('level-3')
+    .withDuration('PT24H') // 3 days
+    .withParent(level2)
+    .build();
+    
+  const level4 = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Level 4')
+    .withHierarchy(4, 'level-3')
+    .withId('level-4')
+    .withDuration('PT16H') // 2 days
+    .withParent(level3)
+    .build();
+
   return [
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Level 1')
-      .withHierarchy(1)
-      .withId('level-1')
-      .build(),
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Level 2')
-      .withHierarchy(2, 'level-1')
-      .withId('level-2')
-      .build(),
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Level 3')
-      .withHierarchy(3, 'level-2')
-      .withId('level-3')
-      .build(),
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Level 4')
-      .withHierarchy(4, 'level-3')
-      .withId('level-4')
-      .build(),
+    level1,
+    level2,
+    level3,
+    level4,
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Level 5')
       .withHierarchy(5, 'level-4')
+      .withDuration('PT8H') // 1 day
+      .withParent(level4)
       .build(),
   ];
 }
@@ -86,39 +112,51 @@ export function deepHierarchy(projectId: string): ProjectOnlineTask[] {
  * Scenario 4: Complex multi-branch hierarchy
  */
 export function complexHierarchy(projectId: string): ProjectOnlineTask[] {
+  // Create parent tasks first
+  const phase1 = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Phase 1')
+    .withHierarchy(1)
+    .withId('phase-1')
+    .build();
+    
+  const phase2 = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Phase 2')
+    .withHierarchy(1)
+    .withId('phase-2')
+    .build();
+
+  // Create second-level tasks
+  const task11 = new ODataTaskBuilder()
+    .withProjectId(projectId)
+    .withName('Task 1.1')
+    .withHierarchy(2, 'phase-1')
+    .withId('task-1-1')
+    .withParent(phase1)
+    .build();
+
   return [
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Phase 1')
-      .withHierarchy(1)
-      .withId('phase-1')
-      .build(),
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Task 1.1')
-      .withHierarchy(2, 'phase-1')
-      .withId('task-1-1')
-      .build(),
+    phase1,
+    task11,
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Subtask 1.1.1')
       .withHierarchy(3, 'task-1-1')
+      .withParent(task11)
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Task 1.2')
       .withHierarchy(2, 'phase-1')
+      .withParent(phase1)
       .build(),
-    new ODataTaskBuilder()
-      .withProjectId(projectId)
-      .withName('Phase 2')
-      .withHierarchy(1)
-      .withId('phase-2')
-      .build(),
+    phase2,
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('Task 2.1')
       .withHierarchy(2, 'phase-2')
+      .withParent(phase2)
       .build(),
   ];
 }
@@ -229,42 +267,42 @@ export function tasksWithAllConstraints(projectId: string): ProjectOnlineTask[] 
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('ASAP Task')
-      .withConstraint('ASAP')
+      .withConstraint(0) // ASAP
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('ALAP Task')
-      .withConstraint('ALAP')
+      .withConstraint(1) // ALAP
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('SNET Task')
-      .withConstraint('SNET', '2024-03-01T08:00:00Z')
+      .withConstraint(4, '2024-03-01T08:00:00Z') // SNET
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('SNLT Task')
-      .withConstraint('SNLT', '2024-03-15T08:00:00Z')
+      .withConstraint(5, '2024-03-15T08:00:00Z') // SNLT
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('FNET Task')
-      .withConstraint('FNET', '2024-04-01T08:00:00Z')
+      .withConstraint(6, '2024-04-01T08:00:00Z') // FNET
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('FNLT Task')
-      .withConstraint('FNLT', '2024-04-15T08:00:00Z')
+      .withConstraint(7, '2024-04-15T08:00:00Z') // FNLT
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('MSO Task')
-      .withConstraint('MSO', '2024-05-01T08:00:00Z')
+      .withConstraint(2, '2024-05-01T08:00:00Z') // MSO
       .build(),
     new ODataTaskBuilder()
       .withProjectId(projectId)
       .withName('MFO Task')
-      .withConstraint('MFO', '2024-05-15T08:00:00Z')
+      .withConstraint(3, '2024-05-15T08:00:00Z') // MFO
       .build(),
   ];
 }
@@ -364,7 +402,7 @@ export function completeTask(projectId: string): ProjectOnlineTask {
     .withDuration('P5D') // 5 business days
     .withPriority(600) // Higher priority
     .withPercentComplete(45) // 45% complete
-    .withConstraint('SNET', '2024-03-15T08:00:00Z') // Start No Earlier Than
+    .withConstraint(4, '2024-03-15T08:00:00Z') // Start No Earlier Than (SNET)
     .withPredecessorString('1FS+2d') // Predecessor with lag
     .withWork('PT80H', 'PT36H') // 80 hours of work, 36 hours actual
     .withNotes(
