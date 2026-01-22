@@ -37,7 +37,11 @@ temp/
 
 # Internal tooling and documentation (not for public release)
 memory-bank/
-sdlc/
+# Ignore most of sdlc/ but allow docs/code/
+sdlc/*
+!sdlc/docs/
+sdlc/docs/*
+!sdlc/docs/code/
 .roo/
 .roomodes
 .sdlc-version
