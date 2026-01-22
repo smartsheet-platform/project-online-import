@@ -10,7 +10,7 @@
 
 <div align="center">
 
-[← Previous: Anti-Patterns](./anti-patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Conventions →](./conventions.md)
+[← Previous: Anti-Patterns](Anti-Patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Conventions →](Conventions.md)
 
 </div>
 
@@ -167,7 +167,7 @@ Once your issue is well-defined:
 
 1. **The AI agent reads your issue** as its primary prompt
 2. **It analyzes the Project Online Import CLI codebase** to understand:
-   - Existing patterns and conventions (see [Conventions](./conventions.md))
+   - Existing patterns and conventions (see [Conventions](Conventions.md))
    - Related code that may need updates
    - Test files that need modifications
    - Documentation that should be updated
@@ -460,7 +460,7 @@ End users (project managers, administrators) setting up the CLI for the first ti
    ```bash
    git checkout -b feature/123-add-incremental-sync
    ```
-3. **Write Code**: Follow [Code Conventions](./conventions.md) and [Patterns](./patterns.md)
+3. **Write Code**: Follow [Code Conventions](Conventions.md) and [Patterns](Patterns.md)
 4. **Write Tests**: Add unit and integration tests (see [Test Suite Guide](../../../test/README.md))
 5. **Quality Checks**: Ensure all checks pass
    ```bash
@@ -516,6 +516,6 @@ Remember: **A well-written issue is the foundation for successful automation wit
 
 <div align="center">
 
-[← Previous: Anti-Patterns](./anti-patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Conventions →](./conventions.md)
+[← Previous: Anti-Patterns](Anti-Patterns.md) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Next: Conventions →](Conventions.md)
 
 </div>

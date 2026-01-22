@@ -198,16 +198,17 @@ For: Technical leads, architects, evaluators
 9. **[Re-run Resiliency](sdlc/docs/project/Re-run-Resiliency.md)** - Idempotent operations and multi-run support
 10. **[Sheet References](sdlc/docs/project/Sheet-References.md)** - Cross-sheet references and relationships
 
-#### 🛠️ [Contributing](sdlc/docs/code/Conventions.md)
+#### 🛠️ [Contributing](sdlc/docs/code/Issue-First-Approach.md)
 **Start here if you're developing or extending the codebase**
 
 For: Developers, contributors, maintainers
 
-11. **[Code Conventions](sdlc/docs/code/Conventions.md)** ⭐ **START HERE** - Naming, formatting, and style standards
-12. **[Code Patterns](sdlc/docs/code/Patterns.md)** - Recommended implementation patterns
-13. **[Anti-Patterns](sdlc/docs/code/Anti-Patterns.md)** - Common mistakes to avoid
-14. **[API Services Catalog](sdlc/docs/api-reference/API-Services-Catalog.md)** - External API integration reference
-15. **[Test Suite Guide](test/README.md)** - Testing strategy and implementation
+11. **[Issue First Approach](sdlc/docs/code/Issue-First-Approach.md)** ⭐ **START HERE** - How to write effective issues for AI agents
+12. **[Code Conventions](sdlc/docs/code/Conventions.md)** - Naming, formatting, and style standards
+13. **[Code Patterns](sdlc/docs/code/Patterns.md)** - Recommended implementation patterns
+14. **[Anti-Patterns](sdlc/docs/code/Anti-Patterns.md)** - Common mistakes to avoid
+15. **[API Services Catalog](sdlc/docs/api-reference/Api-Services-Catalog.md)** - External API integration reference
+16. **[Test Suite Guide](test/README.md)** - Testing strategy and implementation
 
 ---
 
@@ -318,10 +319,21 @@ See [Project Online Migration Overview](sdlc/docs/project/Project-Online-Migrati
 
 ## Contributing
 
-This project follows TypeScript best practices and maintains high code quality standards. Please ensure:
+This project follows an "Issue First" approach for all contributions. Before making code changes:
+
+1. **Create or find a GitHub Issue** describing the change
+2. Provide clear context and examples in the issue
+3. Reference relevant documentation and APIs
+
+This approach enables effective collaboration with AI coding agents (Claude Code and Roo Code) and ensures high-quality contributions. See the **[Issue First Approach Guide](sdlc/docs/code/Issue-First-Approach.md)** for detailed guidance.
+
+### Code Quality Standards
+
+Please ensure all contributions meet these standards:
 
 - All code passes `npm run typecheck`, `npm run lint`, and `npm test`
-- New features include appropriate tests
+- New features include appropriate unit and integration tests
+- Code follows the conventions in [Code Conventions](sdlc/docs/code/Conventions.md) and [Patterns](sdlc/docs/code/Patterns.md)
 - Documentation is updated for significant changes
 
 ## License
