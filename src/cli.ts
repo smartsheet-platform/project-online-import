@@ -84,6 +84,81 @@ program
   });
 
 program
+  .command('bulk-import')
+  .description('Import all accessible Project Online projects to Smartsheet')
+  .option('--dry-run', 'Run without making changes (discover projects only)', false)
+  .option('-v, --verbose', 'Enable verbose logging', false)
+  .option('--config <path>', 'Path to .env configuration file')
+  .action(async (options) => {
+    // Initialize logger
+    const logger = new Logger({
+      level: options.verbose ? LogLevel.DEBUG : LogLevel.INFO,
+      timestamps: false,
+      colors: true,
+    });
+
+    const errorHandler = new ErrorHandler(logger);
+
+    try {
+      logger.info('\n🚀 Bulk Project Online to Smartsheet Import\n');
+
+      // Check for first-time setup
+      if (!ConfigManager.checkSetup()) {
+        process.exit(1);
+      }
+
+      // Load configuration
+      const configManager = new ConfigManager(logger);
+      const config = configManager.load(options.config);
+
+      // Override dry-run from command line if specified
+      if (options.dryRun) {
+        config.dryRun = true;
+      }
+
+      // Override verbose from command line if specified
+      if (options.verbose) {
+        config.verbose = true;
+        logger.setLevel(LogLevel.DEBUG);
+      }
+
+      // Print configuration summary
+      configManager.printSummary();
+
+      // Initialize importer
+      const smartsheetClient = smartsheet.createClient({
+        accessToken: process.env.SMARTSHEET_API_TOKEN,
+      })
+      const importer = new ProjectOnlineImporter(smartsheetClient, logger, errorHandler);
+
+      if (config.dryRun) {
+        logger.warn('\n🚨 DRY RUN MODE: No changes will be made\n');
+      }
+
+      // Perform bulk import
+      const result = await importer.importAllProjects({
+        dryRun: config.dryRun,
+      });
+
+      if (!config.dryRun && result.projectWorkspaceMapping.length > 0) {
+        logger.info('\n🔗 Project → Workspace Links:');
+        result.projectWorkspaceMapping.forEach((mapping) => {
+          if (mapping.success && mapping.workspacePermalink) {
+            logger.success(`${mapping.projectName} → ${mapping.workspacePermalink}`);
+          } else {
+            logger.error(`${mapping.projectName} → ❌ Failed: ${mapping.error || 'Unknown error'}`);
+          }
+        });
+      }
+
+      logger.success('\n✅ Bulk import completed successfully!\n');
+    } catch (error) {
+      errorHandler.handle(error, 'Bulk Import');
+      process.exit(1);
+    }
+  });
+
+program
   .command('validate')
   .description('Validate Project Online data before import')
   .option('-s, --source <url>', 'Project Online source URL')
