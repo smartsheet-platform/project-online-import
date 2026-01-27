@@ -24,6 +24,10 @@ export interface ImportOptions {
   dryRun?: boolean;
 }
 
+export interface BulkImportOptions {
+  dryRun?: boolean;
+}
+
 export interface ValidationResult {
   valid: boolean;
   errors?: string[];
@@ -45,6 +49,23 @@ export interface ImportResult {
   tasksImported: number;
   resourcesImported: number;
   assignmentsImported: number;
+  errors?: string[];
+}
+
+export interface BulkImportResult {
+  totalProjects: number;
+  successfulImports: number;
+  failedImports: number;
+  results: ImportResult[];
+  projectWorkspaceMapping: Array<{
+    projectName: string;
+    projectId: string;
+    workspaceName?: string;
+    workspaceId?: number;
+    workspacePermalink?: string;
+    success: boolean;
+    error?: string;
+  }>;
   errors?: string[];
 }
 
@@ -600,5 +621,212 @@ export class ProjectOnlineImporter {
       valid: errors.length === 0,
       errors: errors.length > 0 ? errors : undefined,
     };
+  }
+
+  /**
+   * Import all accessible Project Online projects to Smartsheet
+   */
+  async importAllProjects(options: BulkImportOptions): Promise<BulkImportResult> {
+    this.logger.info(`📥 Source: All accessible Project Online projects`);
+    this.logger.info(`📤 Destination: Individual workspaces (one per project)`);
+
+    this.initializeProjectOnlineClient();
+
+    const result = this.initializeBulkImportResult();
+    
+    try {
+      const allProjectsData = await this.discoverProjects();
+      result.totalProjects = allProjectsData.length;
+
+      if (allProjectsData.length === 0) {
+        this.logger.warn('⚠️  No accessible projects found in Project Online');
+        return result;
+      }
+
+      if (options.dryRun) {
+        return this.handleDryRun(result, allProjectsData.length);
+      }
+
+      await this.processAllProjects(allProjectsData, result);
+      this.logBulkImportSummary(result);
+
+      return result;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      result.errors!.push(`Bulk import failed: ${errorMsg}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize bulk import result structure
+   */
+  private initializeBulkImportResult(): BulkImportResult {
+    return {
+      totalProjects: 0,
+      successfulImports: 0,
+      failedImports: 0,
+      results: [],
+      projectWorkspaceMapping: [],
+      errors: [],
+    };
+  }
+
+  /**
+   * Discover all accessible projects
+   */
+  private async discoverProjects() {
+    return await this.projectOnlineClient!.extractAllProjectsData();
+  }
+
+  /**
+   * Handle dry run mode
+   */
+  private handleDryRun(result: BulkImportResult, projectCount: number): BulkImportResult {
+    this.logger.warn('\n🚨 Dry run mode - no changes will be made\n');
+    this.logger.info('In dry-run mode, the tool would:');
+    this.logger.info('  • Extract data from each project');
+    this.logger.info('  • Process data transformations');
+    this.logger.info('  • Skip all Smartsheet write operations\n');
+    
+    this.logger.success(`\n✅ Dry run completed successfully!`);
+    this.logger.info(`   Would process ${projectCount} projects\n`);
+    return result;
+  }
+
+  /**
+   * Process all projects for import
+   */
+  private async processAllProjects(
+    allProjectsData: Array<{
+      project: ProjectOnlineProject;
+      tasks: ProjectOnlineTask[];
+      resources: ProjectOnlineResource[];
+      assignments: ProjectOnlineAssignment[];
+    }>,
+    result: BulkImportResult
+  ): Promise<void> {
+    for (let i = 0; i < allProjectsData.length; i++) {
+      const projectData = allProjectsData[i];
+      await this.processSingleProject(projectData, i + 1, allProjectsData.length, result);
+    }
+  }
+
+  /**
+   * Process a single project import
+   */
+  private async processSingleProject(
+    projectData: {
+      project: ProjectOnlineProject;
+      tasks: ProjectOnlineTask[];
+      resources: ProjectOnlineResource[];
+      assignments: ProjectOnlineAssignment[];
+    },
+    currentIndex: number,
+    totalCount: number,
+    result: BulkImportResult
+  ): Promise<void> {
+    this.logger.info(`\n📦 Processing project ${currentIndex}/${totalCount}: ${projectData.project.Name}`);
+    
+    let mapping: BulkImportResult['projectWorkspaceMapping'][0] = {
+      projectName: projectData.project.Name,
+      projectId: projectData.project.Id,
+      success: false,
+    };
+    
+    try {
+      const importResult = await this.importProject({
+        project: projectData.project,
+        tasks: projectData.tasks,
+        resources: projectData.resources,
+        assignments: projectData.assignments,
+      });
+
+      this.handleSuccessfulImport(importResult, mapping, result);
+    } catch (error) {
+      this.handleFailedImport(error, projectData.project.Name, mapping, result);
+    }
+    
+    result.projectWorkspaceMapping.push(mapping);
+  }
+
+  /**
+   * Handle successful project import
+   */
+  private handleSuccessfulImport(
+    importResult: ImportResult,
+    mapping: BulkImportResult['projectWorkspaceMapping'][0],
+    result: BulkImportResult
+  ): void {
+    result.results.push(importResult);
+    result.successfulImports++;
+    
+    mapping.success = true;
+    mapping.workspaceName = importResult.workspaceName;
+    mapping.workspaceId = importResult.workspaceId;
+    mapping.workspacePermalink = importResult.workspacePermalink;
+    
+    this.logger.success(`✅ Successfully imported: ${mapping.projectName}`);
+    if (importResult.workspacePermalink) {
+      this.logger.info(`   Workspace: ${importResult.workspacePermalink}`);
+    }
+  }
+
+  /**
+   * Handle failed project import
+   */
+  private handleFailedImport(
+    error: unknown,
+    projectName: string,
+    mapping: BulkImportResult['projectWorkspaceMapping'][0],
+    result: BulkImportResult
+  ): void {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    result.failedImports++;
+    result.errors!.push(`Failed to import "${projectName}": ${errorMsg}`);
+    
+    mapping.error = errorMsg;
+    this.logger.error(`❌ Failed to import "${projectName}": ${errorMsg}`);
+  }
+
+  /**
+   * Log bulk import summary and results
+   */
+  private logBulkImportSummary(result: BulkImportResult): void {
+    this.logger.info(`\n📊 Bulk Import Summary:`);
+    this.logger.info(`   Total projects: ${result.totalProjects}`);
+    this.logger.info(`   Successful imports: ${result.successfulImports}`);
+    this.logger.info(`   Failed imports: ${result.failedImports}`);
+    
+    this.logProjectWorkspaceMapping(result.projectWorkspaceMapping);
+    this.logDetailedErrors(result.errors);
+  }
+
+  /**
+   * Log project to workspace mapping
+   */
+  private logProjectWorkspaceMapping(mapping: BulkImportResult['projectWorkspaceMapping']): void {
+    if (mapping.length > 0) {
+      this.logger.info(`\n🔗 Project → Workspace Mapping:`);
+      mapping.forEach((item) => {
+        if (item.success && item.workspacePermalink) {
+          this.logger.success(`   ${item.projectName} → ${item.workspacePermalink}`);
+        } else {
+          this.logger.error(`   ${item.projectName} → ❌ Failed: ${item.error || 'Unknown error'}`);
+        }
+      });
+    }
+  }
+
+  /**
+   * Log detailed errors if any
+   */
+  private logDetailedErrors(errors?: string[]): void {
+    if (errors && errors.length > 0) {
+      this.logger.info(`\n⚠️  Detailed Errors:`);
+      errors.forEach((error, index) => {
+        this.logger.error(`   ${index + 1}. ${error}`);
+      });
+    }
   }
 }

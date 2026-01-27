@@ -1,31 +1,22 @@
 # Project Online Import CLI
 
-> **⚠️ Smartsheet Internal Tool** - This repository is private and intended for Smartsheet teams only.
-
-A TypeScript CLI tool for importing Project Online data to Smartsheet.
+A TypeScript CLI tool for importing Project Online data to Smartsheet. This tool helps organizations migrate their Microsoft Project Online projects to Smartsheet workspaces while preserving project structure, tasks, resources, and relationships.
 
 ## Installation
 
-**For Smartsheet Team Members:**
-
-### Option 1: Install from GitHub Release (Recommended)
+### Option 1: Install from npm (Recommended)
 ```bash
-# Download tarball from: https://github.com/smar-shikhar-krishna/project-online-import/releases/latest
-npm install -g ./project-online-import-1.0.0.tgz
+npm install -g @smartsheet/project-online-import
 ```
 
-### Option 2: Install Directly from GitHub
+### Option 2: Install from GitHub
 ```bash
-# Requires repository access
-npm install -g git+ssh://git@github.com/smar-shikhar-krishna/project-online-import.git
-
-# Or with HTTPS (requires GitHub token)
-npm install -g git+https://github.com/smar-shikhar-krishna/project-online-import.git
+npm install -g git+https://github.com/smartsheet-platform/project-online-import.git
 ```
 
 ### Option 3: Clone and Build Locally
 ```bash
-git clone git@github.com:smar-shikhar-krishna/project-online-import.git
+git clone https://github.com/smartsheet-platform/project-online-import.git
 cd project-online-import
 npm install
 npm run build
@@ -38,13 +29,13 @@ npm link  # Makes CLI globally available
 
 - Node.js >= 18.0.0
 - npm >= 9.0.0
-- Access to Smartsheet GitHub organization
+- Access to both Microsoft Project Online and Smartsheet
 
 ### Setup
 
 1. Clone the repository:
    ```bash
-   git clone git@github.com:smar-shikhar-krishna/project-online-import.git
+   git clone https://github.com/smartsheet-platform/project-online-import.git
    cd project-online-import
    ```
 
@@ -80,17 +71,53 @@ npm link  # Makes CLI globally available
 Import data from Project Online to Smartsheet:
 
 ```bash
-npm run dev -- import --source <url> --destination <id>
+npm run dev -- import --source <project-id> --destination <workspace-id>
 ```
 
-Options:
-- `-s, --source <url>` - Project Online source URL
-- `-d, --destination <id>` - Smartsheet destination ID
-- `--dry-run` - Run without making changes
+#### Single Project Import
 
-Example:
 ```bash
-npm run dev -- import --source https://example.com --destination sheet-123
+# Import a specific project
+npm run dev -- import --source 12345678-1234-1234-1234-123456789abc --destination 987654321
+
+# Dry run for a specific project
+npm run dev -- import --source 12345678-1234-1234-1234-123456789abc --destination 987654321 --dry-run
+```
+
+#### Options
+
+- `-s, --source <project-id>` - Project Online project ID (GUID) to import
+- `-d, --destination <workspace-id>` - Smartsheet destination workspace ID
+- `--dry-run` - Run without making changes (validation only)
+- `-v, --verbose` - Enable verbose logging
+- `--config <path>` - Path to custom .env configuration file
+
+### Bulk Import Command
+
+Import all accessible Project Online projects (each gets its own workspace):
+
+```bash
+# Import all accessible projects (creates one workspace per project)
+npm run dev -- bulk-import
+
+# Dry run to discover what projects would be imported
+npm run dev -- bulk-import --dry-run
+
+# Verbose output
+npm run dev -- bulk-import --verbose
+```
+
+#### Options
+
+- `--dry-run` - Discover projects without making changes
+- `-v, --verbose` - Enable verbose logging
+- `--config <path>` - Path to custom .env configuration file
+
+**Output**: After successful completion, displays a mapping of project names to workspace links:
+```
+🔗 Project → Workspace Links:
+Project Alpha → https://app.smartsheet.com/b/workspace/123456789
+Project Beta → https://app.smartsheet.com/b/workspace/987654321
 ```
 
 ### Validate Command
@@ -98,12 +125,32 @@ npm run dev -- import --source https://example.com --destination sheet-123
 Validate Project Online data before import:
 
 ```bash
-npm run dev -- validate --source <url>
+npm run dev -- validate --source <project-id>
 ```
 
 Example:
 ```bash
-npm run dev -- validate --source https://example.com
+npm run dev -- validate --source 12345678-1234-1234-1234-123456789abc
+```
+
+### Configuration Command
+
+Validate and display current configuration:
+
+```bash
+npm run dev -- config
+```
+
+### Automation Script
+
+For automation and CI/CD pipelines, use the standalone bulk import script:
+
+```bash
+# Bulk import all projects (automation-friendly)
+npx tsx scripts/bulk-import-all-projects.ts
+
+# Dry run for automation testing
+npx tsx scripts/bulk-import-all-projects.ts --dry-run
 ```
 
 ## Testing

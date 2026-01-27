@@ -407,7 +407,7 @@ export class ProjectOnlineClient {
           'Tasks/Assignments/Resource', 
           'ProjectResources', 
           'Owner'
-        ], // Expand Resource and Task within Assignments
+        ],
         $top: 1,
       });
 
@@ -418,54 +418,118 @@ export class ProjectOnlineClient {
         );
       }
 
-      // Get project with expanded entities (Tasks, Assignments, and Resources may be in 'results' or direct array)
-      const projectWithExpanded = projectsResponse.value[0] as ProjectOnlineProject & {
-        Tasks?: { results?: ProjectOnlineTask[] } | ProjectOnlineTask[];
-        Assignments?: { results?: ProjectOnlineAssignment[] } | ProjectOnlineAssignment[];
-        ProjectResources?: { results?: ProjectOnlineResource[] } | ProjectOnlineResource[];
-        Owner?: any;
-      };
-      const project = projectWithExpanded;
-      project.OwnerEmail = projectWithExpanded.Owner?.UserPrincipalName;
-      project.Owner = projectWithExpanded.Owner?.Title || '';
-      
-      this.logger.success(`✓ Project: ${project.Name}`);
-      
-      // Extract expanded entities - handle both verbose format (with 'results') and direct arrays
-      const tasks =
-        (projectWithExpanded.Tasks &&
-          'results' in projectWithExpanded.Tasks &&
-          projectWithExpanded.Tasks.results) ||
-        (Array.isArray(projectWithExpanded.Tasks) ? projectWithExpanded.Tasks : []);
-      
-      const assignments =
-        (projectWithExpanded.Assignments &&
-          'results' in projectWithExpanded.Assignments &&
-          projectWithExpanded.Assignments.results) ||
-        (Array.isArray(projectWithExpanded.Assignments) ? projectWithExpanded.Assignments : []);
-
-      // Try to extract resources from $expand first
-      const resources =
-        (projectWithExpanded.ProjectResources &&
-          'results' in projectWithExpanded.ProjectResources &&
-          projectWithExpanded.ProjectResources.results) ||
-        (Array.isArray(projectWithExpanded.ProjectResources) ? projectWithExpanded.ProjectResources : []);
-
-      this.logger.success(`✓ Tasks: ${tasks.length} (via $expand)`);
-      this.logger.success(`✓ Assignments: ${assignments.length} (via $expand)`);
-      this.logger.success(`✓ Resources: ${resources.length} (via $expand)`);
-
-      return {
-        project,
-        tasks,
-        resources,
-        assignments,
-      };
+      const projectWithExpanded = projectsResponse.value[0];
+      return this.formatProjectData(projectWithExpanded);
     } catch (error) {
       // If $expand fails, fall back to separate calls (will likely fail but provides better error messages)
       this.logger.warn('$expand failed, trying separate entity fetches...');
       throw error;
     }
+  }
+
+  /**
+   * Format project data from expanded Project Online entity
+   * Common method used by both single and bulk import operations
+   */
+  formatProjectData(projectWithExpanded: ProjectOnlineProject & {
+    Tasks?: { results?: ProjectOnlineTask[] } | ProjectOnlineTask[];
+    Assignments?: { results?: ProjectOnlineAssignment[] } | ProjectOnlineAssignment[];
+    ProjectResources?: { results?: ProjectOnlineResource[] } | ProjectOnlineResource[];
+    Owner?: any;
+  }): {
+    project: ProjectOnlineProject;
+    tasks: ProjectOnlineTask[];
+    resources: ProjectOnlineResource[];
+    assignments: ProjectOnlineAssignment[];
+  } {
+    const project = projectWithExpanded;
+    project.OwnerEmail = projectWithExpanded.Owner?.UserPrincipalName;
+    project.Owner = projectWithExpanded.Owner?.Title || '';
+    
+    this.logger.success(`✓ Project: ${project.Name}`);
+    
+    // Extract expanded entities - handle both verbose format (with 'results') and direct arrays
+    const tasks =
+      (projectWithExpanded.Tasks &&
+        'results' in projectWithExpanded.Tasks &&
+        projectWithExpanded.Tasks.results) ||
+      (Array.isArray(projectWithExpanded.Tasks) ? projectWithExpanded.Tasks : []);
+    
+    const assignments =
+      (projectWithExpanded.Assignments &&
+        'results' in projectWithExpanded.Assignments &&
+        projectWithExpanded.Assignments.results) ||
+      (Array.isArray(projectWithExpanded.Assignments) ? projectWithExpanded.Assignments : []);
+
+    // Try to extract resources from $expand first
+    const resources =
+      (projectWithExpanded.ProjectResources &&
+        'results' in projectWithExpanded.ProjectResources &&
+        projectWithExpanded.ProjectResources.results) ||
+      (Array.isArray(projectWithExpanded.ProjectResources) ? projectWithExpanded.ProjectResources : []);
+
+    this.logger.success(`✓ Tasks: ${tasks.length} (via $expand)`);
+    this.logger.success(`✓ Assignments: ${assignments.length} (via $expand)`);
+    this.logger.success(`✓ Resources: ${resources.length} (via $expand)`);
+
+    return {
+      project,
+      tasks,
+      resources,
+      assignments,
+    };
+  }
+
+  /**
+   * Extract all accessible projects with expanded data
+   */
+  async extractAllProjectsData(): Promise<Array<{
+    project: ProjectOnlineProject;
+    tasks: ProjectOnlineTask[];
+    resources: ProjectOnlineResource[];
+    assignments: ProjectOnlineAssignment[];
+  }>> {
+    this.logger.info('\n🔍 Discovering accessible Project Online projects...\n');
+    
+    const projectsResponse = await this.getProjects({
+      $expand: [
+        'Assignments',  
+        'Tasks/Parent', 
+        'Tasks/Predecessors', 
+        'Tasks/Assignments/Resource', 
+        'ProjectResources', 
+        'Owner'
+      ],
+      $orderby: 'Id'
+    });
+
+    const projects = projectsResponse.value || [];
+
+    if (projects.length === 0) {
+      this.logger.warn('⚠️  No accessible projects found in Project Online');
+      return [];
+    }
+
+    this.logger.info(`📊 Found ${projects.length} accessible projects:`);
+    projects.forEach((project, index) => {
+      this.logger.info(`   ${index + 1}. ${project.Name} (ID: ${project.Id})`);
+    });
+    this.logger.info('');
+
+    // Format all projects
+    const formattedProjects = [];
+    for (const project of projects) {
+      try {
+        const formattedData = this.formatProjectData(project);
+        formattedProjects.push(formattedData);
+      } catch (error) {
+        this.logger.error(`Failed to format data for project ${project.Name}: ${error instanceof Error ? error.message : String(error)}`);
+        // Continue with other projects
+        continue;
+      }
+    }
+
+    return formattedProjects;
   }
 
   /**
