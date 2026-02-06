@@ -329,6 +329,11 @@ export function getUnmappedTaskFields(task: any): Array<{fieldName: string, titl
       continue;
     }
 
+    // Skip Custom fields - they are handled by CustomFieldHandler
+    if (fieldName.startsWith('Custom')) {
+      continue;
+    }
+
     // Skip object values (complex objects)
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       continue;

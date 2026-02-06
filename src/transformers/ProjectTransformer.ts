@@ -25,6 +25,7 @@ import {
 } from './utils';
 import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist, getColumnMap, findSheetByPartialName } from '../util/SmartsheetHelpers';
 import { ConfigManager } from '../util/ConfigManager';
+import { CustomFieldHandler } from '../lib/CustomFieldHandler';
 
 /**
  * Fields to ignore when discovering unmapped project fields
@@ -139,6 +140,11 @@ export async function createProjectFieldMapping(
     // Skip already mapped core fields, ignored fields, or object values
     if (fieldMappings[fieldName] || PROJECT_FIELDS_TO_IGNORE.has(fieldName) || 
         (value && typeof value === 'object')) {
+      continue;
+    }
+
+    // Skip Custom fields - they are handled by CustomFieldHandler
+    if (fieldName.startsWith('Custom')) {
       continue;
     }
 
@@ -439,13 +445,16 @@ export async function populateProjectSummary(
     templateWorkspaceId
   );
 
+  // Process custom fields with CustomFieldHandler
+  const customFieldHandler = new CustomFieldHandler([project]);
+  const customColumns = customFieldHandler.customColumns();
+
   // Always ensure core columns exist (mandatory columns)
   const coreColumns = createProjectSummaryColumns();
   try {
     await addColumnsIfNotExist(client, summarySheetId, coreColumns);
   } catch (error) {
     // Columns might already exist, which is fine
-    console.log('Some core columns already exist (expected)');
   }
 
   // Add any missing additional columns
@@ -458,11 +467,30 @@ export async function populateProjectSummary(
     }
   }
 
+  // Add custom field columns
+  if (customColumns.length > 0) {
+    try {
+      await addColumnsIfNotExist(client, summarySheetId, customColumns);
+    } catch (error) {
+      console.error('Failed to add custom field columns:', error);
+      // Continue - we'll work with existing columns
+    }
+  }
+
   // Refresh column map after adding new columns
   const finalColumnMap = await getColumnMap(client, summarySheetId);
 
+  // Get custom field cell payload
+  const customFieldCellPayload = customFieldHandler.cellPayload(finalColumnMap);
+
   // Create enhanced project row
   const row = createEnhancedProjectRow(project, finalColumnMap, fieldMappings);
+
+  // Add custom field cells to the project row
+  const customFieldCells = customFieldCellPayload[project.Id] || [];
+  if (row.cells && customFieldCells.length > 0) {
+    row.cells.push(...customFieldCells);
+  }
 
   // Add the row to the sheet
   await client.sheets?.addRows?.({

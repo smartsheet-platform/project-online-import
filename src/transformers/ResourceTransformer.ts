@@ -15,6 +15,7 @@ import { SmartsheetClient } from '../types/SmartsheetClient';
 import { PMOStandardsWorkspaceInfo } from './PMOStandardsTransformer';
 import { convertDateTimeToDate, createContactObject } from './utils';
 import { getColumnMap, addColumnsIfNotExist, findSheetByPartialName } from '../util/SmartsheetHelpers';
+import { CustomFieldHandler } from '../lib/CustomFieldHandler';
 
 /**
  * Core field mappings from Project Online to Smartsheet columns
@@ -175,6 +176,11 @@ export async function createResourceFieldMapping(
   for (const [fieldName, value] of Object.entries(sampleResource)) {
     // Skip already mapped core fields or object values
     if (fieldMappings[fieldName] || (value && typeof value === 'object')) {
+      continue;
+    }
+
+    // Skip Custom fields - they are handled by CustomFieldHandler
+    if (fieldName.startsWith('Custom')) {
       continue;
     }
 
@@ -694,10 +700,13 @@ export class ResourceTransformer {
       this.templateWorkspaceId
     );
 
+    // Process custom fields with CustomFieldHandler
+    const customFieldHandler = new CustomFieldHandler(resources);
+    const customColumns = customFieldHandler.customColumns();
+
     // Get existing columns in the sheet first
     const currentColumnMap = await getColumnMap(this.client, sheetId);
     const existingColumnTitles = new Set(Object.keys(currentColumnMap));
-    console.log('Existing columns in resource sheet:', Array.from(existingColumnTitles));
 
     // Filter core columns to only include ones that don't exist
     const departments = discoverResourceDepartments(resources);
@@ -705,20 +714,16 @@ export class ResourceTransformer {
     const missingCoreColumns = coreColumns.filter(col => !existingColumnTitles.has(col.title));
 
     if (missingCoreColumns.length > 0) {
-      console.log(`Adding ${missingCoreColumns.length} missing core columns:`, missingCoreColumns.map(c => c.title));
       
       // Add columns one by one to identify which one is causing the issue
       for (const column of missingCoreColumns) {
         try {
           await addColumnsIfNotExist(this.client, sheetId, [column]);
-          console.log(`✓ Added column: ${column.title}`);
         } catch (error) {
           console.error(`✗ Failed to add column: ${column.title}`, error);
           // Continue with other columns
         }
       }
-    } else {
-      console.log('All core columns already exist');
     }
 
     // Filter additional columns to only include ones that don't exist  
@@ -726,7 +731,6 @@ export class ResourceTransformer {
 
     // Add any missing additional columns
     if (missingAdditionalColumns.length > 0) {
-      console.log(`Adding ${missingAdditionalColumns.length} additional columns`);
       try {
         await addColumnsIfNotExist(this.client, sheetId, missingAdditionalColumns);
       } catch (error) {
@@ -735,8 +739,21 @@ export class ResourceTransformer {
       }
     }
 
+    // Add custom field columns
+    if (customColumns.length > 0) {
+      try {
+        await addColumnsIfNotExist(this.client, sheetId, customColumns);
+      } catch (error) {
+        console.error('Failed to add custom field columns:', error);
+        // Continue - we'll work with existing columns
+      }
+    }
+
     // Refresh column map after adding new columns
     const finalColumnMap = await getColumnMap(this.client, sheetId);
+
+    // Get custom field cell payload
+    const customFieldCellPayload = customFieldHandler.cellPayload(finalColumnMap);
 
     // Create rows using the enhanced mapping
     let rowsActuallyCreated = 0;
@@ -745,9 +762,17 @@ export class ResourceTransformer {
         throw new Error('Smartsheet client sheets.addRows method not available');
       }
       
-      const rows = resources.map((resource) => 
-        createEnhancedResourceRow(resource, finalColumnMap, fieldMappings)
-      );
+      const rows = resources.map((resource) => {
+        const baseRow = createEnhancedResourceRow(resource, finalColumnMap, fieldMappings);
+        
+        // Add custom field cells to this resource's row
+        const customFieldCells = customFieldCellPayload[resource.Id] || [];
+        if (baseRow.cells && customFieldCells.length > 0) {
+          baseRow.cells.push(...customFieldCells);
+        }
+        
+        return baseRow;
+      });
       
       const addRowsResponse = await this.client.sheets.addRows({ sheetId, body: rows });
 

@@ -14,6 +14,7 @@ import {
 } from './utils';
 import { getColumnMap, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
 import { Logger } from '../util/Logger';
+import { CustomFieldHandler } from '../lib/CustomFieldHandler';
 
 /**
  * Task transformer - converts Project Online Tasks to Smartsheet Tasks sheet rows
@@ -1232,7 +1233,16 @@ export class TaskTransformer {
 
     const addedColumns = await addColumnsIfNotExist(this.client, sheetId, columnsToAdd);
 
-    // Step 2: Discover dynamic fields from all tasks
+    // Step 2: Process custom fields with CustomFieldHandler
+    const customFieldHandler = new CustomFieldHandler(tasks);
+    const customColumns = customFieldHandler.customColumns();
+    
+    if (customColumns.length > 0) {
+      this.logger?.debug(`Adding ${customColumns.length} custom field columns`);
+      await addColumnsIfNotExist(this.client, sheetId, customColumns);
+    }
+
+    // Step 3: Discover dynamic fields from all tasks
     const allUnmappedFields = new Map<string, {titleCase: string, columnType: string}>();
     
     for (const task of tasks) {
@@ -1251,7 +1261,7 @@ export class TaskTransformer {
       `Found ${allUnmappedFields.size} additional dynamic fields: ${Array.from(allUnmappedFields.keys()).join(', ')}`
     );
 
-    // Step 3: Add dynamic columns for unmapped fields
+    // Step 4: Add dynamic columns for unmapped fields
     const dynamicColumnsToAdd: SmartsheetColumn[] = Array.from(allUnmappedFields.values()).map(field => ({
       title: field.titleCase,
       type: field.columnType as any,
@@ -1267,7 +1277,7 @@ export class TaskTransformer {
       dynamicAddedColumns = await addColumnsIfNotExist(this.client, sheetId, dynamicColumnsToAdd);
     }
 
-    // Step 4: Build combined column maps
+    // Step 5: Build combined column maps
     const templateColumnMap: Record<string, number> = {};
     const dynamicFieldsColumnMap: Record<string, number> = {};
 
@@ -1294,11 +1304,15 @@ export class TaskTransformer {
       );
     }
 
+    // Get custom field column mappings
+    const customFieldColumnMap = await getColumnMap(this.client, sheetId);
+    const customFieldCellPayload = customFieldHandler.cellPayload(customFieldColumnMap);
+
     this.logger?.debug(
-      `Template columns: ${Object.keys(templateColumnMap).length}, Dynamic columns: ${Object.keys(dynamicFieldsColumnMap).length}`
+      `Template columns: ${Object.keys(templateColumnMap).length}, Dynamic columns: ${Object.keys(dynamicFieldsColumnMap).length}, Custom field columns: ${customColumns.length}`
     );
 
-    // Step 5: Enhanced row creation function with both template and dynamic data
+    // Step 6: Enhanced row creation function with both template and dynamic data
     const buildEnhancedCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
       // Start with template row creation
       const templateRow = createTaskRow(task, templateColumnMap, tasks);
@@ -1398,6 +1412,10 @@ export class TaskTransformer {
         }
       }
 
+      // Add custom field cells for this task
+      const customFieldCells = customFieldCellPayload[task.Id] || [];
+      cells.push(...customFieldCells);
+
       // Check for duplicate column IDs and remove them
       const seenColumnIds = new Set<number>();
       const dedupedCells = cells.filter(cell => {
@@ -1444,31 +1462,23 @@ export class TaskTransformer {
       }
 
       for (const [groupKey, groupTasks] of tasksByParent.entries()) {
-        console.log(`\n=== PROCESSING LEVEL ${level}, GROUP ${groupKey} ===`);
-        console.log(`Tasks in group: ${groupTasks.length}`);
         
         const rowsToAdd = groupTasks.map((task) => {
           const cells = buildEnhancedCells(task);
-          console.log(`Task "${task.Name}" - Created row with ${cells.length} cells`);
           
           const row: SmartsheetRow = { cells };
 
           if (groupKey === 'NO_PARENT') {
             row.toBottom = true;
-            console.log(`Task "${task.Name}" - Using toBottom: true (top-level task)`);
           } else {
             const parentRowId = parseInt(groupKey.replace('PARENT_', ''));
             row.parentId = parentRowId;
-            console.log(`Task "${task.Name}" - Using parentId: ${parentRowId} (child task)`);
           }
 
           return row;
         });
 
-        console.log(`About to call: this.client.sheets.addRows({ sheetId: ${sheetId}, body: rows })`);
-        
         // Validate row structure before sending
-        console.log(`Validating row structure...`);
         for (let i = 0; i < rowsToAdd.length; i++) {
           const row = rowsToAdd[i];
           console.log(`Row ${i + 1}: ${row.cells?.length || 0} cells, indent: ${row.indent}, toBottom: ${row.toBottom}, parentId: ${row.parentId}`);
@@ -1489,8 +1499,6 @@ export class TaskTransformer {
         
         try {
           const addRowsResponse = await this.client.sheets?.addRows?.({ sheetId, body: rowsToAdd });
-          console.log(`addRows call completed successfully!`);
-          console.log(`addRows response:`, addRowsResponse ? 'Received response' : 'No response');
 
           const createdRows = addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
           const rowsArray = Array.isArray(createdRows) ? createdRows : [];
@@ -1502,15 +1510,7 @@ export class TaskTransformer {
           });
 
           totalRowsCreated += rowsArray.length;
-          console.log(`Successfully created ${rowsArray.length} rows for level ${level}, group ${groupKey}`);
         } catch (error) {
-          console.log(`ERROR in addRows call:`, error);
-          if (error && typeof error === 'object') {
-            console.log(`Error details:`, JSON.stringify(error, null, 2));
-          }
-          console.log(`Error message:`, error instanceof Error ? error.message : String(error));
-          console.log(`Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
-          
           this.logger?.error(
             `Failed to add task rows at level ${level}, group ${groupKey}: ${error instanceof Error ? error.message : String(error)}`
           );

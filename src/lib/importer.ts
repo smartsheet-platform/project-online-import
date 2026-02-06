@@ -178,7 +178,7 @@ export class ProjectOnlineImporter {
     // Extract data from Project Online
     this.logger.info('\n📥 Extracting data from Project Online...\n');
     const data = await this.projectOnlineClient!.extractProjectData(options.source);
-    console.log(data?.tasks[0]?.CustomFields);
+    console.log(data?.tasks[0]?.CustomFields?.results?.[0]);
     
     // Import the extracted data
     await this.importProject({
