@@ -178,7 +178,8 @@ export class ProjectOnlineImporter {
     // Extract data from Project Online
     this.logger.info('\n📥 Extracting data from Project Online...\n');
     const data = await this.projectOnlineClient!.extractProjectData(options.source);
-
+    console.log(data?.tasks[0]?.CustomFields?.results?.[0]);
+    
     // Import the extracted data
     await this.importProject({
       project: data.project,
@@ -254,10 +255,12 @@ export class ProjectOnlineImporter {
 
       // Step 3.5: Populate project data into summary sheet
       progress.startStage('Project Data Population');
+      const templateWorkspaceId = this.configManager?.get().templateWorkspaceId;
       await populateProjectSummary(
         this.smartsheetClient,
         data.project,
-        projectResult.sheets.summarySheet.id
+        projectResult.sheets.summarySheet.id,
+        templateWorkspaceId
       );
       progress.completeStage('Project data populated in summary sheet');
 
@@ -266,6 +269,10 @@ export class ProjectOnlineImporter {
       let assignmentsImported = 0;
       if (data.tasks.length > 0) {
         progress.startStage('Task Import');
+        
+        // Get template workspace ID from config if available
+        // const templateWorkspaceId = this.configManager?.get().templateWorkspaceId;
+        
         const taskTransformer = new TaskTransformer(this.smartsheetClient, this.logger);
         const taskResult = await taskTransformer.transformTasks(
           data.tasks,
@@ -294,7 +301,15 @@ export class ProjectOnlineImporter {
       let resourcesImported = 0;
       if (data.resources.length > 0) {
         progress.startStage('Resource Import');
-        const resourceTransformer = new ResourceTransformer(this.smartsheetClient);
+        
+        // Get template workspace ID from config if available
+        const templateWorkspaceId = this.configManager?.get().templateWorkspaceId;
+        
+        const resourceTransformer = new ResourceTransformer(
+          this.smartsheetClient, 
+          templateWorkspaceId
+        );
+        
         const resourceResult = await resourceTransformer.transformResources(
           data.resources,
           projectResult.sheets.resourceSheet.id

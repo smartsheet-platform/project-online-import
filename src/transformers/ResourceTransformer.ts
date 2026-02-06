@@ -9,11 +9,31 @@ import {
   SmartsheetColumn,
   SmartsheetRow,
   SmartsheetCell,
+  SmartsheetColumnType,
 } from '../types/Smartsheet';
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { PMOStandardsWorkspaceInfo } from './PMOStandardsTransformer';
 import { convertDateTimeToDate, createContactObject } from './utils';
-import { getColumnMap, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
+import { getColumnMap, addColumnsIfNotExist, findSheetByPartialName } from '../util/SmartsheetHelpers';
+import { CustomFieldHandler } from '../lib/CustomFieldHandler';
+
+/**
+ * Core field mappings from Project Online to Smartsheet columns
+ */
+const CORE_FIELD_MAPPINGS: Record<string, string> = {
+  Id: 'Project Online Resource ID',
+  Name: 'Resource Name',
+  Email: 'Team Members', // Will be handled specially based on resource type
+  Group: 'Department',
+  StandardRate: 'Standard Rate',
+  OvertimeRate: 'Overtime Rate',
+  CostPerUse: 'Cost Per Use',
+  MaximumCapacity: 'Max Units',
+  Code: 'Code',
+  IsGenericResource: 'Is Generic',
+  Created: 'Project Online Created Date',
+  Modified: 'Project Online Modified Date',
+};
 
 /**
  * Create Resources sheet with all resources
@@ -22,7 +42,8 @@ export function createResourcesSheet(
   resources: ProjectOnlineResource[],
   projectName: string
 ): SmartsheetSheet {
-  const columns = createResourcesSheetColumns();
+  const departments = discoverResourceDepartments(resources);
+  const columns = createResourcesSheetColumns(departments);
   const rows = resources.map((resource) => createResourceRow(resource));
 
   return {
@@ -33,15 +54,261 @@ export function createResourcesSheet(
 }
 
 /**
- * Create columns for Resources sheet
- * Returns 21 columns total (includes Resource Name primary + 3 type-specific columns)
+ * Determine Smartsheet column type based on Project Online field value
  */
-export function createResourcesSheetColumns(): SmartsheetColumn[] {
+function determineSmartsheetColumnType(value: any): SmartsheetColumnType {
+  // Handle null/undefined values - always return TEXT_NUMBER
+  if (value === null || value === undefined) {
+    return 'TEXT_NUMBER';
+  }
+
+  // Type-based detection
+  if (typeof value === 'boolean') {
+    return 'CHECKBOX';
+  }
+
+  if (typeof value === 'number') {
+    return 'TEXT_NUMBER';
+  }
+
+  // Enhanced date pattern detection for strings including Project Online default date
+  // Pattern: YYYY-MM-DDTHH:MM:SS with optional timezone and milliseconds
+  // Includes default value '0001-01-01T00:00:00' and similar formats
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?([+-]\d{2}:\d{2}|Z)?$/.test(value)) {
+    return 'DATE';
+  }
+
+  return 'TEXT_NUMBER';
+}
+
+/**
+ * Convert camelCase Project Online field name to Title Case for Smartsheet column
+ */
+function camelCaseToTitleCase(fieldName: string): string {
+  return fieldName
+    // Insert space before uppercase letters
+    .replace(/([A-Z])/g, ' $1')
+    // Trim leading space and convert to title case
+    .trim()
+    .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+}
+
+/**
+ * Check if template sheet has matching column (case and space insensitive)
+ */
+function findTemplateColumnMatch(
+  templateColumns: SmartsheetColumn[],
+  projectOnlineFieldName: string
+): SmartsheetColumn | null {
+  const normalizedFieldName = projectOnlineFieldName.toLowerCase().replace(/\s+/g, '');
+  
+  return templateColumns.find(col => {
+    if (!col.title) return false;
+    const normalizedColumnTitle = col.title.toLowerCase().replace(/\s+/g, '');
+    return normalizedColumnTitle === normalizedFieldName;
+  }) || null;
+}
+
+/**
+ * Get template resource sheet columns if template workspace is configured
+ */
+async function getTemplateResourceColumns(
+  client: SmartsheetClient,
+  templateWorkspaceId?: number
+): Promise<SmartsheetColumn[]> {
+  if (!templateWorkspaceId) {
+    return [];
+  }
+
+  try {
+    // Find resource sheet in template workspace
+    const resourceSheet = await findSheetByPartialName(
+      client,
+      templateWorkspaceId,
+      'Resources'
+    );
+
+    if (!resourceSheet) {
+      return [];
+    }
+
+    // Get full sheet details with columns
+    const sheet = await client.sheets?.getSheet?.({ id: resourceSheet.id });
+    return sheet?.columns || [];
+  } catch (error) {
+    // Template access failed - fall back to no template columns
+    return [];
+  }
+}
+
+/**
+ * Create automatic field mapping for resource sheet
+ */
+export async function createResourceFieldMapping(
+  resources: ProjectOnlineResource[],
+  client: SmartsheetClient,
+  templateWorkspaceId?: number
+): Promise<{
+  coreColumns: SmartsheetColumn[];
+  additionalColumns: SmartsheetColumn[];
+  fieldMappings: Record<string, string>; // ProjectOnline field -> Smartsheet column title
+}> {
+  // Get core predefined columns
+  const departments = discoverResourceDepartments(resources);
+  const coreColumns = createResourcesSheetColumns(departments);
+  
+  // Get template columns if available
+  const templateColumns = await getTemplateResourceColumns(client, templateWorkspaceId);
+  
+  const additionalColumns: SmartsheetColumn[] = [];
+  const fieldMappings: Record<string, string> = {};
+  
+  // Core mappings (use constants)
+  Object.assign(fieldMappings, CORE_FIELD_MAPPINGS);
+
+  // Get all Project Online field names from sample data
+  const sampleResource = resources[0];
+  if (!sampleResource) {
+    return { coreColumns, additionalColumns, fieldMappings };
+  }
+
+  // Process each Project Online field
+  for (const [fieldName, value] of Object.entries(sampleResource)) {
+    // Skip already mapped core fields or object values
+    if (fieldMappings[fieldName] || (value && typeof value === 'object')) {
+      continue;
+    }
+
+    // Skip Custom fields - they are handled by CustomFieldHandler
+    if (fieldName.startsWith('Custom')) {
+      continue;
+    }
+
+    // Convert field name to title case
+    const titleCaseFieldName = camelCaseToTitleCase(fieldName);
+    
+    // Check if template has matching column
+    const templateMatch = findTemplateColumnMatch(templateColumns, titleCaseFieldName);
+    
+    if (templateMatch) {
+      // Use template column (existing column will be reused)
+      fieldMappings[fieldName] = templateMatch.title!;
+    } else {
+      // Create new column
+      const columnType = determineSmartsheetColumnType(value);
+      const newColumn: SmartsheetColumn = {
+        title: titleCaseFieldName,
+        type: columnType,
+        width: 120,
+      };
+      
+      additionalColumns.push(newColumn);
+      fieldMappings[fieldName] = titleCaseFieldName;
+    }
+  }
+
+  return { coreColumns, additionalColumns, fieldMappings };
+}
+
+/**
+ * Create enhanced resource row with automatic field mapping
+ */
+export function createEnhancedResourceRow(
+  resource: ProjectOnlineResource,
+  columnMap: Record<string, { id: number; type: string }>,
+  fieldMappings: Record<string, string>
+): SmartsheetRow {
+  const cells: SmartsheetCell[] = [];
+
+  // Process each Project Online field using the mapping
+  for (const [poField, smartsheetColumn] of Object.entries(fieldMappings)) {
+    const columnInfo = columnMap[smartsheetColumn];
+    if (!columnInfo) continue;
+
+    const value = (resource as any)[poField];
+    
+    // Skip object values
+    if (value && typeof value === 'object') {
+      continue;
+    }
+
+    // Handle Email field specially - only populate Team Members for Work resources
+    if (poField === 'Email') {
+      const resourceType = getResourceType(resource);
+      if (resourceType === 'Work' && smartsheetColumn === 'Team Members' && value) {
+        const contact = createContactObject(resource.Name, value);
+        if (contact) {
+          cells.push({
+            columnId: columnInfo.id,
+            objectValue: contact,
+          });
+        }
+      }
+      continue;
+    }
+
+    // Handle Name field - always populate Resource Name column
+    if (poField === 'Name') {
+      if (smartsheetColumn === 'Resource Name') {
+        cells.push({
+          columnId: columnInfo.id,
+          value: resource.Name,
+        });
+      }
+      continue;
+    }
+
+    // Handle other special conversions
+    let cellValue: any = value;
+    
+    if (poField === 'MaximumCapacity' || poField === 'MaxUnits') {
+      cellValue = value !== undefined ? convertMaxUnits(value) : '';
+    } else if (columnInfo.type === 'DATE') {
+      cellValue = value ? convertDateTimeToDate(value) : '';
+    } else if (columnInfo.type === 'CHECKBOX') {
+      cellValue = value ?? false;
+    } else if (value === null || value === undefined) {
+      continue; // Skip empty values
+    }
+
+    cells.push({
+      columnId: columnInfo.id,
+      value: cellValue,
+    });
+  }
+
+  // Add resource type column
+  if (columnMap['Resource Type']) {
+    cells.push({
+      columnId: columnMap['Resource Type'].id,
+      value: getResourceType(resource),
+    });
+  }
+
+  return {
+    toBottom: true,
+    cells,
+  };
+}
+
+export function createResourcesSheetColumns(departments: string[] = []): SmartsheetColumn[] {
+  const departmentColumn: SmartsheetColumn = {
+    title: 'Department',
+    type: 'PICKLIST',
+    width: 150,
+  };
+  
+  // Add department options if provided
+  if (departments.length > 0) {
+    (departmentColumn as any).options = departments;
+  }
+
   return [
     {
-      title: 'Resource ID',
-      type: 'AUTO_NUMBER',
-      width: 80,
+      title: 'Resource Name',
+      type: 'TEXT_NUMBER',
+      primary: true,
+      width: 200,
     },
     {
       title: 'Project Online Resource ID',
@@ -49,12 +316,6 @@ export function createResourcesSheetColumns(): SmartsheetColumn[] {
       width: 150,
       hidden: true,
       locked: true,
-    },
-    {
-      title: 'Resource Name',
-      type: 'TEXT_NUMBER',
-      primary: true,
-      width: 200,
     },
     {
       title: 'Team Members',
@@ -96,11 +357,7 @@ export function createResourcesSheetColumns(): SmartsheetColumn[] {
       type: 'TEXT_NUMBER',
       width: 120,
     },
-    {
-      title: 'Department',
-      type: 'PICKLIST',
-      width: 150,
-    },
+    departmentColumn,
     {
       title: 'Code',
       type: 'TEXT_NUMBER',
@@ -125,26 +382,6 @@ export function createResourcesSheetColumns(): SmartsheetColumn[] {
       title: 'Project Online Modified Date',
       type: 'DATE',
       width: 120,
-    },
-    {
-      title: 'Created Date',
-      type: 'CREATED_DATE',
-      width: 120,
-    },
-    {
-      title: 'Modified Date',
-      type: 'MODIFIED_DATE',
-      width: 120,
-    },
-    {
-      title: 'Created By',
-      type: 'CREATED_BY',
-      width: 150,
-    },
-    {
-      title: 'Modified By',
-      type: 'MODIFIED_BY',
-      width: 150,
     },
   ];
 }
@@ -442,7 +679,7 @@ export function validateResource(resource: ProjectOnlineResource): ResourceValid
  * Provides the expected API while using the functional implementation
  */
 export class ResourceTransformer {
-  constructor(private client: SmartsheetClient) {}
+  constructor(private client: SmartsheetClient, private templateWorkspaceId?: number) {}
 
   async transformResources(
     resources: ProjectOnlineResource[],
@@ -456,66 +693,87 @@ export class ResourceTransformer {
       }
     }
 
-    // Build columnMap: Start by fetching the existing primary column
-    // For re-run resiliency, we check if columns exist before adding
-    const columnMap: Record<string, number> = {};
-
-    // Get existing columns from sheet
-    const existingColumnMap = await getColumnMap(this.client, sheetId);
-
-    // Check for "Resource Name" primary column
-    if (existingColumnMap['Resource Name']) {
-      columnMap['Resource Name'] = existingColumnMap['Resource Name'].id;
-    }
-
-    // Discover unique department values for picklist
-    const uniqueDepartments = discoverResourceDepartments(resources);
-
-    // Define additional columns to add (excluding primary which already exists)
-    // Don't specify index - let Smartsheet append columns to end of sheet
-    const additionalColumns = [
-      {
-        title: 'Project Online Resource ID',
-        type: 'TEXT_NUMBER',
-        width: 150,
-        hidden: true,
-        locked: true,
-      },
-      { title: 'Team Members', type: 'CONTACT_LIST', width: 200 },
-      { title: 'Materials', type: 'TEXT_NUMBER', width: 200 },
-      { title: 'Cost Resources', type: 'TEXT_NUMBER', width: 200 },
-      { title: 'Resource Type', type: 'PICKLIST', width: 120 },
-      { title: 'Max Units', type: 'TEXT_NUMBER', width: 100 },
-      { title: 'Standard Rate', type: 'TEXT_NUMBER', width: 120 },
-      { title: 'Overtime Rate', type: 'TEXT_NUMBER', width: 120 },
-      { title: 'Cost Per Use', type: 'TEXT_NUMBER', width: 120 },
-      { title: 'Department', type: 'PICKLIST', width: 150, options: uniqueDepartments },
-      { title: 'Code', type: 'TEXT_NUMBER', width: 100 },
-      { title: 'Is Active', type: 'CHECKBOX', width: 80 },
-      { title: 'Is Generic', type: 'CHECKBOX', width: 80 },
-      { title: 'Project Online Created Date', type: 'DATE', width: 120 },
-      { title: 'Project Online Modified Date', type: 'DATE', width: 120 },
-    ];
-
-    // Use resiliency helper to add columns (skips existing ones)
-    const addedColumns = await addColumnsIfNotExist(
+    // Create automatic field mapping
+    const { additionalColumns, fieldMappings } = await createResourceFieldMapping(
+      resources,
       this.client,
-      sheetId,
-      additionalColumns as SmartsheetColumn[]
+      this.templateWorkspaceId
     );
 
-    // Add results to column map
-    for (const result of addedColumns) {
-      columnMap[result.title] = result.id;
+    // Process custom fields with CustomFieldHandler
+    const customFieldHandler = new CustomFieldHandler(resources);
+    const customColumns = customFieldHandler.customColumns();
+
+    // Get existing columns in the sheet first
+    const currentColumnMap = await getColumnMap(this.client, sheetId);
+    const existingColumnTitles = new Set(Object.keys(currentColumnMap));
+
+    // Filter core columns to only include ones that don't exist
+    const departments = discoverResourceDepartments(resources);
+    const coreColumns = createResourcesSheetColumns(departments);
+    const missingCoreColumns = coreColumns.filter(col => !existingColumnTitles.has(col.title));
+
+    if (missingCoreColumns.length > 0) {
+      
+      // Add columns one by one to identify which one is causing the issue
+      for (const column of missingCoreColumns) {
+        try {
+          await addColumnsIfNotExist(this.client, sheetId, [column]);
+        } catch (error) {
+          console.error(`✗ Failed to add column: ${column.title}`, error);
+          // Continue with other columns
+        }
+      }
     }
 
-    // Now create rows using the columnMap
+    // Filter additional columns to only include ones that don't exist  
+    const missingAdditionalColumns = additionalColumns.filter(col => !existingColumnTitles.has(col.title));
+
+    // Add any missing additional columns
+    if (missingAdditionalColumns.length > 0) {
+      try {
+        await addColumnsIfNotExist(this.client, sheetId, missingAdditionalColumns);
+      } catch (error) {
+        console.error('Failed to add additional columns:', error);
+        // Continue - we'll work with existing columns
+      }
+    }
+
+    // Add custom field columns
+    if (customColumns.length > 0) {
+      try {
+        await addColumnsIfNotExist(this.client, sheetId, customColumns);
+      } catch (error) {
+        console.error('Failed to add custom field columns:', error);
+        // Continue - we'll work with existing columns
+      }
+    }
+
+    // Refresh column map after adding new columns
+    const finalColumnMap = await getColumnMap(this.client, sheetId);
+
+    // Get custom field cell payload
+    const customFieldCellPayload = customFieldHandler.cellPayload(finalColumnMap);
+
+    // Create rows using the enhanced mapping
     let rowsActuallyCreated = 0;
     if (resources.length > 0) {
       if (!this.client.sheets?.addRows) {
         throw new Error('Smartsheet client sheets.addRows method not available');
       }
-      const rows = resources.map((resource) => this.buildResourceRow(resource, columnMap));
+      
+      const rows = resources.map((resource) => {
+        const baseRow = createEnhancedResourceRow(resource, finalColumnMap, fieldMappings);
+        
+        // Add custom field cells to this resource's row
+        const customFieldCells = customFieldCellPayload[resource.Id] || [];
+        if (baseRow.cells && customFieldCells.length > 0) {
+          baseRow.cells.push(...customFieldCells);
+        }
+        
+        return baseRow;
+      });
+      
       const addRowsResponse = await this.client.sheets.addRows({ sheetId, body: rows });
 
       // Extract the actual created rows from the response
@@ -527,179 +785,6 @@ export class ResourceTransformer {
     return {
       rowsCreated: rowsActuallyCreated,
       sheetId,
-    };
-  }
-
-  private buildResourceRow(
-    resource: ProjectOnlineResource,
-    columnMap: Record<string, number>
-  ): SmartsheetRow {
-    const cells: Array<{
-      columnId: number;
-      value?: string | number | boolean;
-      objectValue?:
-        | { objectType: 'CONTACT'; name?: string; email?: string }
-        | { name?: string; email?: string };
-    }> = [];
-
-    // Resource Name (PRIMARY column - always populated)
-    if (columnMap['Resource Name']) {
-      cells.push({
-        columnId: columnMap['Resource Name'],
-        value: resource.Name,
-      });
-    }
-
-    // Determine resource type (default to Work)
-    const resourceType = getResourceType(resource);
-
-    // Populate type-specific column based on resource type
-    // Per Smartsheet SDK: Omit columnId from cells array for empty values
-    if (resourceType === 'Work') {
-      // Team Members column (CONTACT_LIST for Work resources)
-      if (columnMap['Team Members']) {
-        const contact = createContactObject(resource.Name, resource.Email);
-        if (contact) {
-          // CONTACT_LIST column - createContactObject already includes objectType
-          cells.push({
-            columnId: columnMap['Team Members'],
-            objectValue: contact,
-          });
-        }
-        // If no contact, omit the cell entirely (Smartsheet treats as empty)
-      }
-      // Materials and Cost Resources: omit cells (empty)
-    } else if (resourceType === 'Material') {
-      // Materials column (Material resources)
-      if (columnMap['Materials']) {
-        cells.push({
-          columnId: columnMap['Materials'],
-          value: resource.Name,
-        });
-      }
-      // Team Members and Cost Resources: omit cells (empty)
-    } else if (resourceType === 'Cost') {
-      // Cost Resources column (Cost resources)
-      if (columnMap['Cost Resources']) {
-        cells.push({
-          columnId: columnMap['Cost Resources'],
-          value: resource.Name,
-        });
-      }
-      // Team Members and Materials: omit cells (empty)
-    }
-
-    // Project Online Resource ID
-    if (columnMap['Project Online Resource ID']) {
-      cells.push({
-        columnId: columnMap['Project Online Resource ID'],
-        value: resource.Id,
-      });
-    }
-
-    // Resource Type
-    if (columnMap['Resource Type']) {
-      cells.push({
-        columnId: columnMap['Resource Type'],
-        value: resourceType,
-      });
-    }
-
-    // Max Units (convert decimal to percentage) - only add if value exists
-    if (columnMap['Max Units']) {
-      const maxUnits = resource.MaximumCapacity;
-      if (maxUnits !== undefined) {
-        cells.push({
-          columnId: columnMap['Max Units'],
-          value: convertMaxUnits(maxUnits),
-        });
-      }
-    }
-
-    // Standard Rate - only add if value exists
-    if (columnMap['Standard Rate'] && resource.StandardRate !== undefined) {
-      cells.push({
-        columnId: columnMap['Standard Rate'],
-        value: resource.StandardRate,
-      });
-    }
-
-    // Overtime Rate - only add if value exists
-    if (columnMap['Overtime Rate'] && resource.OvertimeRate !== undefined) {
-      cells.push({
-        columnId: columnMap['Overtime Rate'],
-        value: resource.OvertimeRate,
-      });
-    }
-
-    // Cost Per Use - only add if value exists
-    if (columnMap['Cost Per Use'] && resource.CostPerUse !== undefined) {
-      cells.push({
-        columnId: columnMap['Cost Per Use'],
-        value: resource.CostPerUse,
-      });
-    }
-
-    // Department - only add if value exists
-    if (columnMap['Department']) {
-      const department = resource.Group;
-      if (department) {
-        cells.push({
-          columnId: columnMap['Department'],
-          value: department,
-        });
-      }
-    }
-
-    // Code - only add if value exists
-    if (columnMap['Code'] && resource.Code) {
-      cells.push({
-        columnId: columnMap['Code'],
-        value: resource.Code,
-      });
-    }
-
-    // Is Active
-    if (columnMap['Is Active']) {
-      cells.push({
-        columnId: columnMap['Is Active'],
-        value: true,
-      });
-    }
-
-    // Is Generic
-    if (columnMap['Is Generic']) {
-      cells.push({
-        columnId: columnMap['Is Generic'],
-        value: resource.IsGenericResource ?? false,
-      });
-    }
-
-    // Project Online Created Date - only add if value exists
-    if (columnMap['Project Online Created Date']) {
-      const createdDate = resource.Created;
-      if (createdDate) {
-        cells.push({
-          columnId: columnMap['Project Online Created Date'],
-          value: convertDateTimeToDate(createdDate),
-        });
-      }
-    }
-
-    // Project Online Modified Date - only add if value exists
-    if (columnMap['Project Online Modified Date']) {
-      const modifiedDate = resource.Modified;
-      if (modifiedDate) {
-        cells.push({
-          columnId: columnMap['Project Online Modified Date'],
-          value: convertDateTimeToDate(modifiedDate),
-        });
-      }
-    }
-
-    return {
-      toBottom: true,
-      cells,
     };
   }
 }

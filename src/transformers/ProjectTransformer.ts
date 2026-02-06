@@ -10,6 +10,7 @@ import {
   SmartsheetColumn,
   SmartsheetRow,
   SmartsheetCell,
+  SmartsheetColumnType,
 } from '../types/Smartsheet';
 import { SmartsheetClient } from '../types/SmartsheetClient';
 import { PMOStandardsWorkspaceInfo } from './PMOStandardsTransformer';
@@ -19,25 +20,38 @@ import {
   mapPriority,
   createContactObject,
   createSheetName,
+  camelCaseToTitleCase,
+  determineSmartsheetColumnType,
 } from './utils';
-import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist, getColumnMap } from '../util/SmartsheetHelpers';
+import { getOrCreateSheet, copyWorkspace, addColumnsIfNotExist, getColumnMap, findSheetByPartialName } from '../util/SmartsheetHelpers';
 import { ConfigManager } from '../util/ConfigManager';
+import { CustomFieldHandler } from '../lib/CustomFieldHandler';
 
 /**
- * Column header to project property mapping
+ * Fields to ignore when discovering unmapped project fields
  */
-const PROJECT_COLUMN_MAPPING: Record<string, keyof ProjectOnlineProject> = {
-  'Project Online Project ID': 'Id',
-  'Project Name': 'Name',
-  'Description': 'Description',
-  'Owner': 'Owner',
-  'Start Date': 'StartDate',
-  'Finish Date': 'FinishDate',
-  'Status': 'ProjectStatus',
-  'Priority': 'Priority',
-  '% Complete': 'PercentComplete',
-  'Project Online Created Date': 'CreatedDate',
-  'Project Online Modified Date': 'LastSavedDate',
+export const PROJECT_FIELDS_TO_IGNORE = new Set([
+  'Tasks',
+  'Resources', 
+  'ProjectResources',
+  'Assignments',
+]);
+
+/**
+ * Core field mappings from Project Online to Smartsheet columns
+ */
+const CORE_FIELD_MAPPINGS: Record<string, string> = {
+  Id: 'Project Online Project ID',
+  Name: 'Project Name',
+  Description: 'Description',
+  Owner: 'Owner',
+  StartDate: 'Start Date',
+  FinishDate: 'Finish Date',
+  ProjectStatus: 'Status',
+  Priority: 'Priority',
+  PercentComplete: '% Complete',
+  CreatedDate: 'Project Online Created Date',
+  LastSavedDate: 'Project Online Modified Date',
 };
 
 /**
@@ -46,6 +60,177 @@ const PROJECT_COLUMN_MAPPING: Record<string, keyof ProjectOnlineProject> = {
 export function transformProjectToWorkspace(project: ProjectOnlineProject): SmartsheetWorkspace {
   return {
     name: sanitizeWorkspaceName(project.Name),
+  };
+}
+
+/**
+ * Get template project summary sheet columns if template workspace is configured
+ */
+async function getTemplateProjectColumns(
+  client: SmartsheetClient,
+  templateWorkspaceId?: number
+): Promise<SmartsheetColumn[]> {
+  if (!templateWorkspaceId) {
+    return [];
+  }
+
+  try {
+    // Find project summary sheet in template workspace
+    const projectSheet = await findSheetByPartialName(
+      client,
+      templateWorkspaceId,
+      'Summary'
+    );
+
+    if (!projectSheet) {
+      return [];
+    }
+
+    // Get full sheet details with columns
+    const sheet = await client.sheets?.getSheet?.({ id: projectSheet.id });
+    return sheet?.columns || [];
+  } catch (error) {
+    // Template access failed - fall back to no template columns
+    return [];
+  }
+}
+
+/**
+ * Check if template sheet has matching column (case and space insensitive)
+ */
+function findTemplateColumnMatch(
+  templateColumns: SmartsheetColumn[],
+  projectOnlineFieldName: string
+): SmartsheetColumn | null {
+  const normalizedFieldName = projectOnlineFieldName.toLowerCase().replace(/\s+/g, '');
+  
+  return templateColumns.find(col => {
+    if (!col.title) return false;
+    const normalizedColumnTitle = col.title.toLowerCase().replace(/\s+/g, '');
+    return normalizedColumnTitle === normalizedFieldName;
+  }) || null;
+}
+
+/**
+ * Create automatic field mapping for project summary sheet
+ */
+export async function createProjectFieldMapping(
+  project: ProjectOnlineProject,
+  client: SmartsheetClient,
+  templateWorkspaceId?: number
+): Promise<{
+  coreColumns: SmartsheetColumn[];
+  additionalColumns: SmartsheetColumn[];
+  fieldMappings: Record<string, string>; // ProjectOnline field -> Smartsheet column title
+}> {
+  // Get core predefined columns
+  const coreColumns = createProjectSummaryColumns();
+  
+  // Get template columns if available
+  const templateColumns = await getTemplateProjectColumns(client, templateWorkspaceId);
+  
+  const additionalColumns: SmartsheetColumn[] = [];
+  const fieldMappings: Record<string, string> = {};
+  
+  // Core mappings (use constants)
+  Object.assign(fieldMappings, CORE_FIELD_MAPPINGS);
+
+  // Process each Project Online field
+  for (const [fieldName, value] of Object.entries(project)) {
+    // Skip already mapped core fields, ignored fields, or object values
+    if (fieldMappings[fieldName] || PROJECT_FIELDS_TO_IGNORE.has(fieldName) || 
+        (value && typeof value === 'object')) {
+      continue;
+    }
+
+    // Skip Custom fields - they are handled by CustomFieldHandler
+    if (fieldName.startsWith('Custom')) {
+      continue;
+    }
+
+    // Convert field name to title case
+    const titleCaseFieldName = camelCaseToTitleCase(fieldName);
+    
+    // Check if template has matching column
+    const templateMatch = findTemplateColumnMatch(templateColumns, titleCaseFieldName);
+    
+    if (templateMatch) {
+      // Use template column (existing column will be reused)
+      fieldMappings[fieldName] = templateMatch.title!;
+    } else {
+      // Create new column
+      const columnType = determineSmartsheetColumnType(value);
+      const newColumn: SmartsheetColumn = {
+        title: titleCaseFieldName,
+        type: columnType as SmartsheetColumnType,
+        width: 120,
+      };
+      
+      additionalColumns.push(newColumn);
+      fieldMappings[fieldName] = titleCaseFieldName;
+    }
+  }
+
+  return { coreColumns, additionalColumns, fieldMappings };
+}
+
+/**
+ * Create enhanced project row with automatic field mapping
+ */
+export function createEnhancedProjectRow(
+  project: ProjectOnlineProject,
+  columnMap: Record<string, { id: number; type: string }>,
+  fieldMappings: Record<string, string>
+): SmartsheetRow {
+  const cells: SmartsheetCell[] = [];
+
+  // Process each Project Online field using the mapping
+  for (const [poField, smartsheetColumn] of Object.entries(fieldMappings)) {
+    const columnInfo = columnMap[smartsheetColumn];
+    if (!columnInfo) continue;
+
+    const value = (project as any)[poField];
+    
+    // Skip object values
+    if (value && typeof value === 'object') {
+      continue;
+    }
+
+    // Handle special field mappings
+    let cellValue: any = value;
+    
+    if (poField === 'Owner' && smartsheetColumn === 'Owner') {
+      // Create contact object if we have owner info
+      const contact = createContactObject(project.Owner, (project as any).OwnerEmail);
+      if (contact) {
+        cells.push({
+          columnId: columnInfo.id,
+          objectValue: contact,
+        });
+        continue;
+      }
+      cellValue = project.Owner || '';
+    } else if (poField === 'Priority' && typeof value === 'number') {
+      cellValue = mapPriority(value);
+    } else if (poField === 'PercentComplete' && typeof value === 'number') {
+      cellValue = `${value}%`;
+    } else if (columnInfo.type === 'DATE') {
+      cellValue = value ? convertDateTimeToDate(value) : '';
+    } else if (columnInfo.type === 'CHECKBOX') {
+      cellValue = value ?? false;
+    } else if (value === null || value === undefined) {
+      continue; // Skip empty values
+    }
+
+    cells.push({
+      columnId: columnInfo.id,
+      value: cellValue,
+    });
+  }
+
+  return {
+    cells,
+    toBottom: true,
   };
 }
 
@@ -245,83 +430,67 @@ function createProjectSummaryRow(project: ProjectOnlineProject): SmartsheetRow {
 }
 
 /**
- * Format cell value based on column header type
- */
-function formatCellValue(header: string, rawValue: any, project: ProjectOnlineProject): {
-  cellValue?: any;
-  objectValue?: any;
-} {
-  switch (header) {
-    case 'Owner':
-      const ownerContact = createContactObject(project.Owner, project.OwnerEmail);
-      if (ownerContact) {
-        return { objectValue: ownerContact };
-      } else {
-        return { cellValue: '' };
-      }
-    
-    case 'Start Date':
-    case 'Finish Date':
-    case 'Project Online Created Date':
-    case 'Project Online Modified Date':
-      return { cellValue: rawValue ? convertDateTimeToDate(rawValue as string) : '' };
-    
-    case 'Priority':
-      return { cellValue: rawValue !== undefined ? mapPriority(rawValue as number) : '' };
-    
-    case '% Complete':
-      return { cellValue: rawValue !== undefined ? `${rawValue}%` : '' };
-    
-    default:
-      return { cellValue: rawValue || '' };
-  }
-}
-
-/**
- * Populate project data into an existing summary sheet
+ * Populate project data into an existing summary sheet with enhanced field mapping
  */
 export async function populateProjectSummary(
   client: SmartsheetClient,
   project: ProjectOnlineProject,
-  summarySheetId: number
+  summarySheetId: number,
+  templateWorkspaceId?: number
 ): Promise<{ rowsCreated: number }> {
-  // Get existing column structure
-  const columnMap = await getColumnMap(client, summarySheetId);
-  
-  // Get column headers from the mapping keys
-  const columnHeaders = Object.keys(PROJECT_COLUMN_MAPPING);
+  // Create automatic field mapping
+  const { additionalColumns, fieldMappings } = await createProjectFieldMapping(
+    project,
+    client,
+    templateWorkspaceId
+  );
 
-  // Build cells using column IDs from the actual sheet
-  const cells: SmartsheetCell[] = [];
+  // Process custom fields with CustomFieldHandler
+  const customFieldHandler = new CustomFieldHandler([project]);
+  const customColumns = customFieldHandler.customColumns();
 
-  for (const header of columnHeaders) {
-    if (columnMap[header]) {
-      const projectKey = PROJECT_COLUMN_MAPPING[header];
-      const rawValue = project[projectKey];
-      
-      // Format value based on column header type
-      const { cellValue, objectValue } = formatCellValue(header, rawValue, project);
+  // Always ensure core columns exist (mandatory columns)
+  const coreColumns = createProjectSummaryColumns();
+  try {
+    await addColumnsIfNotExist(client, summarySheetId, coreColumns);
+  } catch (error) {
+    // Columns might already exist, which is fine
+  }
 
-      // Create cell object
-      const cell: SmartsheetCell = {
-        columnId: columnMap[header].id,
-      };
-
-      if (objectValue) {
-        cell.objectValue = objectValue;
-      } else {
-        cell.value = cellValue;
-      }
-
-      cells.push(cell);
+  // Add any missing additional columns
+  if (additionalColumns.length > 0) {
+    try {
+      await addColumnsIfNotExist(client, summarySheetId, additionalColumns);
+    } catch (error) {
+      console.error('Failed to add additional columns:', error);
+      // Continue - we'll work with existing columns
     }
   }
 
-  // Create the row with project data
-  const row: SmartsheetRow = {
-    cells,
-    toBottom: true,
-  };
+  // Add custom field columns
+  if (customColumns.length > 0) {
+    try {
+      await addColumnsIfNotExist(client, summarySheetId, customColumns);
+    } catch (error) {
+      console.error('Failed to add custom field columns:', error);
+      // Continue - we'll work with existing columns
+    }
+  }
+
+  // Refresh column map after adding new columns
+  const finalColumnMap = await getColumnMap(client, summarySheetId);
+
+  // Get custom field cell payload
+  const customFieldCellPayload = customFieldHandler.cellPayload(finalColumnMap);
+
+  // Create enhanced project row
+  const row = createEnhancedProjectRow(project, finalColumnMap, fieldMappings);
+
+  // Add custom field cells to the project row
+  const customFieldCells = customFieldCellPayload[project.Id] || [];
+  if (row.cells && customFieldCells.length > 0) {
+    row.cells.push(...customFieldCells);
+  }
 
   // Add the row to the sheet
   await client.sheets?.addRows?.({

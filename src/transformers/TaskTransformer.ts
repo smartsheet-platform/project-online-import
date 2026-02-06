@@ -7,9 +7,14 @@ import {
   SmartsheetCell,
 } from '../types/ProjectOnline';
 import { SmartsheetClient } from '../types/SmartsheetClient';
-import { convertDateTimeToDate, convertDurationToHoursString } from './utils';
+import { 
+  convertDateTimeToDate, 
+  convertDurationToHoursString, 
+  getUnmappedTaskFields
+} from './utils';
 import { getColumnMap, addColumnsIfNotExist } from '../util/SmartsheetHelpers';
 import { Logger } from '../util/Logger';
+import { CustomFieldHandler } from '../lib/CustomFieldHandler';
 
 /**
  * Task transformer - converts Project Online Tasks to Smartsheet Tasks sheet rows
@@ -560,7 +565,89 @@ export function createTaskRow(
   }
 
   return row;
+}
 
+/**
+ * Create enhanced task row with both template-mapped and dynamic unmapped fields
+ */
+export function createEnhancedTaskRow(
+  task: ProjectOnlineTask,
+  templateColumnMap: Record<string, number>,
+  dynamicFieldsColumnMap: Record<string, number>,
+  allTasks: ProjectOnlineTask[] = []
+): SmartsheetRow {
+  // Start with the standard template row
+  const templateRow = createTaskRow(task, templateColumnMap, allTasks);
+  const cells = templateRow.cells ? [...templateRow.cells] : [];
+  
+  // Add unmapped fields as dynamic columns
+  const unmappedFields = getUnmappedTaskFields(task);
+  
+  for (const field of unmappedFields) {
+    const columnId = dynamicFieldsColumnMap[field.titleCase];
+    if (columnId && field.value !== null && field.value !== undefined) {
+      // Handle different data types appropriately
+      let cellValue: any = field.value;
+      
+      if (field.columnType === 'DATE' && typeof field.value === 'string') {
+        cellValue = convertDateTimeToDate(field.value);
+        // Skip empty/invalid dates
+        if (!cellValue) continue;
+      } else if (field.columnType === 'CHECKBOX' && typeof field.value === 'boolean') {
+        cellValue = field.value;
+      } else if (field.columnType === 'TEXT_NUMBER') {
+        // Handle duration fields
+        if (field.fieldName.toLowerCase().includes('duration') || 
+            field.fieldName.toLowerCase().includes('work') ||
+            field.fieldName.toLowerCase().includes('slack')) {
+          if (typeof field.value === 'string' && field.value.match(/^P|^PT|\d+[hd]$/)) {
+            try {
+              cellValue = convertDurationToHoursString(field.value);
+            } catch {
+              cellValue = field.value; // Keep original if conversion fails
+            }
+          }
+        }
+        // Handle cost/numeric fields that might need formatting
+        else if (typeof field.value === 'number') {
+          cellValue = field.value;
+        } else {
+          cellValue = String(field.value);
+        }
+      }
+      
+      cells.push({
+        columnId,
+        value: cellValue
+      });
+    }
+  }
+  
+  // Check for duplicate column IDs and remove them
+  const seenColumnIds = new Set<number>();
+  const dedupedCells = cells.filter(cell => {
+    if (seenColumnIds.has(cell.columnId)) {
+      console.log(`WARNING: Duplicate column ID ${cell.columnId} found in task ${task.Name}, removing duplicate`);
+      return false;
+    }
+    seenColumnIds.add(cell.columnId);
+    return true;
+  });
+  
+  // Return enhanced row with same positioning logic
+  const enhancedRow: SmartsheetRow = {
+    cells: dedupedCells,
+  };
+
+  // Handle positioning based on hierarchy level
+  const outlineLevel = task.OutlineLevel || 1;
+  if (outlineLevel > 1) {
+    enhancedRow.indent = outlineLevel - 1;
+  } else {
+    enhancedRow.toBottom = true;
+  }
+
+  return enhancedRow;
 }
 
 /**
@@ -1136,55 +1223,103 @@ export class TaskTransformer {
     }
     let totalAssignmentsProcessed = 0;
    
-    // The sheet was created by ProjectTransformer with only a primary "Task Name" column
-    // We need to add all the task columns before we can add rows
-    // For re-run resiliency, we check if columns exist before adding
-
-    // Get all task columns (this returns the full column structure including Task Name)
-    const allTaskColumns = createTasksSheetColumns('Project'); // Use a placeholder name
-
-    // Remove the first column (Task Name) since it already exists as the primary column
-    const columnsToAdd = allTaskColumns.slice(1);
+    // Step 1: Add template columns (existing functionality)
+    const allTaskColumns = createTasksSheetColumns('Project');
+    const columnsToAdd = allTaskColumns.slice(1); // Remove Task Name which already exists
 
     this.logger?.debug(
-      `Adding ${columnsToAdd.length} columns to task sheet ${sheetId} (skipping existing)`
+      `Adding ${columnsToAdd.length} template columns to task sheet ${sheetId} (skipping existing)`
     );
 
-    // Use resiliency helper to add columns (skips existing ones)
-    // Don't specify index - let Smartsheet append columns to end of sheet
     const addedColumns = await addColumnsIfNotExist(this.client, sheetId, columnsToAdd);
 
-    // Build column map from results
-    const columnMap: Record<string, number> = {};
+    // Step 2: Process custom fields with CustomFieldHandler
+    const customFieldHandler = new CustomFieldHandler(tasks);
+    const customColumns = customFieldHandler.customColumns();
+    
+    if (customColumns.length > 0) {
+      this.logger?.debug(`Adding ${customColumns.length} custom field columns`);
+      await addColumnsIfNotExist(this.client, sheetId, customColumns);
+    }
 
-    // First, get the existing Task Name column from the sheet
+    // Step 3: Discover dynamic fields from all tasks
+    const allUnmappedFields = new Map<string, {titleCase: string, columnType: string}>();
+    
+    for (const task of tasks) {
+      const unmappedFields = getUnmappedTaskFields(task);
+      for (const field of unmappedFields) {
+        if (!allUnmappedFields.has(field.titleCase)) {
+          allUnmappedFields.set(field.titleCase, {
+            titleCase: field.titleCase,
+            columnType: field.columnType
+          });
+        }
+      }
+    }
+
+    this.logger?.debug(
+      `Found ${allUnmappedFields.size} additional dynamic fields: ${Array.from(allUnmappedFields.keys()).join(', ')}`
+    );
+
+    // Step 4: Add dynamic columns for unmapped fields
+    const dynamicColumnsToAdd: SmartsheetColumn[] = Array.from(allUnmappedFields.values()).map(field => ({
+      title: field.titleCase,
+      type: field.columnType as any,
+      width: 120
+    }));
+
+    let dynamicAddedColumns: Array<{title: string, id: number, wasCreated: boolean}> = [];
+    if (dynamicColumnsToAdd.length > 0) {
+      this.logger?.debug(
+        `Adding ${dynamicColumnsToAdd.length} dynamic columns for unmapped fields`
+      );
+      
+      dynamicAddedColumns = await addColumnsIfNotExist(this.client, sheetId, dynamicColumnsToAdd);
+    }
+
+    // Step 5: Build combined column maps
+    const templateColumnMap: Record<string, number> = {};
+    const dynamicFieldsColumnMap: Record<string, number> = {};
+
+    // Get existing Task Name column
     const existingColumnMap = await getColumnMap(this.client, sheetId);
     if (existingColumnMap['Task Name']) {
-      columnMap['Task Name'] = existingColumnMap['Task Name'].id;
+      templateColumnMap['Task Name'] = existingColumnMap['Task Name'].id;
       this.logger?.debug(`Task Name column ID: ${existingColumnMap['Task Name'].id}`);
     }
 
-    // Add all other columns from the add results
+    // Add template columns to template map
     for (const result of addedColumns) {
-      columnMap[result.title] = result.id;
+      templateColumnMap[result.title] = result.id;
       this.logger?.debug(
-        `Column ${result.title} - ID: ${result.id}, ${result.wasCreated ? 'newly created' : 'already existed'}`
+        `Template column ${result.title} - ID: ${result.id}, ${result.wasCreated ? 'newly created' : 'already existed'}`
       );
     }
 
+    // Add dynamic columns to dynamic map
+    for (const result of dynamicAddedColumns) {
+      dynamicFieldsColumnMap[result.title] = result.id;
+      this.logger?.debug(
+        `Dynamic column ${result.title} - ID: ${result.id}, ${result.wasCreated ? 'newly created' : 'already existed'}`
+      );
+    }
+
+    // Get custom field column mappings
+    const customFieldColumnMap = await getColumnMap(this.client, sheetId);
+    const customFieldCellPayload = customFieldHandler.cellPayload(customFieldColumnMap);
+
     this.logger?.debug(
-      `Final columnMap has ${Object.keys(columnMap).length} columns: ${Object.keys(columnMap).join(', ')}`
+      `Template columns: ${Object.keys(templateColumnMap).length}, Dynamic columns: ${Object.keys(dynamicFieldsColumnMap).length}, Custom field columns: ${customColumns.length}`
     );
 
-    // Note: Dependencies should already be enabled on sheets created from template
-    // For test sheets, dependencies will be auto-enabled when predecessor column is added
+    // Step 6: Enhanced row creation function with both template and dynamic data
+    const buildEnhancedCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
+      // Start with template row creation
+      const templateRow = createTaskRow(task, templateColumnMap, tasks);
+      const cells = templateRow.cells ? [...templateRow.cells] : [];
 
-    // Helper function to build cells for a task
-    const buildCells = (task: ProjectOnlineTask): SmartsheetCell[] => {
-      const cells: SmartsheetCell[] = [];
-
-      // Handle Work Resources (MULTI_CONTACT_LIST)
-      if (columnMap['Work Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+      // Handle assignment resources (from original buildCells function)
+      if (templateColumnMap['Work Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
         const workAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Work');
         totalAssignmentsProcessed += workAssignments.length;
         
@@ -1196,7 +1331,7 @@ export class TaskTransformer {
                 
         if (contacts.length > 0) {
           cells.push({
-            columnId: columnMap['Work Resource'],
+            columnId: templateColumnMap['Work Resource'],
             objectValue: {
               objectType: 'MULTI_CONTACT',
               values: contacts
@@ -1205,15 +1340,14 @@ export class TaskTransformer {
         }
       }
 
-      // Handle Material Resources (MULTI_PICKLIST)
-      if (columnMap['Material Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+      if (templateColumnMap['Material Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
         const materialAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Material');
         
         const materialNames = materialAssignments.map(a => a.Resource!.Name).filter(Boolean);
         
         if (materialNames.length > 0) {
           cells.push({
-            columnId: columnMap['Material Resource'],
+            columnId: templateColumnMap['Material Resource'],
             objectValue: {
               objectType: 'MULTI_PICKLIST',
               values: materialNames
@@ -1222,15 +1356,14 @@ export class TaskTransformer {
         }
       }
 
-      // Handle Cost Resources (MULTI_PICKLIST) 
-      if (columnMap['Cost Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
+      if (templateColumnMap['Cost Resource'] && task.Assignments?.results && task.Assignments.results.length > 0) {
         const costAssignments = task.Assignments.results.filter(a => a.Resource && a.Resource.Name && getAssignmentResourceType(a.Resource) === 'Cost');
         
         const costNames = costAssignments.map(a => a.Resource!.Name).filter(Boolean);
         
         if (costNames.length > 0) {
           cells.push({
-            columnId: columnMap['Cost Resource'],
+            columnId: templateColumnMap['Cost Resource'],
             objectValue: {
               objectType: 'MULTI_PICKLIST',
               values: costNames
@@ -1239,157 +1372,73 @@ export class TaskTransformer {
         }
       }
 
-      if (columnMap['Task Name']) {
-        cells.push({ columnId: columnMap['Task Name'], value: task.Name });
-      }
-      if (columnMap['Project Online Task ID']) {
-        cells.push({ columnId: columnMap['Project Online Task ID'], value: task.Id });
-      }
-      if (columnMap['Start Date'] && task.Start) {
-        cells.push({ columnId: columnMap['Start Date'], value: convertDateTimeToDate(task.Start) });
-      }
-      if (columnMap['End Date'] && task.Finish) {
-        cells.push({ columnId: columnMap['End Date'], value: convertDateTimeToDate(task.Finish) });
-      }
-      // Duration (readable format like "5d" or "40h")
-      if (columnMap['Duration']) {
-        // Try DurationTimeSpan first (ISO8601 format), then Duration (simple format)
-        const durationValue = task.DurationTimeSpan || task.Duration;
-        this.logger?.debug(`Task ${task.Name} - Duration field found, durationValue: ${durationValue}`);
-        if (durationValue) {
-          const convertedDuration = convertDurationToReadableString(durationValue);
-          this.logger?.debug(`Task ${task.Name} - Converted duration: ${convertedDuration}`);
+      // Add dynamic fields
+      const unmappedFields = getUnmappedTaskFields(task);
+      for (const field of unmappedFields) {
+        const columnId = dynamicFieldsColumnMap[field.titleCase];
+        if (columnId && field.value !== null && field.value !== undefined) {
+          let cellValue: any = field.value;
+          
+          if (field.columnType === 'DATE' && typeof field.value === 'string') {
+            cellValue = convertDateTimeToDate(field.value);
+            if (!cellValue) continue; // Skip empty/invalid dates
+          } else if (field.columnType === 'CHECKBOX' && typeof field.value === 'boolean') {
+            cellValue = field.value;
+          } else if (field.columnType === 'TEXT_NUMBER') {
+            // Handle duration fields
+            if (field.fieldName.toLowerCase().includes('duration') || 
+                field.fieldName.toLowerCase().includes('work') ||
+                field.fieldName.toLowerCase().includes('slack')) {
+              if (typeof field.value === 'string' && field.value.match(/^P|^PT|\d+[hd]$/)) {
+                try {
+                  cellValue = convertDurationToHoursString(field.value);
+                } catch {
+                  cellValue = field.value; // Keep original if conversion fails
+                }
+              }
+            }
+            // Handle numeric fields
+            else if (typeof field.value === 'number') {
+              cellValue = field.value;
+            } else {
+              cellValue = String(field.value);
+            }
+          }
+          
           cells.push({
-            columnId: columnMap['Duration'],
-            value: convertedDuration,
-          });
-        } else {
-          console.log(`Task ${task.Name} - No duration value found in DurationTimeSpan or Duration fields`);
-          this.logger?.debug(`Task ${task.Name} - No duration value found in DurationTimeSpan or Duration fields`);
-        }
-      } else {
-        this.logger?.debug(`Duration column not found in columnMap. Available columns: ${Object.keys(columnMap).join(', ')}`);
-        console.log(`Duration column not found in columnMap. Available columns: ${Object.keys(columnMap).join(', ')}`);
-      }
-      if (columnMap['% Complete'] && task.PercentComplete !== undefined) {
-        cells.push({ columnId: columnMap['% Complete'], value: `${task.PercentComplete}%` });
-      }
-      if (columnMap['Status'] && task.PercentComplete !== undefined) {
-        cells.push({
-          columnId: columnMap['Status'],
-          value: deriveTaskStatus(task.PercentComplete),
-        });
-      }
-      if (columnMap['Priority'] && task.Priority !== undefined) {
-        cells.push({ columnId: columnMap['Priority'], value: mapTaskPriority(task.Priority) });
-      }
-      if (columnMap['Work (hrs)'] && task.Work) {
-        cells.push({
-          columnId: columnMap['Work (hrs)'],
-          value: convertDurationToHoursString(task.Work),
-        });
-      }
-      if (columnMap['Actual Work (hrs)'] && task.ActualWork) {
-        cells.push({
-          columnId: columnMap['Actual Work (hrs)'],
-          value: convertDurationToHoursString(task.ActualWork),
-        });
-      }
-      if (columnMap['Milestone']) {
-        cells.push({ columnId: columnMap['Milestone'], value: task.IsMilestone || false });
-      }
-      if (columnMap['Notes'] && task.TaskNotes) {
-        cells.push({ columnId: columnMap['Notes'], value: task.TaskNotes });
-      }
-      if (columnMap['Predecessors'] && task.Predecessors?.results?.length) {
-        const predecessorValue = mapPredecessorsToSmartsheet(task.Predecessors.results, tasks);
-        if (predecessorValue) {
-          cells.push({ columnId: columnMap['Predecessors'], value: predecessorValue });
-        }
-      }
-      if (columnMap['Constraint Type'] && task.ConstraintType !== undefined && task.ConstraintType !== null) {
-        const constraintValue = mapConstraintTypeToAbbreviation(task.ConstraintType);
-        cells.push({ columnId: columnMap['Constraint Type'], value: constraintValue });
-      }
-      if (columnMap['ConstraintStartEnd'] && task.ConstraintStartEnd) {
-        cells.push({
-          columnId: columnMap['ConstraintStartEnd'],
-          value: convertDateTimeToDate(task.ConstraintStartEnd),
-        });
-      }
-      if (columnMap['Deadline'] && task.Deadline) {
-        cells.push({
-          columnId: columnMap['Deadline'],
-          value: convertDateTimeToDate(task.Deadline),
-        });
-      }
-      // Critical path fields - with safe validation
-      if (columnMap['Late Start']) {
-        const lateStart = safeConvertDate(task.LatestStart);
-        if (lateStart !== null) {
-          cells.push({
-            columnId: columnMap['Late Start'],
-            value: lateStart,
+            columnId,
+            value: cellValue
           });
         }
-      }
-      if (columnMap['Late Finish']) {
-        const lateFinish = safeConvertDate(task.LatestFinish);
-        if (lateFinish !== null) {
-          cells.push({
-            columnId: columnMap['Late Finish'],
-            value: lateFinish,
-          });
-        }
-      }
-      if (columnMap['Total Slack (days)']) {
-        const totalSlack = safeDurationToDays(task.TotalSlack);
-        if (totalSlack !== null) {
-          cells.push({
-            columnId: columnMap['Total Slack (days)'],
-            value: totalSlack,
-          });
-        }
-      }
-      if (columnMap['Free Slack (days)']) {
-        const freeSlack = safeDurationToDays(task.FreeSlack);
-        if (freeSlack !== null) {
-          cells.push({
-            columnId: columnMap['Free Slack (days)'],
-            value: freeSlack,
-          });
-        }
-      }
-      if (columnMap['Project Online Created Date'] && task.Created) {
-        cells.push({
-          columnId: columnMap['Project Online Created Date'],
-          value: convertDateTimeToDate(task.Created),
-        });
-      }
-      if (columnMap['Project Online Modified Date'] && task.Modified) {
-        cells.push({
-          columnId: columnMap['Project Online Modified Date'],
-          value: convertDateTimeToDate(task.Modified),
-        });
       }
 
-      return cells;
+      // Add custom field cells for this task
+      const customFieldCells = customFieldCellPayload[task.Id] || [];
+      cells.push(...customFieldCells);
+
+      // Check for duplicate column IDs and remove them
+      const seenColumnIds = new Set<number>();
+      const dedupedCells = cells.filter(cell => {
+        if (seenColumnIds.has(cell.columnId)) {
+          console.log(`WARNING: Duplicate column ID ${cell.columnId} found in task ${task.Name}, removing duplicate`);
+          return false;
+        }
+        seenColumnIds.add(cell.columnId);
+        return true;
+      });
+
+      return dedupedCells;
     };
 
-    // Add rows in batches by outline level to establish hierarchy
-    // Map task ID to created row ID for parent-child relationships
+    // Step 6: Create rows with hierarchy (same logic as before)
     const taskIdToRowId: Record<string, number> = {};
     let totalRowsCreated = 0;
-
-    // Find max outline level
     const maxLevel = Math.max(...tasks.map((t) => t.OutlineLevel || 1));
 
-    // Add tasks level by level, grouped by parent
     for (let level = 1; level <= maxLevel; level++) {
       const tasksAtLevel = tasks.filter((t) => (t.OutlineLevel || 1) === level);
       if (tasksAtLevel.length === 0) continue;
 
-      // Group tasks by their parent ID (using expanded Parent object)
       const tasksByParent = new Map<string, ProjectOnlineTask[]>();
 
       for (const task of tasksAtLevel) {
@@ -1397,7 +1446,6 @@ export class TaskTransformer {
         if (level === 1) {
           groupKey = 'NO_PARENT';
         } else {
-          // Use expanded Parent object to get parent ID
           let parentTaskId: string | null = null;
           if (task.Parent && task.Parent.Id) {
             parentTaskId = task.Parent.Id;
@@ -1413,16 +1461,16 @@ export class TaskTransformer {
         tasksByParent.get(groupKey)!.push(task);
       }
 
-      // Add each group separately (all rows in a batch must use same location attribute)
       for (const [groupKey, groupTasks] of tasksByParent.entries()) {
+        
         const rowsToAdd = groupTasks.map((task) => {
-          const cells = buildCells(task);
+          const cells = buildEnhancedCells(task);
+          
           const row: SmartsheetRow = { cells };
 
           if (groupKey === 'NO_PARENT') {
             row.toBottom = true;
           } else {
-            // Extract parent ID from groupKey
             const parentRowId = parseInt(groupKey.replace('PARENT_', ''));
             row.parentId = parentRowId;
           }
@@ -1430,19 +1478,31 @@ export class TaskTransformer {
           return row;
         });
 
-        // Add this group's rows in a batch
+        // Validate row structure before sending
+        for (let i = 0; i < rowsToAdd.length; i++) {
+          const row = rowsToAdd[i];
+          console.log(`Row ${i + 1}: ${row.cells?.length || 0} cells, indent: ${row.indent}, toBottom: ${row.toBottom}, parentId: ${row.parentId}`);
+          
+          // Check for invalid cells
+          if (row.cells) {
+            for (let j = 0; j < row.cells.length; j++) {
+              const cell = row.cells[j];
+              if (!cell.columnId) {
+                console.log(`ERROR: Row ${i + 1}, cell ${j + 1} missing columnId`);
+              }
+              if (cell.value === undefined) {
+                console.log(`WARNING: Row ${i + 1}, cell ${j + 1} has undefined value`);
+              }
+            }
+          }
+        }
+        
         try {
-          const addRowsResponse = await this.client.sheets?.addRows?.({
-            sheetId: sheetId,
-            body: rowsToAdd,
-          });
+          const addRowsResponse = await this.client.sheets?.addRows?.({ sheetId, body: rowsToAdd });
 
-          // Unwrap the API response to get the actual array
-          const createdRows =
-            addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
+          const createdRows = addRowsResponse?.result || addRowsResponse?.data || addRowsResponse || [];
           const rowsArray = Array.isArray(createdRows) ? createdRows : [];
 
-          // Map task IDs to row IDs for next level
           groupTasks.forEach((task, index) => {
             if (rowsArray[index]?.id && task.Id) {
               taskIdToRowId[task.Id] = rowsArray[index].id;
@@ -1459,7 +1519,7 @@ export class TaskTransformer {
       }
     }
 
-    this.logger?.debug(`Created ${totalRowsCreated} total task rows with hierarchy`);
+    this.logger?.debug(`Created ${totalRowsCreated} total task rows with hierarchy and ${allUnmappedFields.size} dynamic columns`);
 
     return {
       rowsCreated: totalRowsCreated,
