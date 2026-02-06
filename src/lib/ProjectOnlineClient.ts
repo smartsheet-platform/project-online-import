@@ -403,9 +403,10 @@ export class ProjectOnlineClient {
         $expand: [
           'Assignments',  
           'Tasks/Parent', 
+          'Tasks/CustomFields', 
           'Tasks/Predecessors', 
           'Tasks/Assignments/Resource', 
-          'ProjectResources', 
+          'ProjectResources/CustomFields', 
           'Owner'
         ],
         $top: 1,

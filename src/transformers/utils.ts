@@ -4,6 +4,47 @@
  */
 
 /**
+ * Fields to ignore when discovering unmapped task fields
+ */
+export const FIELDS_TO_IGNORE = new Set([
+  'Parent',
+  'Successors',
+  'CustomFields'
+]);
+
+/**
+ * Template column mappings: Title Case -> camelCase
+ * These are the standard columns that exist in the task template
+ */
+export const TASK_TEMPLATE_MAPPINGS: Record<string, string> = {
+  'Task Name': 'Name',
+  'Project Online Task ID': 'Id',
+  'Start Date': 'Start',
+  'End Date': 'Finish',
+  'Duration': 'DurationTimeSpan',
+  '% Complete': 'PercentComplete',
+  'Status': 'PercentComplete', // Derived field
+  'Priority': 'Priority',
+  'Work (hrs)': 'Work',
+  'Actual Work (hrs)': 'ActualWork',
+  'Milestone': 'IsMilestone',
+  'Notes': 'TaskNotes',
+  'Predecessors': 'Predecessors',
+  'Constraint Type': 'ConstraintType',
+  'ConstraintStartEnd': 'ConstraintStartEnd',
+  'Deadline': 'Deadline',
+  'Late Start': 'LatestStart',
+  'Late Finish': 'LatestFinish',
+  'Total Slack (days)': 'TotalSlack',
+  'Free Slack (days)': 'FreeSlack',
+  'Project Online Created Date': 'Created',
+  'Project Online Modified Date': 'Modified',
+  'Work Resource': 'Assignments', // Special handling
+  'Material Resource': 'Assignments', // Special handling
+  'Cost Resource': 'Assignments', // Special handling
+};
+
+/**
  * Sanitize workspace name according to spec
  * - Remove/replace invalid characters: /\:*?"<>| → -
  * - Consolidate multiple consecutive dashes
@@ -228,4 +269,81 @@ export function createSheetName(baseName: string, suffix: string): string {
   // Truncate base name to fit within limit, adding ellipsis
   const truncatedBaseName = baseName.substring(0, availableForBaseName - 3) + '...';
   return `${truncatedBaseName}${suffixWithSeparator}`;
+}
+
+/**
+ * Convert camelCase to Title Case
+ * e.g., "actualCost" -> "Actual Cost"
+ */
+export function camelCaseToTitleCase(camelCase: string): string {
+  return camelCase
+    // Handle numbers followed by letters (e.g., "x005f" -> "x005f ")
+    .replace(/([0-9])([A-Z])/g, '$1 $2')
+    // Add space before uppercase letters
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    // Handle multiple uppercase letters (e.g., "ID" -> "ID", "URL" -> "URL")
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+    // Split words and capitalize each
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Determine Smartsheet column type from Project Online field value
+ */
+export function determineSmartsheetColumnType(value: any): string {
+  // Handle null/undefined values - always return TEXT_NUMBER
+  if (value === null || value === undefined) {
+    return 'TEXT_NUMBER';
+  }
+
+  // Type-based detection
+  if (typeof value === 'boolean') {
+    return 'CHECKBOX';
+  }
+
+  if (typeof value === 'number') {
+    return 'TEXT_NUMBER';
+  }
+
+  // Enhanced date pattern detection for strings including Project Online default date
+  // Pattern: YYYY-MM-DDTHH:MM:SS with optional timezone and milliseconds
+  // Includes default value '0001-01-01T00:00:00' and similar formats
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?([+-]\d{2}:\d{2}|Z)?$/.test(value)) {
+    return 'DATE';
+  }
+
+  return 'TEXT_NUMBER';
+}
+
+export function getUnmappedTaskFields(task: any): Array<{fieldName: string, titleCase: string, value: any, columnType: string}> {
+  const unmappedFields: Array<{fieldName: string, titleCase: string, value: any, columnType: string}> = [];
+  
+  // Get all template-mapped field names (camelCase)
+  const mappedFields = new Set(Object.values(TASK_TEMPLATE_MAPPINGS));
+
+  for (const [fieldName, value] of Object.entries(task)) {
+    // Skip if it's a mapped field, ignored field, or has an object value (except arrays)
+    if (mappedFields.has(fieldName) || FIELDS_TO_IGNORE.has(fieldName)) {
+      continue;
+    }
+
+    // Skip object values (complex objects)
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      continue;
+    }
+
+    const titleCase = camelCaseToTitleCase(fieldName);
+    const columnType = determineSmartsheetColumnType(value);
+
+    unmappedFields.push({
+      fieldName,
+      titleCase,
+      value,
+      columnType
+    });
+  }
+
+  return unmappedFields;
 }
