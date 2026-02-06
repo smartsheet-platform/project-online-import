@@ -50,7 +50,7 @@ describe('TaskTransformer', () => {
           Work: 'PT80H',
           ActualWork: 'PT32H',
           PercentComplete: 45,
-          TaskType: 'Fixed Duration',
+          TaskType: 2, // Fixed Duration
           Priority: 800,
           IsMilestone: false,
           IsActive: true,
@@ -196,7 +196,7 @@ describe('TaskTransformer', () => {
         Work: 'PT80H',
         ActualWork: 'PT32H',
         PercentComplete: 45,
-        TaskType: 'Fixed Duration',
+        TaskType: 2, // Fixed Duration
         Priority: 800,
         IsMilestone: false,
         IsActive: true,

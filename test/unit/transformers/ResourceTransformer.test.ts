@@ -58,7 +58,6 @@ describe('ResourceTransformer', () => {
       const sheet = createResourcesSheet(resources, projectName);
 
       const columnTitles = sheet.columns?.map((col) => col.title) || [];
-      expect(columnTitles).toContain('Resource ID');
       expect(columnTitles).toContain('Project Online Resource ID');
       expect(columnTitles).toContain('Resource Name');
       expect(columnTitles).toContain('Team Members');
@@ -75,17 +74,13 @@ describe('ResourceTransformer', () => {
       expect(columnTitles).toContain('Is Generic');
       expect(columnTitles).toContain('Project Online Created Date');
       expect(columnTitles).toContain('Project Online Modified Date');
-      expect(columnTitles).toContain('Created Date');
-      expect(columnTitles).toContain('Modified Date');
-      expect(columnTitles).toContain('Created By');
-      expect(columnTitles).toContain('Modified By');
     });
   });
 
   describe('createResourcesSheetColumns', () => {
-    it('should create 21 columns total', () => {
+    it('should create 16 columns total', () => {
       const columns = createResourcesSheetColumns();
-      expect(columns).toHaveLength(21);
+      expect(columns).toHaveLength(16);
     });
 
     it('should have Resource Name as primary column (TEXT_NUMBER)', () => {
@@ -116,12 +111,6 @@ describe('ResourceTransformer', () => {
       expect(costColumn).toBeDefined();
       expect(costColumn?.type).toBe('TEXT_NUMBER');
       expect(costColumn?.width).toBe(200);
-    });
-
-    it('should configure Resource ID as AUTO_NUMBER with project prefix', () => {
-      const columns = createResourcesSheetColumns();
-      const idColumn = columns.find((col) => col.title === 'Resource ID');
-      expect(idColumn?.type).toBe('AUTO_NUMBER');
     });
 
     it('should hide and lock Project Online Resource ID column', () => {
